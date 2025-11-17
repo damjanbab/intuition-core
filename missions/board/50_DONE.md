@@ -22,4 +22,7 @@ Accepted missions that still need to be fully archived (e.g., tagging releases, 
   - Summary: CLI tool to move mission entries between board files.
   - Links: [Worklog](../../worklogs/M-20251117-102/WORKLOG.md)
 
+- [`M-20251117-103`](../M-20251117-103.md) — Mission Summary Reporter (Owner: `Alpha`, Group: WORKFLOW_AUTOMATION)
+  - Summary: Mission reporter CLI accepted; awaiting archival.
+  - Links: [Worklog](../../worklogs/M-20251117-103/WORKLOG.md)
 > Use the entry format from `missions/README.md` and note remaining archival tasks.

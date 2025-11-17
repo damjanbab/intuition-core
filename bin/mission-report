@@ -1,0 +1,235 @@
+#!/usr/bin/env python3
+"""Mission board reporting utility."""
+from __future__ import annotations
+
+import argparse
+from collections import defaultdict
+from datetime import datetime, timezone
+import re
+import sys
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+STATUS_ORDER: List[Tuple[str, str, str]] = [
+    ("inbox", "00_INBOX.md", "00_INBOX"),
+    ("open", "10_OPEN.md", "10_OPEN"),
+    ("in_progress", "20_IN_PROGRESS.md", "20_IN_PROGRESS"),
+    ("blocked", "30_BLOCKED.md", "30_BLOCKED"),
+    ("review", "40_REVIEW.md", "40_REVIEW"),
+    ("done", "50_DONE.md", "50_DONE"),
+    ("archived", "60_ARCHIVED.md", "60_ARCHIVED"),
+]
+
+STATUS_CHOICES = [item[0] for item in STATUS_ORDER]
+ATTENTION_STATUSES = {"blocked", "review"}
+ENTRY_RE = re.compile(
+    r"^- \[`(?P<id>[^`]+)`\]\(../[^)]+\) — (?P<title>.+) \(Owner: `(?P<owner>[^`]+)`(?:, Group: (?P<group>[^)]+))?\)"
+)
+CREATED_RE = re.compile(r"^- \*\*Created:\*\*\s*(?P<date>\d{4}-\d{2}-\d{2})")
+GROUP_RE = re.compile(r"^- \*\*Group:\*\*\s*(?P<group>.+)")
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Summarize missions by group/status from board files.")
+    parser.add_argument(
+        "--group",
+        action="append",
+        dest="groups",
+        help="Filter to a specific mission group (can be provided multiple times).",
+    )
+    parser.add_argument(
+        "--status",
+        action="append",
+        choices=STATUS_CHOICES,
+        dest="statuses",
+        help="Filter to one or more statuses (defaults to all).",
+    )
+    parser.add_argument(
+        "--board-dir",
+        default="missions/board",
+        help="Path to the board directory (default: missions/board).",
+    )
+    parser.add_argument(
+        "--repo-root",
+        default=None,
+        help="Override the repository root (default: script directory/..).",
+    )
+    parser.add_argument(
+        "--attention-only",
+        action="store_true",
+        help="Show only statuses that require attention (blocked/review).",
+    )
+    return parser.parse_args()
+
+
+def read_lines(path: Path) -> List[str]:
+    return path.read_text(encoding="utf-8").splitlines()
+
+
+def parse_entry(block: List[str]) -> Dict[str, str]:
+    if not block or block[0].strip() == "- _Empty_":
+        return {}
+    match = ENTRY_RE.match(block[0].strip())
+    if not match:
+        raise SystemExit(f"Unable to parse board entry header: {block[0]}")
+    summary = ""
+    for line in block[1:]:
+        text = line.strip()
+        if text.startswith("- Summary:"):
+            summary = text.split(":", 1)[1].strip()
+            break
+    return {
+        "id": match.group("id"),
+        "title": match.group("title"),
+        "owner": match.group("owner"),
+        "group": (match.group("group") or "").strip(),
+        "summary": summary,
+    }
+
+
+def split_entries(lines: List[str]) -> List[List[str]]:
+    entries: List[List[str]] = []
+    in_entries = False
+    current: List[str] = []
+    for line in lines:
+        if not in_entries:
+            if line.strip() == "## Entries":
+                in_entries = True
+            continue
+        if line.startswith("> "):
+            break
+        if line.startswith("- [`"):
+            if current:
+                entries.append(current)
+            current = [line]
+        elif current:
+            current.append(line)
+    if current:
+        entries.append(current)
+    return entries
+
+
+def parse_mission_metadata(mission_file: Path) -> Tuple[str, datetime | None]:
+    lines = read_lines(mission_file)
+    group = None
+    created = None
+    for line in lines:
+        if group is None:
+            g_match = GROUP_RE.match(line.strip())
+            if g_match:
+                group = g_match.group("group").strip()
+        if created is None:
+            c_match = CREATED_RE.match(line.strip())
+            if c_match:
+                created = datetime.strptime(c_match.group("date"), "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        if group and created:
+            break
+    return group or "unknown", created
+
+
+def format_mission(entry: Dict[str, str], age_days: int | None) -> str:
+    suffix_parts = []
+    if age_days is not None:
+        suffix_parts.append(f"+{age_days}d")
+    suffix_parts.append(entry["owner"])
+    suffix = ",".join(suffix_parts)
+    return f"{entry['id']}({suffix})"
+
+
+def main() -> None:
+    args = parse_args()
+    repo_root = Path(args.repo_root).resolve() if args.repo_root else Path(__file__).resolve().parents[1]
+    board_dir = (repo_root / args.board_dir).resolve()
+    if not board_dir.exists():
+        raise SystemExit(f"Board directory not found: {board_dir}")
+
+    group_filters = {g.strip().upper() for g in args.groups} if args.groups else None
+    status_filters = set(args.statuses) if args.statuses else None
+    if args.attention_only:
+        attention = ATTENTION_STATUSES
+        status_filters = attention if status_filters is None else status_filters & attention
+        if not status_filters:
+            status_filters = attention
+
+    today = datetime.now(timezone.utc)
+    grouped: Dict[str, Dict[str, List[str]]] = defaultdict(lambda: defaultdict(list))
+    totals = defaultdict(int)
+    found_any = False
+
+    for status_key, filename, label in STATUS_ORDER:
+        if status_filters and status_key not in status_filters:
+            continue
+        board_file = board_dir / filename
+        if not board_file.exists():
+            continue
+        lines = read_lines(board_file)
+        blocks = split_entries(lines)
+        for block in blocks:
+            parsed = parse_entry(block)
+            if not parsed:
+                continue
+            mission_id = parsed["id"].upper()
+            mission_file = repo_root / "missions" / f"{mission_id}.md"
+            if not mission_file.exists():
+                print(f"Error: mission file missing for {mission_id} (referenced in {board_file.name})", file=sys.stderr)
+                sys.exit(1)
+            mission_group, created = parse_mission_metadata(mission_file)
+            board_group = parsed["group"]
+            if board_group and mission_group.strip().upper() != board_group.strip().upper():
+                print(
+                    f"Error: group mismatch for {mission_id}: board '{board_group}' vs mission '{mission_group}'",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            age_days = (today - created).days if created else None
+            display_group = mission_group
+            if group_filters and display_group.upper() not in group_filters:
+                continue
+            formatted = format_mission(parsed, age_days)
+            grouped[display_group][status_key].append(formatted)
+            totals[status_key] += 1
+            found_any = True
+
+    if not found_any:
+        print("No missions matched the supplied filters.")
+        return
+
+    print("Mission Summary Report")
+    if group_filters or status_filters:
+        filters = []
+        if group_filters:
+            filters.append(f"groups={', '.join(sorted(group_filters))}")
+        if status_filters:
+            filters.append(f"statuses={', '.join(sorted(status_filters))}")
+        print(f"Filters: {'; '.join(filters)}")
+    print()
+
+    status_label_map = {key: label for key, _, label in STATUS_ORDER}
+    for group in sorted(grouped.keys()):
+        print(f"Group: {group}")
+        print("  Status           Count  Attention  Missions")
+        print("  " + "-" * 70)
+        for status_key, _, label in STATUS_ORDER:
+            if status_filters and status_key not in status_filters:
+                continue
+            missions = grouped[group].get(status_key)
+            if not missions:
+                continue
+            attention = label if status_key in ATTENTION_STATUSES else ""
+            mission_list = ", ".join(sorted(missions))
+            print(f"  {label:<15} {len(missions):>5}  {attention:<9} {mission_list}")
+        print()
+
+    print("Totals:")
+    for status_key, _, label in STATUS_ORDER:
+        if status_filters and status_key not in status_filters:
+            continue
+        count = totals.get(status_key, 0)
+        print(f"  {label:<15} {count}")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit("Aborted")

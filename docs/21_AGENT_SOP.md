@@ -43,6 +43,7 @@ For each iteration:
 5. **Sync** – If blocked, update the relevant file under `missions/board/` (typically `30_BLOCKED.md`) with a concise note and capture the same information in the worklog.
 
 Always update board status via `bin/move-mission <MISSION_ID> <status> --owner <handle> --summary "<intent>"`; manual edits are prohibited so tooling can enforce formatting.
+When preparing status updates or hand-offs, run `bin/mission-report [--group <group>] [--status <status>]` to summarize the mission board per group/status and identify blocked or review items that need attention.
 
 ---
 
