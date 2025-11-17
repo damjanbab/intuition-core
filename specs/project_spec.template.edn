@@ -1,0 +1,40 @@
+{:spec/id "spec-<project-slug>"
+ :spec/version 0
+ :spec/status :draft
+ :metadata {:title ""
+            :short_name ""
+            :owner_name ""
+            :owner_contact ""
+            :created_at ""
+            :last_updated_at ""
+            :domain ""}
+ :vision {:summary ""
+          :problem_statement ""
+          :in_scope []
+          :out_of_scope []
+          :success_metrics []}
+ :stakeholders []
+ :system_context {:primary_user_segments []
+                  :environments []
+                  :deployment_context ""}
+ :capabilities []
+ :constraints {:business []
+               :technical []
+               :operational []
+               :legal []}
+ :data_model {:entities []
+              :cross_entity_rules []}
+ :external_systems []
+ :non_functional_requirements []
+ :risks []
+ :assumptions []
+ :acceptance_criteria []
+ :verification_plan {:strategy_summary ""
+                     :levels []
+                     :environments []
+                     :regression_policy ""}
+ :glossary []
+ :validation_summary {:last_validated_at nil
+                      :is_valid false
+                      :errors []
+                      :warnings []}}
