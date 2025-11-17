@@ -33,4 +33,4 @@
 - Deliverables checklist status: All deliverables/tests marked complete within `missions/M-20251117-101.md`.
 - Tests (commands + results): `bin/make-worklog --agent Alpha --force M-20251117-101`; generation/failure/force cycles for temporary mission `M-20251117-999` (see iteration notes for exact commands).
 - Risks / follow-ups: Mission 104 should wire this tool into `scripts/mission-verify.sh` to enforce usage; monitor for future template changes (script reads template directly, so drift risk is low).
-- Hand-off notes: Mission moved to `40_REVIEW`; awaiting acceptance before archival.
+- Hand-off notes: Mission accepted by system owner on 2025-11-17; entry moved to `50_DONE` and ready for eventual archival.
