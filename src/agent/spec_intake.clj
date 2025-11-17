@@ -63,8 +63,7 @@
 (defn orientation
   "Prints orientation for spec-intake role using snapshot map."
   [snapshot]
-  (let [{:keys [spec conversation]} snapshot
-        spec-id (:spec-id snapshot)
+  (let [{:keys [spec spec-id conversation]} snapshot
         title (get-in spec [:metadata :title])
         status (:spec/status spec)
         phase (next-phase)]
@@ -89,6 +88,8 @@
     (println "  (agent.spec-intake/update-field! [:capabilities] conj new-cap)")
     (println "  (agent.spec-intake/summary)        ;; quick counts")
     (println "  (agent.spec-intake/next-phase)     ;; see next incomplete phase")
+    (println "  (agent.core/system-snapshot spec-id) ;; inspect full state (spec/schema/protocol)")
+    (println "  (agent.core/schema)                ;; view field instructions")
     (println)
     (println "Remember: gather information from the owner, update the spec via these helpers,")
     (println "rerun (agent.spec-intake/next-phase) until everything is filled, then signal for validation.")))
