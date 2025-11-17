@@ -1,0 +1,195 @@
+#!/usr/bin/env python3
+"""Mission board manager: moves mission entries between board files."""
+import argparse
+import re
+import sys
+from pathlib import Path
+from typing import List, Tuple
+
+STATUS_FILES = {
+    "inbox": "00_INBOX.md",
+    "open": "10_OPEN.md",
+    "in_progress": "20_IN_PROGRESS.md",
+    "blocked": "30_BLOCKED.md",
+    "review": "40_REVIEW.md",
+    "done": "50_DONE.md",
+    "archived": "60_ARCHIVED.md",
+}
+
+ENTRY_START_RE = re.compile(r"^- \[`([^`]+)`]")
+
+
+def strip_empty_placeholder(tail: List[str]) -> List[str]:
+    if tail and tail[0].strip() == "- _Empty_":
+        return tail[1:]
+    return tail
+
+
+def add_empty_placeholder(tail: List[str]) -> List[str]:
+    cleaned = strip_empty_placeholder(tail)
+    new_tail = ["- _Empty_"]
+    if not cleaned or cleaned[0].strip():
+        new_tail.append("")
+    return new_tail + cleaned
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Move a mission entry to a different board status while enforcing the canonical format.")
+    parser.add_argument("mission_id", help="Mission identifier like M-20251117-102")
+    parser.add_argument("status", choices=STATUS_FILES.keys(),
+                        help="Destination status (inbox, open, in_progress, blocked, review, done, archived)")
+    parser.add_argument("--owner", required=True, help="Owner handle recorded in the board entry (use `unassigned` when applicable)")
+    parser.add_argument("--summary", required=True, help="Short summary line for the mission entry")
+    parser.add_argument("--board-dir", default="missions/board", help="Override board directory (default: missions/board)")
+    parser.add_argument("--repo-root", default=None, help="Override repo root (default: script/..)")
+    return parser.parse_args()
+
+
+def read_lines(path: Path) -> List[str]:
+    return path.read_text(encoding="utf-8").splitlines()
+
+
+def write_lines(path: Path, lines: List[str]) -> None:
+    path.write_text("\n".join(lines).rstrip("\n") + "\n", encoding="utf-8")
+
+
+def parse_mission_metadata(path: Path) -> Tuple[str, str]:
+    lines = read_lines(path)
+    title = None
+    group = None
+    for line in lines:
+        if line.startswith("# Mission") and " – " in line:
+            title = line.split(" – ", 1)[1].strip()
+            break
+    if title is None:
+        raise SystemExit(f"Unable to parse mission title from {path}")
+    for line in lines:
+        if "**Group:**" in line:
+            group = line.split("**Group:**", 1)[1].strip()
+            break
+    if not group:
+        group = "none"
+    return title, group
+
+
+def split_board(lines: List[str]) -> Tuple[List[str], List[List[str]], List[str]]:
+    header_end = None
+    for idx, line in enumerate(lines):
+        if line.strip() == "## Entries":
+            header_end = idx + 1
+            break
+    if header_end is None:
+        raise SystemExit("Board file missing '## Entries' section")
+    header = lines[:header_end]
+    rest = lines[header_end:]
+    entries: List[List[str]] = []
+    tail: List[str] = []
+    i = 0
+    while i < len(rest):
+        line = rest[i]
+        if line.startswith("- [`"):
+            block = [line]
+            i += 1
+            while i < len(rest):
+                nxt = rest[i]
+                if nxt.startswith("- [`") or nxt.startswith("> "):
+                    break
+                block.append(nxt)
+                i += 1
+            entries.append(block)
+            continue
+        tail = rest[i:]
+        break
+    else:
+        tail = []
+    return header, entries, tail
+
+
+def extract_id(block: List[str]) -> str:
+    if not block:
+        return ""
+    match = ENTRY_START_RE.match(block[0])
+    if not match:
+        return ""
+    return match.group(1)
+
+
+def build_entry(mission_id: str, title: str, owner: str, group: str, summary: str) -> List[str]:
+    first = f"- [`{mission_id}`](../{mission_id}.md) — {title} (Owner: `{owner}`, Group: {group})"
+    second = f"  - Summary: {summary}"
+    third = f"  - Links: [Worklog](../../worklogs/{mission_id}/WORKLOG.md)"
+    return [first, second, third]
+
+
+def rewrite_without(path: Path, mission_id: str) -> bool:
+    lines = read_lines(path)
+    header, entries, tail = split_board(lines)
+    new_entries = [block for block in entries if extract_id(block) != mission_id]
+    if len(new_entries) == len(entries):
+        return False
+    tail_without = strip_empty_placeholder(tail)
+    if not new_entries:
+        final_tail = add_empty_placeholder(tail_without)
+    else:
+        final_tail = tail_without
+    new_lines = header + [line for block in new_entries for line in block] + final_tail
+    write_lines(path, new_lines)
+    return True
+
+
+def write_target(path: Path, mission_id: str, block: List[str]) -> None:
+    lines = read_lines(path)
+    header, entries, tail = split_board(lines)
+    filtered = [b for b in entries if extract_id(b) != mission_id]
+    filtered.append(block)
+    filtered.sort(key=lambda b: extract_id(b))
+    final_tail = strip_empty_placeholder(tail)
+    new_lines = header + [line for block in filtered for line in block] + final_tail
+    write_lines(path, new_lines)
+
+
+def main() -> None:
+    args = parse_args()
+    repo_root = Path(args.repo_root).resolve() if args.repo_root else Path(__file__).resolve().parents[1]
+    mission_id = args.mission_id.upper()
+    if not re.fullmatch(r"M-\d{8}-\d{3}", mission_id):
+        raise SystemExit("Mission ID must match M-YYYYMMDD-###")
+    status = args.status.lower()
+    board_dir = repo_root / args.board_dir
+    if status not in STATUS_FILES:
+        raise SystemExit(f"Unknown status '{args.status}'")
+    target_file = board_dir / STATUS_FILES[status]
+    if not target_file.exists():
+        raise SystemExit(f"Board file not found: {target_file}")
+
+    mission_file = repo_root / "missions" / f"{mission_id}.md"
+    if not mission_file.exists():
+        raise SystemExit(f"Mission file not found: {mission_file}")
+
+    title, group = parse_mission_metadata(mission_file)
+    owner = args.owner.strip()
+    summary = args.summary.strip()
+    if not owner:
+        raise SystemExit("Owner cannot be empty")
+    if not summary:
+        raise SystemExit("Summary cannot be empty")
+
+    # Remove from all board files first.
+    files_touched = []
+    for status_key, filename in STATUS_FILES.items():
+        board_path = board_dir / filename
+        if board_path.exists() and rewrite_without(board_path, mission_id):
+            files_touched.append(status_key)
+
+    block = build_entry(mission_id, title, owner, group, summary)
+    write_target(target_file, mission_id, block)
+    print(f"Moved {mission_id} to {status} ({STATUS_FILES[status]})")
+    if files_touched:
+        print(f"Removed existing entries from: {', '.join(files_touched)}")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit("Aborted")

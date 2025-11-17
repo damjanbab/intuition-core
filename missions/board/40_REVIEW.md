@@ -6,4 +6,3 @@ Completed missions awaiting system owner acceptance.
 - _Empty_
 
 > Use the entry format from `missions/README.md` and include links to PRs or artifacts.
-

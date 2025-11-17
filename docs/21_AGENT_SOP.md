@@ -20,10 +20,8 @@ This SOP defines how execution agents operate when working on missions for the s
 1. Sync `main` (`git pull --rebase origin main`) and create a branch `git checkout -b mission/<MISSION_ID>`.
 2. Read the mission group brief referenced in the mission file (e.g., `missions/groups/Phase-1-Dict-Skeleton.md`).
 3. Open `missions/board/10_OPEN.md` (see `missions/README.md`) and locate missions ready to claim. Confirm dependencies are satisfied and Git requirements in `docs/22_GIT_GOVERNANCE.md` (branch, hooks, clean tree) hold.
-4. Announce intent to claim by moving the entry to `missions/board/20_IN_PROGRESS.md`, setting yourself as owner, and notifying the system owner (per agreed communication channel).
-5. Copy `templates/WORKLOG_TEMPLATE.md` to `worklogs/<mission-id>/WORKLOG.md`; record the initial timestamp and intent.
-3. Announce intent to claim by moving the entry to `missions/board/20_IN_PROGRESS.md`, setting yourself as owner, and notifying the system owner (per agreed communication channel).
-4. Copy `templates/WORKLOG_TEMPLATE.md` to `worklogs/<mission-id>/WORKLOG.md`; record the initial timestamp and intent.
+4. Announce intent to claim by running `bin/move-mission <MISSION_ID> in_progress --owner <handle> --summary "<intent>"` (never edit the board files manually) and notifying the system owner (per agreed communication channel).
+5. Generate the worklog with `bin/make-worklog <MISSION_ID> --agent <handle>` (never copy templates manually) and record the initial timestamp + intent in the freshly created file.
 
 No work starts before the mission is officially assigned.
 
@@ -43,6 +41,8 @@ For each iteration:
    - Next steps or blockers
 4. **Verify** – Run required tests plus any impacted suites (unit, integration, end-to-end). Capture command invocations and run `./scripts/mission-verify.sh manual` to confirm status before staging significant changes.
 5. **Sync** – If blocked, update the relevant file under `missions/board/` (typically `30_BLOCKED.md`) with a concise note and capture the same information in the worklog.
+
+Always update board status via `bin/move-mission <MISSION_ID> <status> --owner <handle> --summary "<intent>"`; manual edits are prohibited so tooling can enforce formatting.
 
 ---
 
