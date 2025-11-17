@@ -1,0 +1,4 @@
+{:paths ["src"]
+ :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        org.clojure/tools.cli {:mvn/version "1.0.219"}}
+ :aliases {:spec {:main-opts ["-m" "intuition.spec-cli"]}}}
