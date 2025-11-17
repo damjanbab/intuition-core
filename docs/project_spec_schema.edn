@@ -1,0 +1,49 @@
+{:instructions "Project spec template with verbose field instructions. Copy this file to create a new project spec instance and replace values. All strings/vectors must be filled; empty quotes mean TODO."
+ :spec/id {:value "spec-<slug>" :instructions "Stable slug, lowercase kebab-case. Example: spec-intuition-core."}
+ :spec/version {:value 0 :instructions "Monotonic integer. Increase whenever an approved spec changes."}
+ :spec/status {:value :draft :instructions "Status flag. Allowed: :draft, :approved, :superseded."}
+ :metadata {:instructions "Metadata about the spec. All fields required."
+            :title {:value "" :instructions "Full human-friendly project name."}
+            :short_name {:value "" :instructions "Short slug used in folders/IDs."}
+            :owner_name {:value "" :instructions "Single accountable human for this spec."}
+            :owner_contact {:value "" :instructions "Email or handle for follow-up."}
+            :created_at {:value "" :instructions "Creation timestamp (ISO string)."}
+            :last_updated_at {:value "" :instructions "Last update timestamp (ISO string)."}
+            :domain {:value "" :instructions "Domain label (e.g., tooling, finance, platform)."}}
+ :vision {:instructions "Keep statements outcome-focused; no implementation steps."
+          :summary {:value "" :instructions "1-2 sentence outcome statement describing the desired end state."}
+          :problem_statement {:value "" :instructions "Narrative describing the problem we solve."}
+          :in_scope {:value [] :instructions "Vector of strings; each describes what is explicitly covered."}
+          :out_of_scope {:value [] :instructions "Vector of strings describing exclusions."}
+          :success_metrics {:value [] :instructions "Vector of maps {:metric_id keyword :description string :unit string :target_value number :target_condition \"≤\"/\"≥\"/\"=\"}. Provide at least one metric."}}
+ :stakeholders {:value [] :instructions "Vector of stakeholder maps {:stakeholder_id keyword :role string :description string :goals [string] :pain_points [string] :success_criteria [string]}. Include every user/operator affected."}
+ :system_context {:instructions "Describe environment and usage context."
+                  :primary_user_segments {:value [] :instructions "Vector of user segment labels."}
+                  :environments {:value [] :instructions "Vector of environments (\"dev\", \"staging\", \"prod\", etc.)."}
+                  :deployment_context {:value "" :instructions "High-level runtime context (\"internal SaaS\", \"CLI tool\", etc.)."}}
+ :capabilities {:value [] :instructions "Vector of capability maps. Each map must include keys like :capability_id, :name, :description, :priority, :primary_actor, :related_stakeholder_ids, :preconditions, :triggers, :main_flow, :business_rules, :related_data_entity_ids. All language must describe outcomes/users, not implementation steps."}
+ :constraints {:instructions "Non-negotiable rules. Each vector contains strings; describe constraints declaratively."
+               :business {:value [] :instructions "Business/policy constraints (budget, approval, compliance)."}
+               :technical {:value [] :instructions "Required or forbidden technologies/platforms. Allow statements like 'Must use Datomic', 'Repository must remain EDN'."}
+               :operational {:value [] :instructions "Operational requirements (uptime, staffing, agent operational boundaries)."}
+               :legal {:value [] :instructions "Legal/compliance mandates (GDPR, SOC2)."}}
+ :data_model {:instructions "Conceptual data stored/manipulated by the system."
+              :entities {:value [] :instructions "Vector of entities {:entity_id keyword :name string :description string :fields [{:field_id keyword :name string :description string :is_key boolean :is_required boolean}]}"}
+              :cross_entity_rules {:value [] :instructions "Vector of strings describing global invariants (e.g., 'missions reference existing workflows')."}}
+ :external_systems {:value [] :instructions "Vector of external systems {:external_system_id keyword :name string :purpose string :data_exchanged [string] :constraints [string]}."}
+ :non_functional_requirements {:value [] :instructions "Vector of NFR maps {:nfr_id keyword :category keyword :description string :metric string? :target_value number? :target_condition string?}. Must be measurable or clearly checkable."}
+ :risks {:value [] :instructions "Vector of risk maps {:risk_id keyword :description string :impact keyword :likelihood keyword :mitigation string}."}
+ :assumptions {:value [] :instructions "Vector of assumption maps {:assumption_id keyword :description string :is_critical boolean}."}
+ :acceptance_criteria {:value [] :instructions "Vector of acceptance criteria {:criterion_id keyword :related_capability_ids [keyword] :description string :priority keyword :verification_method keyword :metric string? :threshold number? :threshold_condition string?}."}
+ :verification_plan {:instructions "Describe how acceptance criteria and regressions are checked."
+                     :strategy_summary {:value "" :instructions "Narrative of verification approach."}
+                     :levels {:value [] :instructions "Vector of keywords [:unit :integration :system :acceptance]."}
+                     :environments {:value [] :instructions "Vector of environment labels (\"CI\", \"staging\", etc.)."}
+                     :regression_policy {:value "" :instructions "Statement describing regression testing policy."}}
+ :glossary {:value [] :instructions "Vector of {:term string :definition string}. Define domain-specific terms."}
+ :validation_summary {:instructions "Meta section filled by tooling. Do not edit manually."
+                      :last_validated_at {:value nil :instructions "Timestamp or nil."}
+                      :is_valid {:value false :instructions "Boolean result from validator."}
+                      :errors {:value [] :instructions "Vector of validation errors."}
+                      :warnings {:value [] :instructions "Vector of warnings."}}
+}

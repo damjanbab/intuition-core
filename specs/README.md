@@ -1,19 +1,28 @@
 # Project Specifications
 
-All project definitions live here as structured EDN so agents can read and update them programmatically. Later these facts will flow directly into Datomic, so every document in this directory mirrors the eventual entity model.
+Structured specs live under `specs/`. The layout separates the reusable schema, the template, and individual project instances so multiple specs can coexist.
 
-## Files
+```
+specs/
+  schema.edn              ; field-level documentation / constraints
+  project_spec.template.edn ; blank instance without data
+  current.edn             ; {:current-spec "intuition-core"}
+  instances/
+    intuition-core.edn    ; actual project spec data
+``` 
 
-- `project_spec.edn` – the active working spec for the current project.
-- `project_spec.template.edn` – blank scaffold Meta Agents copy when spinning up a new project.
+## Schema (`schema.edn`)
+`schema.edn` exposes `:field-docs`, a map explaining what each path means (e.g., `:vision/summary` must be outcome-focused, capabilities never describe implementation). Meta Agents read this for validation prompts.
 
-Each file conforms to the schema described inside `project_spec.template.edn`. Meta Agents edit these files via code (never manual free-form docs) while interviewing the human owner.
+## Template
+`project_spec.template.edn` is a blank spec without field docs. Meta Agents copy it to `instances/<slug>.edn` when starting new projects.
 
-### Lifecycle
+## Instances
+Each spec instance gets its own file under `specs/instances/`. The current active spec is recorded in `specs/current.edn`. Tooling reads that file to know which instance to load by default.
 
-1. Meta Agent creates or loads `project_spec.edn` with `:spec/status :draft`.
-2. After each interview turn it updates this EDN, re-runs validation, and records issues under `:validation_summary`.
-3. Once `:validation_summary.errors` is empty and the owner signs off, Meta Agent flips `:spec/status` to `:approved` and bumps `:spec/version`.
-4. Mission planners and workflow registries read only approved specs.
+## Lifecycle
+1. Meta Agent ensures `instances/<slug>.edn` exists (copying the template if needed) and updates `current.edn` to point at it.
+2. During spec intake the agent edits only the instance file, referring to `schema.edn` for field rules.
+3. After validation passes and the owner approves, the spec status flips to `:approved`. When a spec is superseded, `current.edn` can point to a different instance.
 
-Because the format is already EDN, tomorrow’s Datomic schema can ingest the file as-is (each nested map becomes facts). EOF
+Because everything is EDN, Datomic/other stores can ingest these files directly later.
