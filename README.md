@@ -26,6 +26,7 @@ This repository currently hosts the documentation and workflow scaffolding for t
 4. **Follow the mission workflow**
   - Claim a mission in `missions/board/10_OPEN.md`.
   - Run `bin/make-worklog <mission-id> --agent <handle>` to scaffold `worklogs/<mission-id>/WORKLOG.md`.
+  - Use `bin/move-mission <mission-id> <status> --owner <handle> --summary "<intent>"` to move entries between board files instead of editing Markdown manually.
    - Use `scripts/mission-verify.sh` (hooks run it on commit/push) to enforce branch, worklog, and clean-tree requirements.
    - Update docs/tests per mission deliverables, then move entries through the board.
 

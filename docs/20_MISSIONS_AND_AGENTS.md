@@ -82,6 +82,7 @@ No mission may skip stages or bypass documentation.
   - Read `missions/README.md` for the layout (`board/00_INBOX.md` … `60_ARCHIVED.md`) and the required entry format.
   - Each mission gets its own file `missions/M-YYYYMMDD-###.md` (copied from `_MISSION_TEMPLATE.md`); the board entries link to these files plus their worklogs.
   - Status changes are performed by moving the entry between the numbered files inside `missions/board/`.
+  - Agents must run `bin/move-mission <mission-id> <status> --owner <handle> --summary "<intent>"` for every board move; manual Markdown edits are forbidden so tooling can enforce ordering/formatting.
 - **Branch lifecycle**
   1. Sync `main`: `git pull --rebase origin main`.
   2. Create branch: `git checkout -b mission/<MISSION_ID>`.

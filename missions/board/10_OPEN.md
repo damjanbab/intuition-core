@@ -3,9 +3,6 @@
 Approved missions that have no current owner.
 
 ## Entries
-- [`M-20251117-102`](../M-20251117-102.md) — Mission Board Manager (Owner: `unassigned`, Group: WORKFLOW_AUTOMATION)
-  - Summary: CLI tool to move mission entries between board files.
-  - Links: [Worklog](../../worklogs/M-20251117-102/WORKLOG.md)
 - [`M-20251117-103`](../M-20251117-103.md) — Mission Summary Reporter (Owner: `unassigned`, Group: WORKFLOW_AUTOMATION)
   - Summary: Reporting script for mission statuses per group.
   - Links: [Worklog](../../worklogs/M-20251117-103/WORKLOG.md)
