@@ -3,6 +3,8 @@
             [clojure.string :as str]
             [agent.core :as core]))
 
+(core/register-role! "spec-intake" 'agent.spec-intake)
+
 (defn- empty-value? [v]
   (or (nil? v)
       (and (string? v) (str/blank? v))

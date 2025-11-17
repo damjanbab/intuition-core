@@ -121,8 +121,12 @@
   (println "Conversation protocol lives in specs/conversation_protocol.edn")
   (println "--------------------------------------------"))
 
-(def role->namespace
-  {"spec-intake" 'agent.spec-intake})
+(def role-registry* (atom {}))
+
+(defn register-role!
+  "Role namespace must define `orientation` fn taking snapshot map."
+  [role-id ns-sym]
+  (swap! role-registry* assoc role-id ns-sym))
 
 (defn boot!
   "Loads role namespace, prints orientation. spec-id optional (falls back to current)."
@@ -134,13 +138,14 @@
         _ (set-current-spec! spec-id)
         snapshot (system-snapshot spec-id)]
     (describe-core spec-id)
-    (if-let [ns-sym (role->namespace role)]
-      (do (require ns-sym)
-          (if-let [orient (ns-resolve ns-sym 'orientation)]
-            (orient snapshot)
-            (println "Role namespace missing orientation function:" ns-sym)))
-      (when (some? role)
-        (println "Unknown role" role)))
+    (if (and role (not (str/blank? role)))
+      (if-let [ns-sym (@role-registry* role)]
+        (do (require ns-sym)
+            (if-let [orient (ns-resolve ns-sym 'orientation)]
+              (orient snapshot)
+              (println "Role namespace missing orientation function:" ns-sym)))
+        (println "Unknown role" role))
+      (println "No role specified; load one via (agent.core/boot! \"role\" spec)."))
     (println "Orientation complete. You are now in the REPL.")))
 
 (defn active-spec []
