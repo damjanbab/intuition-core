@@ -15,6 +15,9 @@ Accepted missions that still need to be fully archived (e.g., tagging releases, 
 - [`M-20251117-004`](../M-20251117-004.md) — Bootstrap Hook & Branch Enablement (Owner: `codex`)
   - Summary: README + setup script + verify demo accepted; pending full archival.
   - Links: [Worklog](../../worklogs/M-20251117-004/WORKLOG.md)
+- [`M-20251117-005`](../M-20251117-005.md) — Document Mission Group Workflow (Owner: `codex`)
+  - Summary: Mission group governance + SOP/template updates accepted; awaiting archival.
+  - Links: [Worklog](../../worklogs/M-20251117-005/WORKLOG.md)
 
 > Use the entry format from `missions/README.md` and note remaining archival tasks.
 

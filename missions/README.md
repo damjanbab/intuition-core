@@ -12,6 +12,7 @@ This directory replaces the single `MISSION_BOARD.md` file with a structured wor
   - `40_REVIEW.md` – Work awaiting owner acceptance.
   - `50_DONE.md` – Accepted work pending archival.
   - `60_ARCHIVED.md` – Permanent historical log.
+- `groups/` – Mission group briefs. Each file describes the mini-project scope, dependencies, shared constraints, mission list, and review plan.
 - `<MISSION_ID>.md` – One file per mission copied from `_MISSION_TEMPLATE.md`.
 - `_MISSION_TEMPLATE.md` – Canonical template for new mission files.
 
@@ -34,6 +35,8 @@ Include dependencies or notes inline when helpful. Keep entries sorted by Missio
 3. **Approve** – When the system owner approves, move the entry into `board/10_OPEN.md` without changing the mission file.
 4. **Claim & Execute** – Agents move entries between status files (`20_IN_PROGRESS`, `30_BLOCKED`, `40_REVIEW`) as work evolves, updating owners and summaries in place.
 5. **Done & Archive** – Once accepted, move the entry to `50_DONE.md`. After archival (mission + worklog zipped or referenced), move the entry to `60_ARCHIVED.md` with any postmortem links.
+
+Mission groups: maintain a brief in `missions/groups/<group>.md`. Each mission file references its group. When all missions in a group reach `50_DONE`, run a group review, document outcomes in the brief, then archive the missions.
 
 Always keep the mission file, board entry, and worklog in sync. Status changes happen via git commits—the system owner arbitrates conflicts when multiple agents touch the board.
 

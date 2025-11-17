@@ -3,9 +3,11 @@
 - **Mission ID:** `M-YYYYMMDD-###`
 - **Status:** `draft`
 - **Owner:** `unassigned`
+- **Group:** <group-id or `none`>
 - **Created:** <YYYY-MM-DD>
 - **Links:** <spec refs, issue trackers>
 - **Worklog:** `worklogs/<mission-id>/WORKLOG.md`
+- **Group:** <group-id or `none`>
 
 ## Summary
 <Short intent paragraph>
@@ -34,4 +36,3 @@
 ## References
 - `docs/01_NORTH_STAR.md#...`
 - `docs/02_SYSTEM_SPEC.md#...`
-

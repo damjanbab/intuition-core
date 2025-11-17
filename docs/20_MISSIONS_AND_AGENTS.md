@@ -68,9 +68,17 @@ No mission may skip stages or bypass documentation.
 
 ---
 
-## 6. Mission Board, Branching & Worklogs
+## 6. Mission Groups, Board, Branching & Worklogs
 
-- **Mission board** now lives in the `missions/` folder.
+- **Mission groups (mini-projects)**
+  - Definition: A mission group is a themed set of tightly scoped missions that together deliver a mini-project (e.g., "Phase 1: Dictionary Skeleton").
+  - Each group has a brief (one-pager) describing goals, shared constraints, dependencies, and review plan. Store briefs under `missions/groups/` (see `missions/README.md`).
+  - The orchestrator introduces new groups by adding the brief + seeding related missions; groups move to "Completed" after all constituent missions are archived and the group review is done.
+  - Mission files must reference their group in the metadata section (e.g., `- **Group:** Phase-1-Dict-Skeleton`). Use `none` only if a mission explicitly stands alone.
+  - Mission sizing rule: if a chain of dependent tasks cannot be split without eliminating safe parallelism (i.e., one agent would have to perform every step sequentially regardless), model it as a single mission rather than multiple tightly coupled missions. Keep the mission in the group but avoid artificial dependency chains that block parallel work.
+  - Group review cadence: when every mission in a group is in `50_DONE`, run a structured review → document outcomes → move missions to `60_ARCHIVED` and update the brief with findings.
+
+- **Mission board** now lives in the `missions/` folder, and each mission entry should mention its group (e.g., `[M-20251117-010] — Title (Group: Phase-1-Dict-Skeleton, Owner: ...)`).
   - Read `missions/README.md` for the layout (`board/00_INBOX.md` … `60_ARCHIVED.md`) and the required entry format.
   - Each mission gets its own file `missions/M-YYYYMMDD-###.md` (copied from `_MISSION_TEMPLATE.md`); the board entries link to these files plus their worklogs.
   - Status changes are performed by moving the entry between the numbered files inside `missions/board/`.

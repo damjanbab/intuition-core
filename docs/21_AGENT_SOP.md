@@ -7,6 +7,7 @@ This SOP defines how execution agents operate when working on missions for the s
 ## 1. Prerequisites
 
 - Read and understand `00_CANON.md`, `01_NORTH_STAR.md`, `02_SYSTEM_SPEC.md`, `03_ROADMAP.md`, `20_MISSIONS_AND_AGENTS.md`, and `22_GIT_GOVERNANCE.md`.
+- Before touching a mission, read the relevant **mission group brief** (stored under `missions/groups/`); it anchors the context, dependencies, and review plan.
 - Ensure the local dev environment can run the stack: Datomic, Ring server, HTMX/Hiccup UI, Garden styles, bidi routing (or approved alternative), and the full test suite.
 - Verify you have a dedicated terminal session; agents must not share shells or rely on side channels.
 - GitHub credentials are preconfigured on this machine via `~/.git-credentials` and `GITHUB_TOKEN`; never write tokens into the repo or logs. If authentication fails, notify the system owner instead of re-adding secrets.
@@ -17,7 +18,10 @@ This SOP defines how execution agents operate when working on missions for the s
 ## 2. Mission Intake
 
 1. Sync `main` (`git pull --rebase origin main`) and create a branch `git checkout -b mission/<MISSION_ID>`.
-2. Open `missions/board/10_OPEN.md` (see `missions/README.md`) and locate missions ready to claim. Confirm dependencies are satisfied and Git requirements in `docs/22_GIT_GOVERNANCE.md` (branch, hooks, clean tree) hold.
+2. Read the mission group brief referenced in the mission file (e.g., `missions/groups/Phase-1-Dict-Skeleton.md`).
+3. Open `missions/board/10_OPEN.md` (see `missions/README.md`) and locate missions ready to claim. Confirm dependencies are satisfied and Git requirements in `docs/22_GIT_GOVERNANCE.md` (branch, hooks, clean tree) hold.
+4. Announce intent to claim by moving the entry to `missions/board/20_IN_PROGRESS.md`, setting yourself as owner, and notifying the system owner (per agreed communication channel).
+5. Copy `templates/WORKLOG_TEMPLATE.md` to `worklogs/<mission-id>/WORKLOG.md`; record the initial timestamp and intent.
 3. Announce intent to claim by moving the entry to `missions/board/20_IN_PROGRESS.md`, setting yourself as owner, and notifying the system owner (per agreed communication channel).
 4. Copy `templates/WORKLOG_TEMPLATE.md` to `worklogs/<mission-id>/WORKLOG.md`; record the initial timestamp and intent.
 
@@ -62,8 +66,9 @@ For each iteration:
    - Link to worklog
    - Tests run and outcomes
    - Follow-up mission suggestions (if any)
-6. After approval, archive the mission per `20_MISSIONS_AND_AGENTS.md` and remove local branches as instructed.
-7. Agents (not the owner) update the board entry after each confirmation: move from `40_REVIEW` → `50_DONE`, then to `60_ARCHIVED` once final steps are complete.
+6. Include group status in the hand-off (e.g., "Group Phase-1-Dict-Skeleton: mission 3/5 complete").
+7. After approval, archive the mission per `20_MISSIONS_AND_AGENTS.md` and remove local branches as instructed.
+8. Agents (not the owner) update the board entry after each confirmation: move from `40_REVIEW` → `50_DONE`, then to `60_ARCHIVED` once final steps are complete. When a group’s last mission lands in `50_DONE`, flag the orchestrator for group review.
 
 ---
 
