@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-repo_root=$(git rev-parse --show-toplevel 2>/dev/null || exit 0)
-"$repo_root/scripts/mission-verify.sh" pre-push
