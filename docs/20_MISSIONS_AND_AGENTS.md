@@ -93,8 +93,8 @@ No mission may skip stages or bypass documentation.
   - Every mission operates on a dedicated branch (`mission/<id>`); no work happens on `main`.
   - Mission status changes must be reflected in Git history (commit messages include the mission ID).
   - Hooks (`.githooks/pre-commit`, `.githooks/pre-push`) call `scripts/mission-verify.sh` and block when requirements are unmet.
-- **Worklogs** are per-mission files stored under `worklogs/<mission-id>/WORKLOG.md`.
-  - Agents duplicate `templates/WORKLOG_TEMPLATE.md` when starting a mission.
+  - **Worklogs** are per-mission files stored under `worklogs/<mission-id>/WORKLOG.md`.
+    - Agents must use `bin/make-worklog <mission-id> --agent <handle>` to generate the file from the canonical template—manual copies are disallowed.
   - Every agent iteration is timestamped, summarises actions, test commands, and observations.
 
 ---

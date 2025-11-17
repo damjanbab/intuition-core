@@ -24,8 +24,8 @@ This repository currently hosts the documentation and workflow scaffolding for t
    bin/setup-hooks.sh
    ```
 4. **Follow the mission workflow**
-   - Claim a mission in `missions/board/10_OPEN.md`.
-   - Duplicate `templates/WORKLOG_TEMPLATE.md` into `worklogs/<mission-id>/WORKLOG.md`.
+  - Claim a mission in `missions/board/10_OPEN.md`.
+  - Run `bin/make-worklog <mission-id> --agent <handle>` to scaffold `worklogs/<mission-id>/WORKLOG.md`.
    - Use `scripts/mission-verify.sh` (hooks run it on commit/push) to enforce branch, worklog, and clean-tree requirements.
    - Update docs/tests per mission deliverables, then move entries through the board.
 
@@ -42,4 +42,3 @@ This repository currently hosts the documentation and workflow scaffolding for t
 ## Mission Directory
 
 See `missions/README.md` for the board structure, mission template, and verification rules. All missions live in the `missions/` folder with status tracked via numbered board files.
-

@@ -21,9 +21,7 @@ This SOP defines how execution agents operate when working on missions for the s
 2. Read the mission group brief referenced in the mission file (e.g., `missions/groups/Phase-1-Dict-Skeleton.md`).
 3. Open `missions/board/10_OPEN.md` (see `missions/README.md`) and locate missions ready to claim. Confirm dependencies are satisfied and Git requirements in `docs/22_GIT_GOVERNANCE.md` (branch, hooks, clean tree) hold.
 4. Announce intent to claim by moving the entry to `missions/board/20_IN_PROGRESS.md`, setting yourself as owner, and notifying the system owner (per agreed communication channel).
-5. Copy `templates/WORKLOG_TEMPLATE.md` to `worklogs/<mission-id>/WORKLOG.md`; record the initial timestamp and intent.
-3. Announce intent to claim by moving the entry to `missions/board/20_IN_PROGRESS.md`, setting yourself as owner, and notifying the system owner (per agreed communication channel).
-4. Copy `templates/WORKLOG_TEMPLATE.md` to `worklogs/<mission-id>/WORKLOG.md`; record the initial timestamp and intent.
+5. Generate the worklog with `bin/make-worklog <MISSION_ID> --agent <handle>` (never copy templates manually) and record the initial timestamp + intent in the freshly created file.
 
 No work starts before the mission is officially assigned.
 
