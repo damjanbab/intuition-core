@@ -29,9 +29,16 @@
 - **Results:** Script consistently moves entries, reorders lists, manages `_Empty_` placeholders, and errors when metadata is missing; docs now instruct agents to use the tool.
 - **Next steps / blockers:** None—prepare final summary once review is requested.
 
+### Iteration 3 – 2025-11-17 16:20 UTC
+- **Intent:** Capture mission acceptance, move board entries, and archive predecessor mission per instructions.
+- **Actions:** Used `bin/move-mission` to move M-20251117-102 to `50_DONE`, archived M-20251117-101 into `60_ARCHIVED`, updated mission statuses/worklogs accordingly.
+- **Tests run:** `bin/move-mission M-20251117-102 done --owner Alpha --summary "CLI tool to move mission entries between board files."`; `bin/move-mission M-20251117-101 archived --owner Alpha --summary "bin/make-worklog shipped and docs mandate usage; archived after acceptance."`
+- **Results:** Board reflects acceptance + archival state, and documentation mirrors the latest mission statuses.
+- **Next steps / blockers:** None.
+
 ## Final Summary
 
 - Deliverables checklist status: All mission deliverables marked complete in `missions/M-20251117-102.md` (script, status coverage, group metadata, docs).
 - Tests (commands + results): `python3 -m py_compile bin/move-mission`; multiple `bin/move-mission` invocations moving M-20251117-102 between `in_progress` ↔ `review` and verifying placeholder behavior; negative test with nonexistent mission ID (expected failure).
 - Risks / follow-ups: Future mission (`M-20251117-104`) should add `bin/move-mission` checks into `scripts/mission-verify.sh` so hooks can guarantee usage.
-- Hand-off notes: Mission staged for review with board entry moved via `bin/move-mission`; ready for acceptance once reviewed.
+- Hand-off notes: Mission accepted on 2025-11-17 and moved to `50_DONE` via `bin/move-mission`; awaiting eventual archival once downstream automation lands.
