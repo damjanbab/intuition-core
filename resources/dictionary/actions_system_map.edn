@@ -1,0 +1,10 @@
+[
+ {:action/ident :action/system-map.refresh
+  :action/name "Refresh system map"
+  :action/description "Reconciles dictionary entities into graph nodes/edges so SYSTEM_SPEC §§4.1, 4.5, 4.10 stay computable."
+  :action/invariants [:spec/p4.1 :spec/p4.2 :spec/p4.10 :spec/p9.1]
+  :action/permissions [:permission/system-map.write]
+  :action/config-spec :action.system-map/refresh-config
+  :action/output-spec :action.system-map/refresh-output
+  :action/handler "intuition.sfs.system-map.runtime/refresh-action"
+  :action/tags [:action.tag/system-map :action.tag/docs]}]

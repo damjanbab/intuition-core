@@ -1,0 +1,1070 @@
+[
+ ;; Attribute definitions – system-map nodes
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/system-map/node/ident"
+  :entity/name "System-map node ident"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/created-by :mission/M-05
+  :entity/updated-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-05
+  :entity/description "Graph nodes must be keyed to the governing dictionary ident (SYSTEM_SPEC.md §§4.1, 4.10)."
+  :attribute/ident :system-map.node/ident
+  :attribute/owner-type :system-map/node
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Stable identifier, typically the dictionary entity ident."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/system-map/node/entity"
+  :entity/name "Node dictionary entity"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/created-by :mission/M-05
+  :entity/updated-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-05
+  :entity/description "Keyword of the dictionary entity represented (SYSTEM_SPEC.md §§4.1, 4.5)."
+  :attribute/ident :system-map.node/entity
+  :attribute/owner-type :system-map/node
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Every node must point at an entity defined in the dictionary."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/system-map/node/entity-kind"
+  :entity/name "Node entity kind"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/created-by :mission/M-05
+  :entity/updated-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-05
+  :entity/description "Category of the represented entity (action/protocol/app/etc.) as required by SYSTEM_SPEC.md §4.10.1."
+  :attribute/ident :system-map.node/entity-kind
+  :attribute/owner-type :system-map/node
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/options {:enum #{:system-map.entity/action
+                               :system-map.entity/protocol
+                               :system-map.entity/app
+                               :system-map.entity/workflow
+                               :system-map.entity/mission}}
+  :attribute/description "Controls iconography + layout per UI model."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/system-map/node/spec-sections"
+  :entity/name "Node spec sections"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/created-by :mission/M-05
+  :entity/updated-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-05
+  :entity/description "Links to SYSTEM_SPEC clauses per §4.9 and §4.10."
+  :attribute/ident :system-map.node/spec-sections
+  :attribute/owner-type :system-map/node
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/many
+  :attribute/required? false
+  :attribute/description "List of SECTION identifiers backing this node."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/system-map/node/tags"
+  :entity/name "Node tags"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/created-by :mission/M-05
+  :entity/updated-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-05
+  :entity/description "Classification tags for UI groupings (SYSTEM_SPEC.md §4.10.1)."
+  :attribute/ident :system-map.node/tags
+  :attribute/owner-type :system-map/node
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/many
+  :attribute/required? false
+  :attribute/description "Used for filtering/layout in the relationship strip."}
+
+ ;; Attribute definitions – system-map edges
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/system-map/edge/ident"
+  :entity/name "System-map edge ident"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/created-by :mission/M-05
+  :entity/updated-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-05
+  :entity/description "Edges must be addressable for mission evidence (SYSTEM_SPEC.md §4.10.2)."
+  :attribute/ident :system-map.edge/ident
+  :attribute/owner-type :system-map/edge
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Stable identifier for the relationship."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/system-map/edge/from"
+  :entity/name "Edge source"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/created-by :mission/M-05
+  :entity/updated-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-05
+  :entity/description "Source node ident (SYSTEM_SPEC.md §§4.1, 4.10.1)."
+  :attribute/ident :system-map.edge/from
+  :attribute/owner-type :system-map/edge
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Must reference an existing :system-map/node ident."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/system-map/edge/to"
+  :entity/name "Edge target"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/created-by :mission/M-05
+  :entity/updated-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-05
+  :entity/description "Target node ident (SYSTEM_SPEC.md §§4.5, 4.10.3)."
+  :attribute/ident :system-map.edge/to
+  :attribute/owner-type :system-map/edge
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Must reference an existing :system-map/node ident."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/system-map/edge/relation"
+  :entity/name "Edge relation"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/created-by :mission/M-05
+  :entity/updated-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-05
+  :entity/description "Semantic of the link (SYSTEM_SPEC.md §4.10.1 – relationship strip)."
+  :attribute/ident :system-map.edge/relation
+  :attribute/owner-type :system-map/edge
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/options {:enum #{:system-map.relation/orchestrates
+                               :system-map.relation/feeds
+                               :system-map.relation/depends-on}}
+  :attribute/description "Describes how the source influences the target."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/system-map/edge/spec-sections"
+  :entity/name "Edge spec references"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/created-by :mission/M-05
+  :entity/updated-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-05
+  :entity/description "Traceability entries tying relationships to SYSTEM_SPEC.md §§4.1, 4.10, 5.1."
+  :attribute/ident :system-map.edge/spec-sections
+  :attribute/owner-type :system-map/edge
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/many
+  :attribute/required? false
+  :attribute/description "List of spec clauses that require the relationship."}
+
+ ;; Type definitions
+ {:entity/type :meta/type
+  :entity/path "/system/types/system-map/node"
+  :entity/name "System map node"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/created-by :mission/M-05
+  :entity/updated-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-05
+  :entity/description "Graph node describing a structural entity (SYSTEM_SPEC.md §§4.1, 4.5, 4.10)."
+  :type/ident :system-map/node
+  :type/category :category/graph
+  :type/attributes [:system-map.node/ident
+                    :system-map.node/entity
+                    :system-map.node/entity-kind
+                    :system-map.node/spec-sections
+                    :system-map.node/tags]
+  :type/meta {:spec/sections ["4.1" "4.5" "4.10.1" "4.10.3"]
+              :extends [:dictionary/entity]
+              :doc "Every TypeDefinition/action/workflow must project to a node in the system map."}}
+
+ {:entity/type :meta/type
+  :entity/path "/system/types/system-map/edge"
+  :entity/name "System map edge"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/created-by :mission/M-05
+  :entity/updated-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-05
+  :entity/description "Relationship between two structural nodes (SYSTEM_SPEC.md §§4.1, 4.10, 5.1)."
+  :type/ident :system-map/edge
+  :type/category :category/graph
+  :type/attributes [:system-map.edge/ident
+                    :system-map.edge/from
+                    :system-map.edge/to
+                    :system-map.edge/relation
+                    :system-map.edge/spec-sections]
+  :type/meta {:spec/sections ["4.1" "4.10.1" "5.1" "5.2"]
+              :extends [:dictionary/entity]
+              :doc "Edges capture dependencies/orchestration across SfS entities."}}
+
+ ;; Sample nodes wired to existing dictionary entries
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/env.bootstrap"
+  :entity/name "Action – env.bootstrap"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/created-by :mission/M-05
+  :entity/updated-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-05
+  :entity/description "Mission bootstrap action required by §§4.1, 4.10, 6.2."
+  :system-map.node/ident :action/env.bootstrap
+  :system-map.node/entity :action/env.bootstrap
+  :system-map.node/entity-kind :system-map.entity/action
+ :system-map.node/spec-sections ["4.1" "4.5" "4.10.1" "6.2"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/environment]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/git-branch-prepare"
+  :entity/name "Action – git.branch.prepare"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251120-101
+  :entity/updated-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251120-101
+  :entity/description "Writes branch.edn + branch.md snapshots proving §6.2 sandbox isolation."
+  :system-map.node/ident :action/git.branch.prepare
+  :system-map.node/entity :action/git.branch.prepare
+  :system-map.node/entity-kind :system-map.entity/action
+  :system-map.node/spec-sections ["3.3" "3.5" "6.2"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/environment]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/lint.run"
+  :entity/name "Action – lint.run"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251119-401
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251119-401
+  :entity/description "Enforces lint invariants before mission tests (§§3.1, 5.3)."
+  :system-map.node/ident :action/lint.run
+  :system-map.node/entity :action/lint.run
+  :system-map.node/entity-kind :system-map.entity/action
+  :system-map.node/spec-sections ["3.1" "5.3" "10.1"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/tests]}
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/codetype.validate"
+  :entity/name "Action – codetype.validate"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251120-102
+  :entity/updated-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251120-102
+  :entity/description "Runs CodeDefinition validators and records paths/spec citations before review (§§4.7, 5.1)."
+ :system-map.node/ident :action/codetype.validate
+  :system-map.node/entity :action/codetype.validate
+  :system-map.node/entity-kind :system-map.entity/action
+  :system-map.node/spec-sections ["3.3" "4.7" "5.1" "9"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/code]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/mission-step-plan"
+  :entity/name "Action – mission.step.plan"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-405
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-405
+  :entity/description "Gateway plan refinement recorder tying requirements to artifacts (§§3.3–3.6, §4.7, §5.1)."
+  :system-map.node/ident :action/mission.step.plan
+  :system-map.node/entity :action/mission.step.plan
+  :system-map.node/entity-kind :system-map.entity/action
+  :system-map.node/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/missions]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/mission-step-edit"
+  :entity/name "Action – mission.step.edit"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-405
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-405
+  :entity/description "Validates requested edits against mission locks and records artifacts (§§3.3–3.6, §4.7, §5.1)."
+  :system-map.node/ident :action/mission.step.edit
+  :system-map.node/entity :action/mission.step.edit
+  :system-map.node/entity-kind :system-map.entity/action
+  :system-map.node/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/missions]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/mission-step-tool-run"
+  :entity/name "Action – mission.step.tool-run"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-405
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-405
+  :entity/description "Runs governed tools via gateway-only execution and logs tool-run.edn (§§3.3–3.6, §5.1, §5.3)."
+  :system-map.node/ident :action/mission.step.tool-run
+  :system-map.node/entity :action/mission.step.tool-run
+  :system-map.node/entity-kind :system-map.entity/action
+  :system-map.node/spec-sections ["3.3" "3.4" "3.5" "3.6" "5.1" "5.3"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/tests]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/mission-step-decision"
+  :entity/name "Action – mission.step.decision"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-405
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-405
+  :entity/description "Captures gateway decisions referencing requirements/tests (§§3.3–3.6, §4.7, §5.1)."
+  :system-map.node/ident :action/mission.step.decision
+  :system-map.node/entity :action/mission.step.decision
+  :system-map.node/entity-kind :system-map.entity/action
+  :system-map.node/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/missions]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/codetype.generate"
+  :entity/name "Action – codetype.generate"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-404
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-404
+  :entity/description "Generates CodeType scaffolding and logs checksums (§§3.3–3.6, §4.7, §5.1, §5.3)."
+  :system-map.node/ident :action/codetype.generate
+  :system-map.node/entity :action/codetype.generate
+  :system-map.node/entity-kind :system-map.entity/action
+  :system-map.node/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/code]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/system-map.refresh"
+  :entity/name "Action – system-map.refresh"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/created-by :mission/M-05
+  :entity/updated-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-05
+  :entity/description "Graph refresh action mandated by SYSTEM_SPEC.md §§4.1, 4.5, 4.10, Phase-2 item 5."
+  :system-map.node/ident :action/system-map.refresh
+  :system-map.node/entity :action/system-map.refresh
+  :system-map.node/entity-kind :system-map.entity/action
+ :system-map.node/spec-sections ["4.1" "4.5" "4.10.1" "4.10.4" "5.1"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/system-map]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/spec-capture"
+  :entity/name "Action – spec.capture"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-401
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-401
+  :entity/description "Reads raw EDN targets and normalizes them into the dictionary (§§3.3–3.6, 4.1–4.2, 9)."
+  :system-map.node/ident :action/spec.capture
+  :system-map.node/entity :action/spec.capture
+  :system-map.node/entity-kind :system-map.entity/action
+  :system-map.node/spec-sections ["3.3" "3.4" "4.1" "4.2" "4.7" "9"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/spec]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/spec-validate"
+  :entity/name "Action – spec.validate"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-401
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-401
+  :entity/description "Checks spec schema, CodeType links, and artifact evidence per §§3.3–3.6, 4.7, 5.1, 9."
+  :system-map.node/ident :action/spec.validate
+  :system-map.node/entity :action/spec.validate
+  :system-map.node/entity-kind :system-map.entity/action
+  :system-map.node/spec-sections ["3.3" "3.5" "4.7" "5.1" "9"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/spec]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/spec-publish"
+  :entity/name "Action – spec.publish"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-401
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-401
+  :entity/description "Marks validated specs as ready and records the audit log (§§3.3, 3.5, 9)."
+  :system-map.node/ident :action/spec.publish
+  :system-map.node/entity :action/spec.publish
+  :system-map.node/entity-kind :system-map.entity/action
+  :system-map.node/spec-sections ["3.3" "3.5" "9"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/spec]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/protocols/mission-standard"
+  :entity/name "Protocol – mission-standard"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/created-by :mission/M-05
+  :entity/updated-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-05
+  :entity/description "Mission orchestration protocol from §§3.1–3.5, 5.1."
+  :system-map.node/ident :protocol/mission-standard
+  :system-map.node/entity :protocol/mission-standard
+ :system-map.node/entity-kind :system-map.entity/protocol
+ :system-map.node/spec-sections ["3.1" "3.5" "5.1" "5.2"]
+  :system-map.node/tags [:system-map.tag/protocol :system-map.tag/system-map]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/protocols/mission-sync"
+  :entity/name "Protocol – mission-sync"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251120-101
+  :entity/updated-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251120-101
+  :entity/description "Runs env bootstrap then records the branch snapshot before mission work begins (§§3.3–3.4, 6.2)."
+  :system-map.node/ident :protocol/mission-sync
+  :system-map.node/entity :protocol/mission-sync
+  :system-map.node/entity-kind :system-map.entity/protocol
+  :system-map.node/spec-sections ["3.3" "3.4" "6.2"]
+  :system-map.node/tags [:system-map.tag/protocol :system-map.tag/environment]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/protocols/spec-intake"
+  :entity/name "Protocol – spec-intake"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-401
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-401
+  :entity/description "Orchestrates capture→validate→publish for specs (§§3.3–3.6, 4.1–4.2, 4.7, 5.1, 9)."
+  :system-map.node/ident :protocol/spec-intake
+  :system-map.node/entity :protocol/spec-intake
+  :system-map.node/entity-kind :system-map.entity/protocol
+  :system-map.node/spec-sections ["3.3" "3.5" "4.1" "4.2" "4.7" "5.1" "9"]
+  :system-map.node/tags [:system-map.tag/protocol :system-map.tag/spec]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/js-component-register"
+  :entity/name "Action – js.component.register"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "Validates JS bundles + manifests before protocol execution (SYSTEM_SPEC.md §§4.8, 10.2)."
+  :system-map.node/ident :action/js.component.register
+  :system-map.node/entity :action/js.component.register
+  :system-map.node/entity-kind :system-map.entity/action
+  :system-map.node/spec-sections ["4.8" "6" "10.2"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/security]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/external-api-register"
+  :entity/name "Action – external.api.register"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "Captures outbound API metadata for §6 approvals."
+  :system-map.node/ident :action/external.api.register
+  :system-map.node/entity :action/external.api.register
+  :system-map.node/entity-kind :system-map.entity/action
+  :system-map.node/spec-sections ["4.8" "6" "10.2"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/security]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/integration-scan"
+  :entity/name "Action – integration.scan-usage"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "Analyzes JS/API call paths for security (§§6, 10.2)."
+  :system-map.node/ident :action/integration.scan-usage
+  :system-map.node/entity :action/integration.scan-usage
+  :system-map.node/entity-kind :system-map.entity/action
+  :system-map.node/spec-sections ["6" "10.2"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/security]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/integration-request-approval"
+  :entity/name "Action – integration.request-approval"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "Writes the JS/API approval artifact (SYSTEM_SPEC.md §10.2)."
+  :system-map.node/ident :action/integration.request-approval
+  :system-map.node/entity :action/integration.request-approval
+  :system-map.node/entity-kind :system-map.entity/action
+  :system-map.node/spec-sections ["3.5" "4.8" "10.2"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/security]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/actions/integration-revoke-access"
+  :entity/name "Action – integration.revoke-access"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "Records revocation of JS/API entrypoints (§§6, 10.2)."
+  :system-map.node/ident :action/integration.revoke-access
+  :system-map.node/entity :action/integration.revoke-access
+  :system-map.node/entity-kind :system-map.entity/action
+  :system-map.node/spec-sections ["6" "10.2"]
+  :system-map.node/tags [:system-map.tag/action :system-map.tag/security]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/protocols/js-approve"
+  :entity/name "Protocol – js-approve"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "JS approval workflow per SYSTEM_SPEC.md §§4.8, 10.2."
+  :system-map.node/ident :protocol/js-approve
+  :system-map.node/entity :protocol/js-approve
+  :system-map.node/entity-kind :system-map.entity/protocol
+  :system-map.node/spec-sections ["4.8" "6" "10.2"]
+ :system-map.node/tags [:system-map.tag/protocol :system-map.tag/security]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/code/intuition-sfs-actions-handlers"
+  :entity/name "Code – intuition.sfs.actions.handlers"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251120-102
+  :entity/updated-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251120-102
+  :entity/description "Pure action handlers, including the CodeType validator (SYSTEM_SPEC.md §§3.4, 4.6, 4.7, 9)."
+  :system-map.node/ident :code/intuition.sfs.actions.handlers
+  :system-map.node/entity :code/intuition.sfs.actions.handlers
+  :system-map.node/entity-kind :system-map.entity/workflow
+  :system-map.node/spec-sections ["3.4" "4.6" "4.7" "9"]
+  :system-map.node/tags [:system-map.tag/code]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/code/intuition-code-runtime"
+  :entity/name "Code – intuition.code.runtime"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251120-102
+  :entity/updated-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251120-102
+  :entity/description "Loads CodeType/Definition catalogs and exposes lookup helpers (§§4.7, 7, 9)."
+ :system-map.node/ident :code/intuition.code.runtime
+  :system-map.node/entity :code/intuition.code.runtime
+  :system-map.node/entity-kind :system-map.entity/workflow
+  :system-map.node/spec-sections ["4.7" "7" "9"]
+  :system-map.node/tags [:system-map.tag/code]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/code/intuition-codetype-generators"
+  :entity/name "Code – intuition.codetype.generators"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-404
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-404
+  :entity/description "Reusable generator implementations that feed CodeType scaffolding (§§3.3–3.6, §4.7, §5.1, §5.3)."
+  :system-map.node/ident :code/intuition.codetype.generators
+  :system-map.node/entity :code/intuition.codetype.generators
+  :system-map.node/entity-kind :system-map.entity/workflow
+  :system-map.node/spec-sections ["3.3" "3.4" "4.7" "5.1" "5.3"]
+  :system-map.node/tags [:system-map.tag/code]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/protocols/external-api-approve"
+  :entity/name "Protocol – external-api-approve"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "Outbound API approval per SYSTEM_SPEC.md §§4.8, 6, 10.2."
+  :system-map.node/ident :protocol/external-api-approve
+  :system-map.node/entity :protocol/external-api-approve
+  :system-map.node/entity-kind :system-map.entity/protocol
+  :system-map.node/spec-sections ["4.8" "6" "10.2"]
+  :system-map.node/tags [:system-map.tag/protocol :system-map.tag/security]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/protocols/js-revoke"
+  :entity/name "Protocol – js-revoke"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "Revocation workflow for JS/API entrypoints (§§6, 10.2)."
+  :system-map.node/ident :protocol/js-revoke
+  :system-map.node/entity :protocol/js-revoke
+  :system-map.node/entity-kind :system-map.entity/protocol
+  :system-map.node/spec-sections ["6" "10.2"]
+  :system-map.node/tags [:system-map.tag/protocol :system-map.tag/security]}
+
+ ;; Sample edges wiring the topology
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-mission-standard->protocol-mission-sync"
+  :entity/name "Mission standard orchestrates mission-sync"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251120-101
+  :entity/updated-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251120-101
+  :entity/description "Mission-standard now calls mission-sync to capture sandbox + branch evidence (§§3.3–3.4, 6.2)."
+  :system-map.edge/ident :system-map.edge/mission-standard->mission-sync
+  :system-map.edge/from :protocol/mission-standard
+  :system-map.edge/to :protocol/mission-sync
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["3.3" "3.4" "6.2"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-spec-intake->action-spec-capture"
+  :entity/name "Spec intake orchestrates capture"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-401
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-401
+  :entity/description "Spec intake begins by normalizing target docs (§§3.3–3.4, 4.1–4.2)."
+  :system-map.edge/ident :system-map.edge/spec-intake->spec-capture
+  :system-map.edge/from :protocol/spec-intake
+  :system-map.edge/to :action/spec.capture
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["3.3" "3.4" "4.1" "4.2" "9"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-spec-intake->action-spec-validate"
+  :entity/name "Spec intake orchestrates validate"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-401
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-401
+  :entity/description "Schema + CodeType validations enforce §§4.7, 5.1 before publication."
+  :system-map.edge/ident :system-map.edge/spec-intake->spec-validate
+  :system-map.edge/from :protocol/spec-intake
+  :system-map.edge/to :action/spec.validate
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["3.5" "4.7" "5.1" "9"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-spec-intake->action-spec-publish"
+  :entity/name "Spec intake orchestrates publish"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-401
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-401
+  :entity/description "Publishing records §9 evidence tying specs to missions/tests."
+  :system-map.edge/ident :system-map.edge/spec-intake->spec-publish
+  :system-map.edge/from :protocol/spec-intake
+  :system-map.edge/to :action/spec.publish
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["3.5" "9"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-mission-standard->action-lint.run"
+  :entity/name "Mission standard orchestrates lint"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251119-401
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251119-401
+  :entity/description "Lint must run before mission tests (§5.3)."
+  :system-map.edge/ident :system-map.edge/mission-standard->lint.run
+  :system-map.edge/from :protocol/mission-standard
+  :system-map.edge/to :action/lint.run
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["3.1" "5.3"]}
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-mission-standard->action-mission-step-plan"
+  :entity/name "Mission standard orchestrates plan steps"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-405
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-405
+  :entity/description "Gateway planning replaces ad-hoc coordination (§§3.3–3.6, §4.7, §5.1)."
+  :system-map.edge/ident :system-map.edge/mission-standard->mission-step-plan
+  :system-map.edge/from :protocol/mission-standard
+  :system-map.edge/to :action/mission.step.plan
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-mission-standard->action-mission-step-edit"
+  :entity/name "Mission standard orchestrates edit steps"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-405
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-405
+  :entity/description "All edits now pass through locked resource validation (§§3.3–3.6, §4.7, §5.1)."
+  :system-map.edge/ident :system-map.edge/mission-standard->mission-step-edit
+  :system-map.edge/from :protocol/mission-standard
+  :system-map.edge/to :action/mission.step.edit
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-mission-standard->action-mission-step-tool-run"
+  :entity/name "Mission standard orchestrates tool runs"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-405
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-405
+  :entity/description "Lint/tests executed only through gateway wrappers (§§3.3–3.6, §5.1, §5.3)."
+  :system-map.edge/ident :system-map.edge/mission-standard->mission-step-tool-run
+  :system-map.edge/from :protocol/mission-standard
+  :system-map.edge/to :action/mission.step.tool-run
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["3.3" "3.4" "3.5" "3.6" "5.1" "5.3"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-mission-standard->action-mission-step-decision"
+  :entity/name "Mission standard orchestrates decision steps"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-405
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-405
+  :entity/description "Mission-impact decisions record structured requirements references (§§3.3–3.6, §4.7, §5.1)."
+  :system-map.edge/ident :system-map.edge/mission-standard->mission-step-decision
+  :system-map.edge/from :protocol/mission-standard
+  :system-map.edge/to :action/mission.step.decision
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-mission-instantiation->action-codetype.generate"
+  :entity/name "Mission instantiation generates CodeTypes"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-404
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-404
+  :entity/description "Plan-node CodeTypes trigger generator runs before sandbox work (§§3.3–3.6, §4.7, §5.1, §5.3)."
+  :system-map.edge/ident :system-map.edge/mission-instantiation->codetype.generate
+  :system-map.edge/from :protocol/mission-instantiation
+  :system-map.edge/to :action/codetype.generate
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3"]}
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-mission-standard->action-codetype.validate"
+  :entity/name "Mission standard validates CodeTypes"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251120-102
+  :entity/updated-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251120-102
+  :entity/description "Awaiting-review transitions require codetype validation (§§3.3, 4.7, 5.1)."
+  :system-map.edge/ident :system-map.edge/mission-standard->codetype.validate
+  :system-map.edge/from :protocol/mission-standard
+  :system-map.edge/to :action/codetype.validate
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["3.3" "4.7" "5.1"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-mission-standard->action-system-map.refresh"
+  :entity/name "Mission standard requires system-map refresh"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/created-by :mission/M-05
+  :entity/updated-at #inst "2025-02-01T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-05
+  :entity/description "Docs/system-map track (SYSTEM_SPEC.md §§3.5, 4.10) enforces this edge."
+ :system-map.edge/ident :system-map.edge/mission-standard->system-map.refresh
+  :system-map.edge/from :protocol/mission-standard
+  :system-map.edge/to :action/system-map.refresh
+  :system-map.edge/relation :system-map.relation/feeds
+  :system-map.edge/spec-sections ["3.5" "4.1" "4.10.1" "5.1"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-mission-sync->action-env.bootstrap"
+  :entity/name "Mission-sync orchestrates env bootstrap"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251120-101
+  :entity/updated-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251120-101
+  :entity/description "Mission-sync begins by preparing the sandbox before recording the branch snapshot."
+  :system-map.edge/ident :system-map.edge/mission-sync->env.bootstrap
+  :system-map.edge/from :protocol/mission-sync
+  :system-map.edge/to :action/env.bootstrap
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["3.3" "6.2"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-mission-sync->action-git-branch"
+  :entity/name "Mission-sync captures branch snapshot"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251120-101
+  :entity/updated-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251120-101
+  :entity/description "Ensures missions write branch.edn + branch.md artifacts prior to locks/tests (§6.2)."
+  :system-map.edge/ident :system-map.edge/mission-sync->git-branch
+  :system-map.edge/from :protocol/mission-sync
+  :system-map.edge/to :action/git.branch.prepare
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["3.4" "6.2"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-js-approve->register"
+  :entity/name "JS approve orchestrates component register"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "JS approval protocol kicks off the register action (§4.8)."
+  :system-map.edge/ident :system-map.edge/js-approve->register
+  :system-map.edge/from :protocol/js-approve
+  :system-map.edge/to :action/js.component.register
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["4.8" "10.2"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-js-approve->scan"
+  :entity/name "JS approve orchestrates scan"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "Security scan enforces §6 before approvals."
+  :system-map.edge/ident :system-map.edge/js-approve->scan
+  :system-map.edge/from :protocol/js-approve
+  :system-map.edge/to :action/integration.scan-usage
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["6" "10.2"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-js-approve->request"
+  :entity/name "JS approve captures approval artifact"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "Writes the js-approvals.edn artifact (§10.2)."
+  :system-map.edge/ident :system-map.edge/js-approve->request
+  :system-map.edge/from :protocol/js-approve
+  :system-map.edge/to :action/integration.request-approval
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["3.5" "4.8" "10.2"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/action-codetype.validate->code-handlers"
+  :entity/name "codetype.validate depends on action handlers"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251120-102
+  :entity/updated-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251120-102
+  :entity/description "Handler implementations live in intuition.sfs.actions.handlers (§§3.4, 4.6)."
+  :system-map.edge/ident :system-map.edge/codetype.validate->handlers
+  :system-map.edge/from :action/codetype.validate
+ :system-map.edge/to :code/intuition.sfs.actions.handlers
+  :system-map.edge/relation :system-map.relation/depends-on
+  :system-map.edge/spec-sections ["3.4" "4.6" "4.7" "9"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/action-codetype.generate->code-handlers"
+  :entity/name "codetype.generate depends on action handlers"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-404
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-404
+  :entity/description "Generator orchestration and logging live in intuition.sfs.actions.handlers (§§3.4, 4.6)."
+  :system-map.edge/ident :system-map.edge/codetype.generate->handlers
+  :system-map.edge/from :action/codetype.generate
+  :system-map.edge/to :code/intuition.sfs.actions.handlers
+  :system-map.edge/relation :system-map.relation/depends-on
+  :system-map.edge/spec-sections ["3.4" "4.6" "4.7" "5.1"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/action-codetype.validate->code-runtime"
+  :entity/name "codetype.validate depends on intuition.code.runtime"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251120-102
+  :entity/updated-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251120-102
+  :entity/description "Validator reads CodeDefinitions via the catalog runtime (§§4.7, 7, 9)."
+  :system-map.edge/ident :system-map.edge/codetype.validate->code.runtime
+  :system-map.edge/from :action/codetype.validate
+ :system-map.edge/to :code/intuition.code.runtime
+  :system-map.edge/relation :system-map.relation/depends-on
+  :system-map.edge/spec-sections ["4.7" "7" "9"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/action-codetype.generate->code-runtime"
+  :entity/name "codetype.generate depends on intuition.code.runtime"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-404
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-404
+  :entity/description "Generator looks up CodeTypes via the catalog runtime (§§4.7, 5.1)."
+  :system-map.edge/ident :system-map.edge/codetype.generate->code.runtime
+  :system-map.edge/from :action/codetype.generate
+  :system-map.edge/to :code/intuition.code.runtime
+  :system-map.edge/relation :system-map.relation/depends-on
+  :system-map.edge/spec-sections ["4.7" "5.1" "5.3"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/action-codetype.generate->code-generators"
+  :entity/name "codetype.generate depends on generator library"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-404
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-404
+  :entity/description "Default generator implementations live in intuition.codetype.generators (§§3.3–3.6, §4.7, §5.1, §5.3)."
+  :system-map.edge/ident :system-map.edge/codetype.generate->codetype.generators
+  :system-map.edge/from :action/codetype.generate
+  :system-map.edge/to :code/intuition.codetype.generators
+  :system-map.edge/relation :system-map.relation/depends-on
+  :system-map.edge/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-external-api->register"
+  :entity/name "External API approve orchestrates register"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "Captures API metadata before scanning (§4.8)."
+  :system-map.edge/ident :system-map.edge/external-api->register
+  :system-map.edge/from :protocol/external-api-approve
+  :system-map.edge/to :action/external.api.register
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["4.8" "6"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-external-api->scan"
+  :entity/name "External API approve orchestrates scan"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "Scans outbound call paths before approval."
+  :system-map.edge/ident :system-map.edge/external-api->scan
+  :system-map.edge/from :protocol/external-api-approve
+  :system-map.edge/to :action/integration.scan-usage
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["6" "10.2"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-external-api->request"
+  :entity/name "External API approve captures approval artifact"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "Writes the external-api approval record."
+  :system-map.edge/ident :system-map.edge/external-api->request
+  :system-map.edge/from :protocol/external-api-approve
+  :system-map.edge/to :action/integration.request-approval
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["3.5" "4.8" "10.2"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/protocol-js-revoke->revoke"
+  :entity/name "JS revoke orchestrates revocation action"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "Captures revocation evidence before archive (§6)."
+  :system-map.edge/ident :system-map.edge/js-revoke->revoke
+  :system-map.edge/from :protocol/js-revoke
+  :system-map.edge/to :action/integration.revoke-access
+  :system-map.edge/relation :system-map.relation/orchestrates
+  :system-map.edge/spec-sections ["6" "10.2"]}]

@@ -1,2 +1,36 @@
-{:paths ["src"]
- :deps {org.clojure/clojure {:mvn/version "1.11.1"}}}
+{:paths ["src" "resources"]
+ :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        com.datomic/local {:mvn/version "1.0.291"}
+        org.clojure/tools.logging {:mvn/version "1.3.0"}}
+ :mvn/repos {"central" {:url "https://repo1.maven.org/maven2/"}
+             "clojars" {:url "https://clojars.org/repo"}}
+ :aliases
+ {:run {:main-opts ["-m" "spec.importer"]}
+  :dev {:extra-paths ["." "dev" "test" "resources"]
+        :extra-deps {org.clojure/tools.namespace {:mvn/version "1.4.4"}}}
+  :test {:extra-paths ["test" "resources" "."]
+         :extra-deps {io.github.cognitect-labs/test-runner {:local/root "vendor/test-runner"}}
+         :main-opts ["-m" "cognitect.test-runner"
+                     "-d" "test"
+                     "-n" "system-map-no-dangling-edges-test"
+                     "-n" "docgen-type-app-test"
+                     "-n" "mission-ready-filtering-test"
+                     "-n" "js-security-sandbox-test"
+                     "-n" "external-api-call-paths-test"
+                     "-n" "codetype-validation-test"
+                     "-n" "codetype-generation-test"
+                     "-n" "deploy-blue-green-test"
+                     "-n" "deploy-canary-test"
+                     "-n" "agent-gateway-test"
+                     "-n" "dev-agent-gateway-smoke-test"
+                     "-n" "code-types-catalog-test"
+                     "-n" "dev-tools-smoke-test"
+                     "-n" "scheduler-smoke-test"
+                     "-n" "integration.mission-flow-test"
+                     "-n" "spec-intake-test"
+                     "-n" "analytics-runtime-test"
+                     "-n" "mission-instantiation-test"]}
+  :lint {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2024.11.14"}}
+         :main-opts ["-m" "clj-kondo.main"
+                     "--config" "resources/dictionary/clj_kondo/config.edn"
+                     "--lint" "src" "test" "resources/dictionary" "dev"]}}}

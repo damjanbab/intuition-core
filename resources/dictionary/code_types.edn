@@ -1,0 +1,1321 @@
+[
+ {:entity/type :code/type
+  :entity/path "/code/types/runtime"
+  :entity/name "Runtime namespace"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Clojure runtimes that orchestrate SfS behavior per SYSTEM_SPEC.md §§4.7, 7, 9."
+  :code.type/ident :code.type/runtime
+  :code.type/category :code.category/runtime
+  :code.type/spec-sections ["4.7" "7" "9"]
+  :code.type/default-validators [:validator/ns-loads :validator/spec-trace]}
+
+ {:entity/type :code/type
+  :entity/path "/code/types/resource"
+  :entity/name "Dictionary resource"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "EDN bundles that seed dictionary/state per §§4.1–4.5 and §7."
+  :code.type/ident :code.type/resource
+  :code.type/category :code.category/resource
+  :code.type/spec-sections ["4.1" "4.2" "4.7" "7"]
+  :code.type/default-validators [:validator/edn-readable :validator/spec-citations]}
+
+ {:entity/type :code/type
+  :entity/path "/code/types/test"
+  :entity/name "Test namespace"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Acceptance/contract suites that enforce §§3.5, 5.1, 7, 9."
+  :code.type/ident :code.type/test
+  :code.type/category :code.category/test
+  :code.type/spec-sections ["3.5" "5.1" "7" "9"]
+  :code.type/default-validators [:validator/test-runner :validator/spec-coverage]}
+
+ {:entity/type :code/type
+  :entity/path "/code/types/dev"
+  :entity/name "Dev helper"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Operator helpers/scripts that replay governed flows (§§3.6, 7, 9)."
+  :code.type/ident :code.type/dev
+  :code.type/category :code.category/dev
+  :code.type/spec-sections ["3.6" "7" "9"]
+  :code.type/default-validators [:validator/dev-script :validator/ns-loads]}
+
+ {:entity/type :code/type
+  :entity/path "/code/types/doc"
+  :entity/name "Doc/data template"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Doc templates and catalog data that drive §4.9 + §7 deliverables."
+ :code.type/ident :code.type/doc
+  :code.type/category :code.category/doc
+  :code.type/spec-sections ["4.9" "7" "9"]
+  :code.type/default-validators [:validator/doc-template :validator/edn-readable]}
+
+ {:entity/type :code/type
+  :entity/path "/code/types/generator/sample"
+  :entity/name "Generator sample"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-404
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-404
+  :entity/description "Demonstrates CodeType generator metadata cited in SYSTEM_SPEC.md §§3.3–3.6, §4.7, §5.1, §5.3."
+  :code.type/ident :code.type/codex.sample
+  :code.type/category :code.category/dev
+  :code.type/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3"]
+  :code.type/default-validators []
+  :code.type/generator "intuition.codetype.generators/sample-runtime"
+  :code.type/generator-templates ["resources/codetype/sample_handler.clj.tpl"]
+  :code.type/generated-artifacts ["src/generated/sample_runtime.clj"]}
+
+ {:entity/type :code/type
+  :entity/path "/code/types/generator/missing-template"
+  :entity/name "Generator sample – missing template"
+  :entity/status :entity.status/draft
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-404
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-404
+  :entity/description "Test-only CodeType that references a missing template to assert generator error handling."
+  :code.type/ident :code.type/codex.sample-missing-template
+  :code.type/category :code.category/dev
+  :code.type/spec-sections ["3.3" "3.4" "4.7" "5.1" "5.3"]
+  :code.type/default-validators []
+  :code.type/generator "intuition.codetype.generators/sample-runtime"
+  :code.type/generator-templates ["resources/codetype/does-not-exist.tpl"]
+  :code.type/generated-artifacts ["src/generated/missing_template.clj"]}
+
+ {:entity/type :code/type
+  :entity/path "/code/types/generator/missing-handler"
+  :entity/name "Generator sample – missing handler"
+  :entity/status :entity.status/draft
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-404
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-404
+  :entity/description "Test-only CodeType that references an unresolved generator var."
+  :code.type/ident :code.type/codex.sample-missing-handler
+  :code.type/category :code.category/dev
+  :code.type/spec-sections ["3.3" "3.5" "4.7" "5.1" "5.3"]
+  :code.type/default-validators []
+  :code.type/generator "intuition.codetype.generators/missing-runtime"
+  :code.type/generator-templates ["resources/codetype/sample_handler.clj.tpl"]
+  :code.type/generated-artifacts ["src/generated/missing_handler.clj"]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/spec/importer"
+  :entity/name "Spec importer"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Parses SYSTEM_SPEC.md headings and loads them into Datomic with hashes + parent refs."
+  :code.definition/ident :code/spec.importer
+  :code.definition/name "SYSTEM_SPEC importer"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/spec/importer.clj"]
+  :code.definition/dependencies [:code/intuition.datomic]
+  :code.definition/validators [:validator/spec-parser :validator/checksum]
+  :code.definition/tests []
+  :code.definition/spec-sections ["4.7" "4.9" "7" "9"]
+  :code.definition/missions [:mission/M-01]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/datomic"
+  :entity/name "Datomic bootstrap helpers"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Creates local Datomic connections/DBs for SfS runtimes."
+  :code.definition/ident :code/intuition.datomic
+  :code.definition/name "intuition.datomic"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/datomic.clj"]
+  :code.definition/dependencies []
+  :code.definition/validators [:validator/datomic-client]
+  :code.definition/tests []
+  :code.definition/spec-sections ["4.7" "7" "9"]
+  :code.definition/missions [:mission/M-02]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/dictionary"
+  :entity/name "Dictionary loader"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Loads actions/protocol mission seeds and installs supporting schema." 
+  :code.definition/ident :code/intuition.dictionary
+  :code.definition/name "intuition.dictionary"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/dictionary.clj"]
+  :code.definition/dependencies [:code/intuition.datomic
+                                 :code/resources.dictionary.actions
+                                 :code/resources.dictionary.protocols
+                                 :code/resources.dictionary.missions]
+  :code.definition/validators [:validator/edn-readable :validator/schema-install]
+  :code.definition/tests [:code/test.schema-core-metadata]
+  :code.definition/spec-sections ["4.1" "4.2" "4.6" "7" "9"]
+  :code.definition/missions [:mission/M-02]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/dictionary/seed"
+  :entity/name "Dictionary seeding script"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Installs the action/protocol schema bundle into dev-local Datomic."
+  :code.definition/ident :code/intuition.dictionary.seed
+  :code.definition/name "intuition.dictionary.seed"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/dictionary/seed.clj"]
+  :code.definition/dependencies [:code/intuition.datomic
+                                 :code/intuition.dictionary
+                                 :code/intuition.dictionary.meta-types]
+  :code.definition/validators [:validator/bootstrap-script]
+  :code.definition/tests [:code/test.schema-core-metadata]
+  :code.definition/spec-sections ["4.1" "4.6" "7" "9"]
+  :code.definition/missions [:mission/M-02]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/dictionary/meta_types"
+  :entity/name "Meta-type seeding runtime"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Loads the meta-type EDN bundle, validates invariants, and installs schema."
+  :code.definition/ident :code/intuition.dictionary.meta-types
+  :code.definition/name "intuition.dictionary.meta-types"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/dictionary/meta_types.clj"]
+  :code.definition/dependencies [:code/resources.dictionary.meta-types]
+  :code.definition/validators [:validator/meta-bundle :validator/schema-install]
+  :code.definition/tests [:code/test.schema-core-metadata]
+  :code.definition/spec-sections ["4.1" "4.2" "11.1"]
+  :code.definition/missions [:mission/M-01]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/docs/runtime"
+  :entity/name "Doc generation runtime"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Renders template instances into Markdown/EDN artifacts with spec + code catalogs."
+  :code.definition/ident :code/intuition.docs.runtime
+  :code.definition/name "intuition.docs.runtime"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/docs/runtime.clj"]
+  :code.definition/dependencies [:code/resources.dictionary.doc-templates
+                                 :code/resources.dictionary.meta-types
+                                 :code/resources.dictionary.missions
+                                 :code/resources.dictionary.code-types
+                                 :code/intuition.code.runtime]
+  :code.definition/validators [:validator/doc-template :validator/doc-paths]
+  :code.definition/tests [:code/test.docgen-type-app :code/test.code-types-catalog]
+  :code.definition/spec-sections ["4.7" "4.9" "7" "9"]
+  :code.definition/missions [:mission/M-06 :mission/M-code-types]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/code/runtime"
+  :entity/name "Code catalog runtime"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Loads CodeType definitions, exposes lookup helpers, and feeds doc/system-map integrations."
+  :code.definition/ident :code/intuition.code.runtime
+  :code.definition/name "intuition.code.runtime"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/code/runtime.clj"]
+  :code.definition/dependencies [:code/resources.dictionary.code-types]
+  :code.definition/validators [:validator/code-catalog :validator/dependency-graph]
+  :code.definition/tests [:code/test.code-types-catalog]
+  :code.definition/spec-sections ["4.7" "7" "9"]
+  :code.definition/missions [:mission/M-code-types]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/sfs/actions/runtime"
+  :entity/name "Action runtime"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Executes ActionDefinitions per §4.6/§5.1 with spec + permission enforcement and logging."
+  :code.definition/ident :code/intuition.sfs.actions.runtime
+  :code.definition/name "intuition.sfs.actions.runtime"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/sfs/actions/runtime.clj"]
+  :code.definition/dependencies [:code/intuition.datomic
+                                 :code/resources.dictionary.actions
+                                 :code/intuition.sfs.actions.handlers
+                                 :code/intuition.sfs.schemas]
+  :code.definition/validators [:validator/action-specs :validator/permission-checks]
+  :code.definition/tests [:code/test.actions-contract]
+  :code.definition/spec-sections ["4.6" "5.1" "7" "9"]
+  :code.definition/missions [:mission/M-02]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/sfs/actions/handlers"
+  :entity/name "Action handlers"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Pure handlers for env bootstrap, locks, tests, docs sync, and docgen."
+  :code.definition/ident :code/intuition.sfs.actions.handlers
+  :code.definition/name "intuition.sfs.actions.handlers"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/sfs/actions/handlers.clj"]
+  :code.definition/dependencies [:code/intuition.sfs.env.bootstrap
+                                 :code/intuition.sfs.log.step
+                                 :code/intuition.docs.runtime]
+  :code.definition/validators [:validator/repo-paths :validator/action-contracts]
+  :code.definition/tests [:code/test.actions-contract :code/test.docgen-type-app]
+  :code.definition/spec-sections ["3.4" "4.6" "7" "9"]
+  :code.definition/missions [:mission/M-02 :mission/M-04 :mission/M-06]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/sfs/env/bootstrap"
+  :entity/name "Env bootstrap runtime"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Creates governed sandboxes with repo-relative paths and lock-backed metadata."
+  :code.definition/ident :code/intuition.sfs.env.bootstrap
+  :code.definition/name "intuition.sfs.env.bootstrap"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/sfs/env/bootstrap.clj"]
+  :code.definition/dependencies []
+  :code.definition/validators [:validator/sandbox-paths :validator/file-locks]
+  :code.definition/tests [:code/test.env-isolation]
+  :code.definition/spec-sections ["3.4" "3.7" "6.2" "9"]
+  :code.definition/missions [:mission/M-04]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/sfs/log/step"
+  :entity/name "Worklog runtime"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Persists mission worklogs to Datomic + Markdown with lock + evidence validation."
+  :code.definition/ident :code/intuition.sfs.log.step
+  :code.definition/name "intuition.sfs.log.step"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/sfs/log/step.clj"]
+  :code.definition/dependencies [:code/intuition.sfs.env.bootstrap]
+  :code.definition/validators [:validator/worklog-locks :validator/repo-paths]
+  :code.definition/tests [:code/test.log-step-links]
+  :code.definition/spec-sections ["3.4" "7" "9"]
+  :code.definition/missions [:mission/M-04]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/sfs/missions/state_machine"
+  :entity/name "Mission state machine"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Normalizes mission records and enforces transition requirements (scope, locks, tests)."
+  :code.definition/ident :code/intuition.sfs.missions.state-machine
+  :code.definition/name "intuition.sfs.missions.state-machine"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/sfs/missions/state_machine.clj"]
+  :code.definition/dependencies [:code/resources.dictionary.missions
+                                 :code/intuition.sfs.schemas]
+  :code.definition/validators [:validator/mission-scope :validator/work-track]
+  :code.definition/tests [:code/test.mission-validation :code/test.mission-state-machine]
+  :code.definition/spec-sections ["3.1" "3.3" "3.4" "3.5" "7"]
+  :code.definition/missions [:mission/M-03 :mission/M-09]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/sfs/missions/registry"
+  :entity/name "Mission registry helpers"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Computes ready queues, priorities, and conflicts for mission auto-start tooling."
+  :code.definition/ident :code/intuition.sfs.missions.registry
+  :code.definition/name "intuition.sfs.missions.registry"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/sfs/missions/registry.clj"]
+  :code.definition/dependencies [:code/resources.dictionary.missions]
+  :code.definition/validators [:validator/mission-queue]
+  :code.definition/tests [:code/test.mission-ready-filtering]
+  :code.definition/spec-sections ["3.6" "3.7" "3.12"]
+  :code.definition/missions [:mission/M-07]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/sfs/missions/runtime"
+  :entity/name "Mission runtime"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Datomic-backed mission lifecycle entrypoints (start, transition, report, approve, archive)."
+  :code.definition/ident :code/intuition.sfs.missions.runtime
+  :code.definition/name "intuition.sfs.missions.runtime"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/sfs/missions/runtime.clj"]
+  :code.definition/dependencies [:code/intuition.datomic
+                                 :code/resources.dictionary.missions
+                                 :code/intuition.sfs.missions.state-machine
+                                 :code/intuition.sfs.missions.registry
+                                 :code/intuition.sfs.protocols.runtime
+                                 :code/intuition.sfs.actions.runtime
+                                 :code/intuition.sfs.env.bootstrap
+                                 :code/intuition.sfs.log.step
+                                 :code/intuition.docs.runtime
+                                 :code/intuition.sfs.system-map.runtime
+                                 :code/intuition.js.runtime
+                                 :code/intuition.deploy.runtime
+                                 :code/intuition.sfs.schemas]
+  :code.definition/validators [:validator/mission-transition
+                               :validator/work-track
+                               :validator/report-artifacts]
+  :code.definition/tests [:code/test.mission-state-machine
+                          :code/test.mission-ready-filtering
+                          :code/test.mission-report-requires-tests
+                          :code/test.js-security-sandbox
+                          :code/test.external-api-call-paths
+                          :code/test.deploy-blue-green
+                          :code/test.deploy-canary]
+  :code.definition/spec-sections ["3.1" "3.4" "3.6" "3.12" "5.1" "7" "9"]
+  :code.definition/missions [:mission/M-03 :mission/M-07 :mission/M-08 :mission/M-09 :mission/M-10]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/sfs/protocols/runtime"
+  :entity/name "Protocol runtime"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Runs ProtocolDefinitions, resolves placeholders, enforces locks/work-tracks, records runs."
+  :code.definition/ident :code/intuition.sfs.protocols.runtime
+  :code.definition/name "intuition.sfs.protocols.runtime"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/sfs/protocols/runtime.clj"]
+  :code.definition/dependencies [:code/intuition.datomic
+                                 :code/resources.dictionary.protocols
+                                 :code/intuition.sfs.actions.runtime]
+  :code.definition/validators [:validator/protocol-graph :validator/work-track]
+  :code.definition/tests [:code/test.protocols-sequence]
+  :code.definition/spec-sections ["4.6" "5.2" "5.3" "7" "9"]
+  :code.definition/missions [:mission/M-02]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/sfs/schemas"
+  :entity/name "Action/Mission specs"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Centralized clojure.spec definitions for action configs, mission artifacts, doc/system-map payloads."
+  :code.definition/ident :code/intuition.sfs.schemas
+  :code.definition/name "intuition.sfs.schemas"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/sfs/schemas.clj"]
+  :code.definition/dependencies [:code/resources.dictionary.actions
+                                 :code/resources.dictionary.missions
+                                 :code/resources.dictionary.doc-templates
+                                 :code/resources.dictionary.system-map]
+  :code.definition/validators [:validator/spec-registry]
+  :code.definition/tests [:code/test.actions-contract :code/test.mission-report-requires-tests]
+  :code.definition/spec-sections ["4.6" "4.9" "7" "9"]
+  :code.definition/missions [:mission/M-06 :mission/M-08 :mission/M-09]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/sfs/system_map/runtime"
+  :entity/name "System map runtime"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Installs system-map schema, reconciles nodes/edges from dictionary + code catalog, enforces no-dangling invariants."
+  :code.definition/ident :code/intuition.sfs.system-map.runtime
+  :code.definition/name "intuition.sfs.system-map.runtime"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/sfs/system_map/runtime.clj"]
+  :code.definition/dependencies [:code/intuition.datomic
+                                 :code/resources.dictionary.system-map
+                                 :code/resources.dictionary.actions
+                                 :code/resources.dictionary.protocols
+                                 :code/intuition.code.runtime]
+  :code.definition/validators [:validator/system-map-node :validator/system-map-edge]
+  :code.definition/tests [:code/test.system-map-no-dangling-edges :code/test.code-types-catalog]
+  :code.definition/spec-sections ["4.1" "4.5" "4.10" "7" "9"]
+  :code.definition/missions [:mission/M-05 :mission/M-code-types]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/js/runtime"
+  :entity/name "JS/API governance runtime"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Validates JS bundles + external APIs (paths, dependencies, risk profiles) before use."
+  :code.definition/ident :code/intuition.js.runtime
+  :code.definition/name "intuition.js.runtime"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/js/runtime.clj"]
+  :code.definition/dependencies [:code/intuition.sfs.env.bootstrap]
+  :code.definition/validators [:validator/bundle-paths :validator/risk-profile]
+  :code.definition/tests [:code/test.js-security-sandbox :code/test.external-api-call-paths]
+  :code.definition/spec-sections ["4.8" "6" "10.2" "7" "9"]
+  :code.definition/missions [:mission/M-09]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/deploy/runtime"
+  :entity/name "Deploy runtime"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Models blue/green + canary cycles, collects evidence, and manages environment state."
+  :code.definition/ident :code/intuition.deploy.runtime
+  :code.definition/name "intuition.deploy.runtime"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/deploy/runtime.clj"]
+  :code.definition/dependencies [:code/intuition.sfs.env.bootstrap]
+  :code.definition/validators [:validator/deploy-evidence :validator/traffic-switch]
+  :code.definition/tests [:code/test.deploy-blue-green :code/test.deploy-canary]
+  :code.definition/spec-sections ["6.3" "8" "9"]
+  :code.definition/missions [:mission/M-10]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/versioning/runtime"
+  :entity/name "Versioning runtime"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-608
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-608
+  :entity/description "Loads version snapshots from mission logs and traces spec→plan→mission lineage (§8.1)."
+  :code.definition/ident :code/intuition.versioning.runtime
+  :code.definition/name "intuition.versioning.runtime"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/versioning/runtime.clj"]
+  :code.definition/dependencies []
+  :code.definition/validators [:validator/ns-loads]
+  :code.definition/tests [:code/test.versioning-snapshot]
+  :code.definition/spec-sections ["3.3" "3.4" "8.1" "11"]
+  :code.definition/missions [:mission/M-20251121-608]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/analytics/runtime"
+  :entity/name "Mission analytics runtime"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-608
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-608
+  :entity/description "Aggregates mission logs/CI timelines into governed analytics artifacts (§§3.3–3.6, §5.1, §5.3, §9, §11)."
+  :code.definition/ident :code/intuition.analytics.runtime
+  :code.definition/name "intuition.analytics.runtime"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/analytics/runtime.clj"]
+  :code.definition/dependencies [:code/intuition.versioning.runtime]
+  :code.definition/validators [:validator/ns-loads]
+  :code.definition/tests [:code/test.analytics-runtime]
+  :code.definition/spec-sections ["3.3" "3.4" "3.5" "3.6" "5.1" "5.3" "9" "11"]
+  :code.definition/missions [:mission/M-20251121-608]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/src/intuition/scheduler/core"
+  :entity/name "Mission scheduler"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-608
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-608
+  :entity/description "Selects ready missions and dispatches governed agent sessions with analytics hooks (§§3.3–3.6, §5.3, §6.2, §11)."
+  :code.definition/ident :code/intuition.scheduler.core
+  :code.definition/name "intuition.scheduler.core"
+  :code.definition/type :code.type/runtime
+  :code.definition/paths ["src/intuition/scheduler/core.clj"]
+  :code.definition/dependencies [:code/intuition.sfs.missions.registry
+                                 :code/intuition.sfs.missions.runtime
+                                 :code/intuition.analytics.runtime]
+  :code.definition/validators [:validator/ns-loads]
+  :code.definition/tests []
+  :code.definition/spec-sections ["3.3" "3.4" "3.6" "5.3" "6.2" "11"]
+  :code.definition/missions [:mission/M-20251121-608]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/resources/dictionary/meta-types"
+  :entity/name "Meta-type bundle"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Authoritative TypeDefinition/AttributeDefinition catalog for SfS."
+  :code.definition/ident :code/resources.dictionary.meta-types
+  :code.definition/name "dictionary/meta-types.edn"
+  :code.definition/type :code.type/resource
+  :code.definition/paths ["resources/dictionary/meta-types.edn"]
+  :code.definition/dependencies []
+  :code.definition/validators [:validator/spec-citations :validator/type-coverage]
+  :code.definition/tests [:code/test.schema-core-metadata]
+  :code.definition/spec-sections ["4.1" "4.2" "4.7" "11.1"]
+  :code.definition/missions [:mission/M-01 :mission/M-09 :mission/M-10 :mission/M-code-types]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/resources/dictionary/actions"
+  :entity/name "Action catalog"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "ActionDefinitions with invariants, permissions, and handlers."
+  :code.definition/ident :code/resources.dictionary.actions
+  :code.definition/name "dictionary/actions.edn"
+  :code.definition/type :code.type/resource
+  :code.definition/paths ["resources/dictionary/actions.edn"]
+  :code.definition/dependencies [:code/resources.dictionary.meta-types]
+ :code.definition/validators [:validator/edn-readable :validator/spec-citations :validator/action-contracts]
+  :code.definition/tests [:code/test.actions-contract
+                          :code/test.protocols-sequence
+                          :code/test.mission-ready-filtering
+                          :code/test.mission-report-requires-tests
+                          :code/test.js-security-sandbox
+                          :code/test.deploy-blue-green
+                          :code/test.deploy-canary]
+  :code.definition/spec-sections ["4.6" "5.1" "7" "9"]
+  :code.definition/missions [:mission/M-02 :mission/M-04 :mission/M-06 :mission/M-07 :mission/M-08 :mission/M-09 :mission/M-10]}
+
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/resources/dictionary/actions/git-branch-prepare"
+  :entity/name "Action – git.branch.prepare"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251120-101
+  :entity/updated-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251120-101
+  :entity/description "Records mission/<id>/<timestamp>-<agent> branch metadata per SYSTEM_SPEC §6.2."
+  :code.definition/ident :code/resources.dictionary.actions.git-branch-prepare
+  :code.definition/name ":action/git.branch.prepare"
+  :code.definition/type :code.type/resource
+  :code.definition/paths ["resources/dictionary/actions.edn"]
+  :code.definition/dependencies [:code/intuition.sfs.actions.handlers
+                                 :code/resources.dictionary.actions]
+  :code.definition/validators [:validator/edn-readable :validator/spec-citations]
+  :code.definition/tests [:code/test.git-branch-prepare :code/test.mission-state-machine]
+  :code.definition/spec-sections ["3.3" "3.5" "6.2"]
+  :code.definition/missions [:mission/M-20251120-101]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/resources/dictionary/actions_env"
+  :entity/name "Env/log action catalog"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Supplemental ActionDefinitions for sandbox bootstrap + mission worklogs."
+  :code.definition/ident :code/resources.dictionary.actions-env
+  :code.definition/name "dictionary/actions_env.edn"
+  :code.definition/type :code.type/resource
+  :code.definition/paths ["resources/dictionary/actions_env.edn"]
+  :code.definition/dependencies [:code/resources.dictionary.actions]
+  :code.definition/validators [:validator/edn-readable :validator/spec-citations]
+  :code.definition/tests [:code/test.env-isolation :code/test.log-step-links]
+  :code.definition/spec-sections ["3.4" "3.7" "6.2" "7"]
+  :code.definition/missions [:mission/M-04]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/resources/dictionary/actions_system-map"
+  :entity/name "System-map action extension"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Adds :action/system-map.refresh pointing to the reconciler runtime."
+  :code.definition/ident :code/resources.dictionary.actions-system-map
+  :code.definition/name "dictionary/actions_system_map.edn"
+  :code.definition/type :code.type/resource
+  :code.definition/paths ["resources/dictionary/actions_system_map.edn"]
+  :code.definition/dependencies [:code/resources.dictionary.actions
+                                 :code/resources.dictionary.system-map]
+  :code.definition/validators [:validator/edn-readable :validator/spec-citations]
+  :code.definition/tests [:code/test.system-map-no-dangling-edges]
+  :code.definition/spec-sections ["4.10" "7"]
+  :code.definition/missions [:mission/M-05]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/resources/dictionary/doc_templates"
+  :entity/name "Doc template catalog"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "TemplateDefinitions + TemplateInstances for mission/type docs."
+  :code.definition/ident :code/resources.dictionary.doc-templates
+  :code.definition/name "dictionary/doc_templates.edn"
+  :code.definition/type :code.type/doc
+  :code.definition/paths ["resources/dictionary/doc_templates.edn"]
+  :code.definition/dependencies [:code/resources.dictionary.meta-types
+                                 :code/resources.dictionary.missions]
+  :code.definition/validators [:validator/edn-readable :validator/doc-template]
+  :code.definition/tests [:code/test.docgen-type-app]
+  :code.definition/spec-sections ["4.9" "7" "9"]
+  :code.definition/missions [:mission/M-06 :mission/M-09]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/resources/dictionary/missions"
+  :entity/name "Mission catalog"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Mission statuses, work tracks, queue tags, and seed mission records."
+  :code.definition/ident :code/resources.dictionary.missions
+  :code.definition/name "dictionary/missions.edn"
+  :code.definition/type :code.type/resource
+  :code.definition/paths ["resources/dictionary/missions.edn"]
+  :code.definition/dependencies [:code/resources.dictionary.meta-types]
+  :code.definition/validators [:validator/edn-readable :validator/spec-citations]
+  :code.definition/tests [:code/test.mission-validation :code/test.mission-state-machine :code/test.mission-ready-filtering]
+  :code.definition/spec-sections ["3.1" "3.3" "3.6" "7"]
+  :code.definition/missions [:mission/M-03 :mission/M-07]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/resources/dictionary/protocols"
+  :entity/name "Protocol catalog"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "ProtocolDefinitions for mission-standard flows, deploy orchestration, and security approvals."
+  :code.definition/ident :code/resources.dictionary.protocols
+  :code.definition/name "dictionary/protocols.edn"
+  :code.definition/type :code.type/resource
+  :code.definition/paths ["resources/dictionary/protocols.edn"]
+  :code.definition/dependencies [:code/resources.dictionary.meta-types
+                                 :code/resources.dictionary.actions]
+  :code.definition/validators [:validator/edn-readable :validator/protocol-graph]
+ :code.definition/tests [:code/test.protocols-sequence
+                          :code/test.mission-report-requires-tests
+                          :code/test.deploy-blue-green
+                          :code/test.deploy-canary]
+  :code.definition/spec-sections ["4.6" "5.2" "5.3" "7"]
+  :code.definition/missions [:mission/M-02 :mission/M-08 :mission/M-09 :mission/M-10]}
+
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/resources/dictionary/protocols/mission-sync"
+  :entity/name "Protocol – mission-sync"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251120-101
+  :entity/updated-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251120-101
+  :entity/description "Runs env bootstrap + git.branch.prepare before any mission locks/tests per §§3.3–3.4 and §6.2."
+  :code.definition/ident :code/resources.dictionary.protocols.mission-sync
+  :code.definition/name ":protocol/mission-sync"
+  :code.definition/type :code.type/resource
+  :code.definition/paths ["resources/dictionary/protocols.edn"]
+  :code.definition/dependencies [:code/resources.dictionary.protocols
+                                 :code/intuition.sfs.actions.runtime]
+  :code.definition/validators [:validator/edn-readable :validator/protocol-graph]
+  :code.definition/tests [:code/test.protocols-sequence :code/test.mission-state-machine]
+  :code.definition/spec-sections ["3.3" "3.4" "6.2"]
+  :code.definition/missions [:mission/M-20251120-101]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/resources/dictionary/system-map"
+  :entity/name "System-map types"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "TypeDefinitions for :system-map/node and :system-map/edge with sample data."
+  :code.definition/ident :code/resources.dictionary.system-map
+  :code.definition/name "dictionary/system-map.edn"
+  :code.definition/type :code.type/resource
+  :code.definition/paths ["resources/dictionary/system-map.edn"]
+  :code.definition/dependencies [:code/resources.dictionary.meta-types]
+  :code.definition/validators [:validator/edn-readable :validator/spec-citations :validator/system-map-node]
+  :code.definition/tests [:code/test.system-map-no-dangling-edges :code/test.code-types-catalog]
+  :code.definition/spec-sections ["4.1" "4.5" "4.10" "7"]
+  :code.definition/missions [:mission/M-05 :mission/M-09]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/resources/dictionary/code-types"
+  :entity/name "CodeType catalog"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Catalog of CodeTypes + CodeDefinition instances used by automation."
+  :code.definition/ident :code/resources.dictionary.code-types
+  :code.definition/name "dictionary/code_types.edn"
+  :code.definition/type :code.type/doc
+  :code.definition/paths ["resources/dictionary/code_types.edn"]
+  :code.definition/dependencies [:code/resources.dictionary.meta-types]
+  :code.definition/validators [:validator/edn-readable :validator/code-catalog]
+  :code.definition/tests [:code/test.code-types-catalog]
+  :code.definition/spec-sections ["4.7" "7" "9"]
+  :code.definition/missions [:mission/M-code-types]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/dev/run_protocol"
+  :entity/name "Run protocol helper"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Command-line script that seeds the DB and runs :protocol/mission-standard for manual smoke tests."
+  :code.definition/ident :code/dev.run-protocol
+  :code.definition/name "dev/run_protocol.clj"
+  :code.definition/type :code.type/dev
+  :code.definition/paths ["dev/run_protocol.clj"]
+  :code.definition/dependencies [:code/intuition.datomic
+                                 :code/intuition.dictionary
+                                 :code/intuition.sfs.protocols.runtime
+                                 :code/intuition.sfs.actions.runtime]
+  :code.definition/validators [:validator/dev-script]
+  :code.definition/tests []
+  :code.definition/spec-sections ["3.6" "7" "9"]
+  :code.definition/missions [:mission/M-02]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/dev/run_mission"
+  :entity/name "Run mission helper"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Seeds the DB and walks a sample mission through start→awaiting-review to validate workflows."
+  :code.definition/ident :code/dev.run-mission
+  :code.definition/name "dev/run_mission.clj"
+  :code.definition/type :code.type/dev
+  :code.definition/paths ["dev/run_mission.clj"]
+  :code.definition/dependencies [:code/intuition.datomic
+                                 :code/intuition.dictionary
+                                 :code/intuition.sfs.missions.runtime
+                                 :code/intuition.sfs.protocols.runtime]
+  :code.definition/validators [:validator/dev-script]
+ :code.definition/tests []
+  :code.definition/spec-sections ["3.6" "3.12" "7" "9"]
+  :code.definition/missions [:mission/M-03]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/dev/list_missions"
+  :entity/name "List missions helper"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Prints ready missions grouped by queue/priority using the registry/runtime helpers."
+  :code.definition/ident :code/dev.list-missions
+  :code.definition/name "dev/list_missions.clj"
+  :code.definition/type :code.type/dev
+  :code.definition/paths ["dev/list_missions.clj"]
+  :code.definition/dependencies [:code/intuition.datomic
+                                 :code/intuition.dictionary
+                                 :code/intuition.sfs.missions.registry
+                                 :code/intuition.sfs.missions.runtime]
+  :code.definition/validators [:validator/dev-script]
+  :code.definition/tests []
+  :code.definition/spec-sections ["3.6" "3.7" "7" "9"]
+  :code.definition/missions [:mission/M-07]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/analytics_runtime_test"
+  :entity/name "Analytics runtime test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-608
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-608
+  :entity/description "Covers analytics metric generation and artifact copies into mission logs."
+  :code.definition/ident :code/test.analytics-runtime
+  :code.definition/name "test/analytics_runtime_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/analytics_runtime_test.clj"]
+  :code.definition/dependencies [:code/intuition.analytics.runtime]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["3.3" "3.4" "3.5" "3.6" "5.1" "5.3" "9" "11"]
+  :code.definition/missions [:mission/M-20251121-608]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/schema_core_metadata_test"
+  :entity/name "Schema core metadata test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Verifies meta-type bundles seed cleanly and match Datomic counts."
+  :code.definition/ident :code/test.schema-core-metadata
+  :code.definition/name "test/schema_core_metadata_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/schema_core_metadata_test.clj"]
+  :code.definition/dependencies [:code/intuition.dictionary.meta-types
+                                 :code/resources.dictionary.meta-types]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["4.1" "4.2" "7" "9"]
+  :code.definition/missions [:mission/M-01]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/actions_contract_test"
+  :entity/name "Actions contract test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Exercises action runtime validation, permission checks, and logging."
+  :code.definition/ident :code/test.actions-contract
+  :code.definition/name "test/actions_contract_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/actions_contract_test.clj"]
+  :code.definition/dependencies [:code/intuition.sfs.actions.runtime
+                                 :code/intuition.sfs.actions.handlers
+                                 :code/resources.dictionary.actions
+                                 :code/intuition.sfs.schemas]
+ :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["4.6" "5.1" "7" "9"]
+  :code.definition/missions [:mission/M-02]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/sample_validator"
+  :entity/name "Sample work-plan validator"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-608
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-608
+  :entity/description "Placeholder test contract used by the work-plan demo/spec validation harness."
+  :code.definition/ident :code/sample.validator
+  :code.definition/name "test/work_plan_validation_test.clj – sample validator"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/work_plan_validation_test.clj"]
+  :code.definition/dependencies [:code/intuition.sfs.actions.handlers]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["3.3" "3.4" "3.5" "4.7" "5.1"]
+  :code.definition/missions [:mission/M-20251121-608]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/versioning_snapshot_test"
+  :entity/name "Versioning snapshot test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-608
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-608
+  :entity/description "Validates spec/plan/mission version snapshots and lineage tracing (§8.1)."
+  :code.definition/ident :code/test.versioning-snapshot
+  :code.definition/name "test/versioning_snapshot_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/versioning_snapshot_test.clj"]
+  :code.definition/dependencies [:code/intuition.sfs.actions.handlers
+                                 :code/intuition.versioning.runtime]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["3.3" "3.4" "8.1" "11"]
+  :code.definition/missions [:mission/M-20251121-608]}
+
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/git_branch_prepare_test"
+  :entity/name "Git branch prepare test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251120-101
+  :entity/updated-at #inst "2025-11-20T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251120-101
+  :entity/description "Ensures :action/git.branch.prepare enforces repo-relative paths and §6.2 metadata."
+  :code.definition/ident :code/test.git-branch-prepare
+  :code.definition/name "test/git_branch_prepare_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/git_branch_prepare_test.clj"]
+  :code.definition/dependencies [:code/resources.dictionary.actions
+                                 :code/intuition.sfs.actions.handlers]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["3.3" "6.2"]
+  :code.definition/missions [:mission/M-20251120-101]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/protocols_sequence_test"
+  :entity/name "Protocols sequence test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Ensures protocol steps enforce lock/work-track ordering and placeholder resolution."
+  :code.definition/ident :code/test.protocols-sequence
+  :code.definition/name "test/protocols_sequence_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/protocols_sequence_test.clj"]
+  :code.definition/dependencies [:code/intuition.sfs.protocols.runtime
+                                 :code/intuition.sfs.actions.runtime
+                                 :code/resources.dictionary.protocols]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["4.6" "5.2" "7" "9"]
+  :code.definition/missions [:mission/M-02]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/env_isolation_test"
+  :entity/name "Env isolation test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Validates sandbox creation/cleanup and repo-relative path enforcement."
+  :code.definition/ident :code/test.env-isolation
+  :code.definition/name "test/env_isolation_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/env_isolation_test.clj"]
+  :code.definition/dependencies [:code/intuition.sfs.env.bootstrap
+                                 :code/resources.dictionary.actions-env]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["3.4" "6.2" "7" "9"]
+  :code.definition/missions [:mission/M-04]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/log_step_links_test"
+  :entity/name "Log step links test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Ensures worklogs enforce lock tokens, evidence paths, and artifact wiring."
+  :code.definition/ident :code/test.log-step-links
+  :code.definition/name "test/log_step_links_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/log_step_links_test.clj"]
+  :code.definition/dependencies [:code/intuition.sfs.log.step
+                                 :code/intuition.sfs.env.bootstrap
+                                 :code/resources.dictionary.actions-env]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["3.4" "7" "9"]
+  :code.definition/missions [:mission/M-04]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/mission_validation_test"
+  :entity/name "Mission validation test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Covers mission metadata normalization (scope, prerequisites, tests)."
+  :code.definition/ident :code/test.mission-validation
+  :code.definition/name "test/mission_validation_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/mission_validation_test.clj"]
+  :code.definition/dependencies [:code/intuition.sfs.missions.state-machine
+                                 :code/resources.dictionary.missions]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["3.1" "3.3" "7" "9"]
+  :code.definition/missions [:mission/M-03]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/mission_state_machine_test"
+  :entity/name "Mission state machine test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Integration coverage for mission start/transition/report gating."
+  :code.definition/ident :code/test.mission-state-machine
+  :code.definition/name "test/mission_state_machine_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/mission_state_machine_test.clj"]
+  :code.definition/dependencies [:code/intuition.sfs.missions.runtime
+                                 :code/intuition.sfs.missions.state-machine
+                                 :code/resources.dictionary.missions]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["3.1" "3.4" "3.5" "7" "9"]
+  :code.definition/missions [:mission/M-03]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/mission_ready_filtering_test"
+  :entity/name "Mission ready filtering test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Validates queue selection + auto-start orchestration."
+  :code.definition/ident :code/test.mission-ready-filtering
+  :code.definition/name "test/mission_ready_filtering_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/mission_ready_filtering_test.clj"]
+  :code.definition/dependencies [:code/intuition.sfs.missions.registry
+                                 :code/intuition.sfs.missions.runtime
+                                 :code/resources.dictionary.missions]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["3.6" "3.7" "3.12" "7"]
+  :code.definition/missions [:mission/M-07]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/mission_report_requires_tests"
+  :entity/name "Mission report gating test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Ensures report/approve/ archive flows enforce doc/system-map/test evidence."
+  :code.definition/ident :code/test.mission-report-requires-tests
+  :code.definition/name "test/mission_report_requires_tests.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/mission_report_requires_tests.clj"]
+  :code.definition/dependencies [:code/intuition.sfs.missions.runtime
+                                 :code/intuition.docs.runtime
+                                 :code/intuition.sfs.system-map.runtime
+                                 :code/intuition.sfs.schemas]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["3.4" "3.5" "7" "9"]
+  :code.definition/missions [:mission/M-08]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/docgen_type_app_test"
+  :entity/name "Docgen type/app test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Runs docgen actions end-to-end and asserts generated Markdown/EDN outputs."
+  :code.definition/ident :code/test.docgen-type-app
+  :code.definition/name "test/docgen_type_app_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/docgen_type_app_test.clj"]
+  :code.definition/dependencies [:code/intuition.docs.runtime
+                                 :code/intuition.sfs.actions.handlers
+                                 :code/resources.dictionary.doc-templates
+                                 :code/resources.dictionary.meta-types
+                                 :code/intuition.code.runtime]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["4.9" "7" "9"]
+  :code.definition/missions [:mission/M-06]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/system_map_no_dangling_edges_test"
+  :entity/name "System-map no-dangling-edges test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Covers happy-path refresh plus dangling node/edge failures."
+  :code.definition/ident :code/test.system-map-no-dangling-edges
+  :code.definition/name "test/system_map_no_dangling_edges_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/system_map_no_dangling_edges_test.clj"]
+  :code.definition/dependencies [:code/intuition.sfs.system-map.runtime
+                                 :code/resources.dictionary.system-map
+                                 :code/resources.dictionary.actions
+                                 :code/resources.dictionary.protocols]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["4.1" "4.10" "7" "9"]
+  :code.definition/missions [:mission/M-05]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/js_security_sandbox_test"
+  :entity/name "JS security sandbox test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Validates JS component validations, repo path enforcement, and mission integration hooks."
+  :code.definition/ident :code/test.js-security-sandbox
+  :code.definition/name "test/js_security_sandbox_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/js_security_sandbox_test.clj"]
+  :code.definition/dependencies [:code/intuition.js.runtime
+                                 :code/intuition.sfs.env.bootstrap
+                                 :code/resources.dictionary.meta-types]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["4.8" "6" "10.2" "7" "9"]
+  :code.definition/missions [:mission/M-09]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/external_api_call_paths_test"
+  :entity/name "External API call paths test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Ensures API descriptors declare safe call paths + risk profiles."
+  :code.definition/ident :code/test.external-api-call-paths
+  :code.definition/name "test/external_api_call_paths_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/external_api_call_paths_test.clj"]
+  :code.definition/dependencies [:code/intuition.js.runtime
+                                 :code/resources.dictionary.meta-types]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["4.8" "6" "10.2" "7" "9"]
+  :code.definition/missions [:mission/M-09]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/deploy_blue_green_test"
+  :entity/name "Deploy blue/green test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Covers blue/green stage/flip flows, approvals, and rollback evidence."
+  :code.definition/ident :code/test.deploy-blue-green
+  :code.definition/name "test/deploy_blue_green_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/deploy_blue_green_test.clj"]
+  :code.definition/dependencies [:code/intuition.deploy.runtime
+                                 :code/intuition.sfs.missions.runtime
+                                 :code/resources.dictionary.actions]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["6.3" "8" "7" "9"]
+  :code.definition/missions [:mission/M-10]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/deploy_canary_test"
+  :entity/name "Deploy canary test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Exercises canary start/stop flows, health gates, and artifact capture."
+  :code.definition/ident :code/test.deploy-canary
+  :code.definition/name "test/deploy_canary_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/deploy_canary_test.clj"]
+  :code.definition/dependencies [:code/intuition.deploy.runtime
+                                 :code/intuition.sfs.missions.runtime
+                                 :code/resources.dictionary.actions]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["6.3" "8" "7" "9"]
+  :code.definition/missions [:mission/M-10]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/support/datomic"
+  :entity/name "Test Datomic support"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Utility helpers for spinning up Datomic fixtures in tests."
+  :code.definition/ident :code/test-support.datomic
+  :code.definition/name "test/support/datomic.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/support/datomic.clj"]
+  :code.definition/dependencies [:code/intuition.datomic :code/intuition.dictionary]
+  :code.definition/validators [:validator/test-fixture]
+  :code.definition/tests []
+  :code.definition/spec-sections ["7" "9"]
+  :code.definition/missions [:mission/M-02]}
+ {:entity/type :code/definition
+  :entity/path "/code/definitions/test/code_types_catalog_test"
+  :entity/name "Code types catalog test"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-code-types
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-code-types
+  :entity/description "Verifies catalog completeness, dependency resolution, and doc/system-map integration."
+  :code.definition/ident :code/test.code-types-catalog
+  :code.definition/name "test/code_types_catalog_test.clj"
+  :code.definition/type :code.type/test
+  :code.definition/paths ["test/code_types_catalog_test.clj"]
+  :code.definition/dependencies [:code/intuition.code.runtime
+                                 :code/resources.dictionary.code-types
+                                 :code/intuition.docs.runtime
+                                 :code/intuition.sfs.system-map.runtime]
+  :code.definition/validators [:validator/test-runner]
+  :code.definition/tests []
+  :code.definition/spec-sections ["4.7" "7" "9"]
+  :code.definition/missions [:mission/M-code-types]}
+]

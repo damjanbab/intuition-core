@@ -1,3 +1,8 @@
 /.cpcache/
 /.lsp/
 /.clj-kondo/
+
+# Local dev artifacts
+data/
+/tmp/
+missions/logs/

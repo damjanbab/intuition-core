@@ -1,0 +1,50 @@
+[
+ {:ci.profile/ident :ci.profile/runtime-default
+  :ci.profile/description "Default runtime/spec CI profile that enforces lint, targeted tests, and codetype validation so SYSTEM_SPEC §§3.3–3.6, §5.1, §5.3, §6.2 traces exist for every edit."
+  :ci.profile/mission-types [:mission.category/runtime
+                             :mission.category/spec
+                             :mission.category/governance]
+  :ci.profile/required-tools [:tool/lint :tool/test :tool/codetype]
+  :ci.profile/thresholds {:lint/max-warnings 0
+                          :tests/max-failures 0
+                          :codetype/required? true}
+  :ci.profile/steps
+  [{:ci.profile.step/id :ci.step/lint
+    :ci.profile.step/tool :tool/lint
+    :ci.profile.step/description "Run governed lint suite before any merge so §5.3 evidence exists."
+    :ci.profile.step/command-template ["clojure" "-M:lint"]
+    :ci.profile.step/retry-policy {:max-attempts 1
+                                   :backoff-ms 0}}
+   {:ci.profile.step/id :ci.step/tests
+    :ci.profile.step/tool :tool/test
+    :ci.profile.step/description "Execute targeted test suites to satisfy SYSTEM_SPEC §§3.3–3.6 & §5.1."
+    :ci.profile.step/command-template ["clojure" "-M:test" "--focus" "mission"]
+    :ci.profile.step/retry-policy {:max-attempts 1
+                                   :backoff-ms 0}}
+   {:ci.profile.step/id :ci.step/codetype
+    :ci.profile.step/tool :tool/codetype
+    :ci.profile.step/description "Validate CodeType bindings before steward review (§§4.7, §5.1)."
+    :ci.profile.step/command-template ["clojure" "-M:codetype" "validate"]
+    :ci.profile.step/retry-policy {:max-attempts 1
+                                   :backoff-ms 0}}]}
+
+ {:ci.profile/ident :ci.profile/ops-slim
+  :ci.profile/description "Operational CI profile for ops/deploy missions – focuses on lint + health checks while still citing SYSTEM_SPEC §§3.3–3.6, §5.1, §5.3, §6.2."
+  :ci.profile/mission-types [:mission.category/ops]
+  :ci.profile/required-tools [:tool/lint :tool/test]
+  :ci.profile/thresholds {:lint/max-warnings 0
+                          :tests/max-failures 0}
+  :ci.profile/steps
+  [{:ci.profile.step/id :ci.step/ops-lint
+    :ci.profile.step/tool :tool/lint
+    :ci.profile.step/description "Ensure configuration/scripts stay linted before deploy automation."
+    :ci.profile.step/command-template ["clojure" "-M:lint" "--profile" "ops"]
+    :ci.profile.step/retry-policy {:max-attempts 1
+                                   :backoff-ms 0}}
+   {:ci.profile.step/id :ci.step/ops-tests
+    :ci.profile.step/tool :tool/test
+    :ci.profile.step/description "Run ops health checks (smoke tests + config validation)."
+    :ci.profile.step/command-template ["clojure" "-M:test" "--profile" "ops"]
+    :ci.profile.step/retry-policy {:max-attempts 1
+                                   :backoff-ms 0}}]}
+]

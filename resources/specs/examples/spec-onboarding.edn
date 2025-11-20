@@ -1,0 +1,16 @@
+{:spec/id :spec/onboarding-intake
+ :spec/title "Onboarding target spec ingestion"
+ :spec/summary "Codifies the target spec pipeline so onboarding documents are machine readable."
+ :spec/requirements ["Capture target specs as EDN data"
+                     "Normalize required SYSTEM_SPEC sections"
+                     "Persist normalized specs in governed storage"]
+ :spec/acceptance-criteria ["Spec capture copies input into resources/specs"
+                           "Spec validation writes spec-validation.edn & .md"
+                           "Spec publish marks :spec/status as validated"]
+ :spec/test-contracts [:code/intuition.sfs.actions.handlers]
+ :spec/constraints ["Only accepts repo-relative artifact paths"
+                    "Rejects missing CodeDefinition references"]
+ :spec/status :spec.status/draft
+ :spec/spec-sections ["3.3" "3.4" "3.5" "4.1" "4.2" "4.7" "5.1" "9"]
+ :spec/artifacts ["resources/specs/examples/spec-onboarding.edn"]
+ :spec/owner :role/dictionary-engineer}

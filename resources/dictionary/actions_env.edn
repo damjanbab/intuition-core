@@ -1,0 +1,21 @@
+[
+ {:action/ident :action/env.bootstrap
+  :action/name "Bootstrap mission sandbox"
+  :action/description "Allocates a per-agent workspace under ./tmp/missions with isolated ports and manifest metadata."
+  :action/invariants [:spec/p6.2 :spec/p6.6 :spec/p7.1]
+  :action/permissions [:permission/env.bootstrap]
+  :action/config-spec :action.env/bootstrap-config
+  :action/output-spec :action.env/bootstrap-output
+  :action/handler "intuition.sfs.env.bootstrap/bootstrap!"
+  :action/tags [:action.tag/environment :action.tag/safety]
+  :action/meta {:spec/refs ["SYSTEM_SPEC.md#L240" "SYSTEM_SPEC.md#L273" "SYSTEM_SPEC.md#L289"]}}
+ {:action/ident :action/log.step
+  :action/name "Log mission work step"
+  :action/description "Persists a Datomic worklog entry plus markdown evidence for a mission deliverable."
+  :action/invariants [:spec/p3.4 :spec/p9.1 :spec/p10.1]
+  :action/permissions [:permission/missions.log]
+  :action/config-spec :action.log/step-config
+  :action/output-spec :action.log/step-output
+  :action/handler "intuition.sfs.log.step/log-step!"
+  :action/tags [:action.tag/worklog :action.tag/compliance]
+  :action/meta {:spec/refs ["SYSTEM_SPEC.md#L80" "SYSTEM_SPEC.md#L93" "SYSTEM_SPEC.md#L319"]}}]

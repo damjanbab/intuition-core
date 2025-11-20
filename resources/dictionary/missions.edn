@@ -1,0 +1,262 @@
+[
+ ;; Lifecycle states (§3.1, §3.9, §3.11)
+ {:db/ident :mission.status/draft
+  :entity/type :mission/status
+  :entity/path "/missions/status/draft"
+  :entity/name "Draft"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Mission backlog entry captured per SYSTEM_SPEC.md §3.1 before locks/tests apply."}
+ {:db/ident :mission.status/ready
+  :entity/type :mission/status
+  :entity/path "/missions/status/ready"
+  :entity/name "Ready"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Scope/locks/tests declared; agent may start per SYSTEM_SPEC.md §3.3."}
+ {:db/ident :mission.status/in-progress
+  :entity/type :mission/status
+  :entity/path "/missions/status/in-progress"
+  :entity/name "In Progress"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Worklogs + artifacts accumulate per SYSTEM_SPEC.md §3.4."}
+ {:db/ident :mission.status/revision
+  :entity/type :mission/status
+  :entity/path "/missions/status/revision"
+  :entity/name "Revision"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Steward temporarily locks scope for edits per SYSTEM_SPEC.md §3.9."}
+ {:db/ident :mission.status/awaiting-review
+  :entity/type :mission/status
+  :entity/path "/missions/status/awaiting-review"
+  :entity/name "Awaiting Review"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "All worklogs/tests/docs captured, waiting for steward approval (§3.5)."}
+ {:db/ident :mission.status/done
+  :entity/type :mission/status
+  :entity/path "/missions/status/done"
+  :entity/name "Done"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Steward accepted deliverables/tests per SYSTEM_SPEC.md §3.5."}
+ {:db/ident :mission.status/abandoned
+  :entity/type :mission/status
+  :entity/path "/missions/status/abandoned"
+  :entity/name "Abandoned"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Mission intentionally stopped; artifacts archived per SYSTEM_SPEC.md §3.11."}
+ {:db/ident :mission.status/archived
+  :entity/type :mission/status
+  :entity/path "/missions/status/archived"
+  :entity/name "Archived"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Final resting state with evidence snapshots per SYSTEM_SPEC.md §3.8 & §3.10."}
+
+ ;; Work tracks (§3.3)
+ {:db/ident :work-track/planning
+  :entity/type :mission/work-track
+  :entity/path "/missions/work-tracks/planning"
+  :entity/name "Planning"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Scope + lock planning required before :mission.status/ready (SYSTEM_SPEC.md §3.3)."}
+ {:db/ident :work-track/code
+  :entity/type :mission/work-track
+  :entity/path "/missions/work-tracks/code"
+  :entity/name "Code"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Implementation effort; demands worklogs & artifacts (§3.4)."}
+ {:db/ident :work-track/test-functional
+  :entity/type :mission/work-track
+  :entity/path "/missions/work-tracks/test-functional"
+  :entity/name "Functional Tests"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Acceptance coverage per SYSTEM_SPEC.md §1.2 & §3.5."}
+ {:db/ident :work-track/doc
+  :entity/type :mission/work-track
+  :entity/path "/missions/work-tracks/doc"
+  :entity/name "Documentation"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Docs/system-map refreshing mandated by §3.5 & §5.1."}
+ {:db/ident :work-track/system-map
+  :entity/type :mission/work-track
+  :entity/path "/missions/work-tracks/system-map"
+  :entity/name "System Map"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Graph updates required so §4.1/§4.2 stay satisfied."}
+
+ ;; Queue tags (§3.6)
+ {:db/ident :mission.queue/core
+  :entity/type :mission/queue-tag
+  :entity/path "/missions/queue/core"
+  :entity/name "Core Dictionary"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Signals steward focus on dictionary/runtime work as in SYSTEM_SPEC.md §3.6."}
+ {:db/ident :mission.queue/ops-ready
+  :entity/type :mission/queue-tag
+  :entity/path "/missions/queue/ops-ready"
+  :entity/name "Ops Ready"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Queue tag used when ops approvals block work (§3.6 & §6)."}
+ {:db/ident :mission.queue/spec-sync
+  :entity/type :mission/queue-tag
+  :entity/path "/missions/queue/spec-sync"
+  :entity/name "Spec Sync"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Highlight missions that mirror the spec as per §1.2 and §5.3."}
+
+ ;; Sample missions (§3.1–§3.11)
+ {:entity/type :mission/record
+  :entity/path "/missions/records/M-20251117-001"
+  :entity/name "M-20251117-001 – Mission lifecycle nucleus"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T10:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T10:00:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Implements lifecycle enforcement (§§3.1–3.11, P3.x, P10)."
+  :mission/id "M-20251117-001"
+  :mission/title "Mission lifecycle nucleus"
+  :mission/summary "Prototype showing how draft→archived transitions collect locks, worklogs, and approvals."
+  :mission/category :mission.category/governance
+  :mission/priority :mission.priority/p0
+  :mission/status :mission.status/ready
+  :mission/protocol :protocol/mission-standard
+  :mission/protocol-version 1
+  :mission/scope "{:paths [\"resources/dictionary\" \"src/intuition/sfs/missions\"] :namespaces [intuition.sfs.missions.state-machine intuition.sfs.missions.runtime] :docs [\"missions/logs/M-03.md\"]}"
+  :mission/prerequisites ["M-01" "M-02"]
+  :mission/deliverables ["resources/dictionary/missions.edn"
+                         "src/intuition/sfs/missions/state_machine.clj"
+                         "src/intuition/sfs/missions/runtime.clj"
+                         "dev/run-mission.clj"
+                         "test/mission_validation_test.clj"
+                         "test/mission_state_machine_test.clj"]
+  :mission/work-tracks [:work-track/planning :work-track/code :work-track/test-functional :work-track/doc :work-track/system-map]
+  :mission/queue-tags [:mission.queue/core :mission.queue/spec-sync]
+  :mission/tests ["test/mission_validation_test" "test/mission_state_machine_test"]
+  :mission/spec-section :spec/phase-1
+  :mission/owner :role/steward}
+ {:entity/type :mission/record
+  :entity/path "/missions/records/M-20251117-002"
+  :entity/name "M-20251117-002 – Lifecycle regression"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-17T11:00:00.000-00:00"
+  :entity/created-by :mission/M-03
+  :entity/updated-at #inst "2025-11-17T11:30:00.000-00:00"
+  :entity/updated-by :mission/M-03
+  :entity/description "Exercises revision/abandon flow (§3.9 & §3.11)."
+  :mission/id "M-20251117-002"
+  :mission/title "Lifecycle regression"
+  :mission/summary "Covers steward revision + abandon cases so invariants remain enforced."
+  :mission/category :mission.category/spec
+  :mission/priority :mission.priority/p1
+  :mission/status :mission.status/draft
+  :mission/protocol :protocol/mission-standard
+  :mission/protocol-version 1
+  :mission/scope "{:paths [\"docs\"] :namespaces [] :docs [\"SYSTEM_SPEC.md\"]}"
+  :mission/prerequisites ["M-20251117-001"]
+  :mission/deliverables ["docs/M-20251117-002.md" "missions/logs/M-20251117-002/worklog.md"]
+  :mission/work-tracks [:work-track/planning :work-track/doc]
+  :mission/queue-tags [:mission.queue/ops-ready]
+  :mission/tests ["test/mission_validation_test"]
+  :mission/spec-section :spec/phase-1
+  :mission/owner :role/steward}
+
+ ;; Mission lifecycle action definitions (§§3.1–3.5)
+ {:action/ident :action/mission.validate
+  :action/name "Validate mission"
+  :action/description "Evaluates mission scope/work-track/tests per SYSTEM_SPEC.md §3.1–§3.4 before transitions."
+  :action/invariants [:spec/p3.1 :spec/p3.2 :spec/p3.3]
+  :action/permissions [:permission/missions.manage]
+  :action/config-spec :action.mission/validate-config
+  :action/output-spec :action.mission/validate-output
+  :action/handler "intuition.sfs.missions.state-machine/validate-action"
+  :action/tags [:action.tag/missions :action.tag/governance]}
+ {:action/ident :action/mission.transition
+  :action/name "Transition mission"
+  :action/description "Applies allowed lifecycle change (draft→ready→…) enforcing §3.1, §3.5, §3.9, §3.11."
+  :action/invariants [:spec/p3.2 :spec/p3.3 :spec/p10.1]
+  :action/permissions [:permission/missions.manage]
+  :action/config-spec :action.mission/transition-config
+  :action/output-spec :action.mission/transition-output
+  :action/handler "intuition.sfs.missions.state-machine/transition-action"
+  :action/tags [:action.tag/missions :action.tag/state-machine]}
+ ]

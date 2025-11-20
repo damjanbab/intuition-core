@@ -1,0 +1,256 @@
+[
+ ;; Permission definitions ---------------------------------------------------
+ {:entity/type :permission/definition
+  :entity/path "/security/permissions/env.bootstrap"
+  :entity/name "Environment bootstrap"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/created-by :mission/M-11
+  :entity/updated-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-11
+  :entity/description "Governs sandbox creation and workspace isolation (SYSTEM_SPEC.md §§2.1, 6.2–6.6)."
+  :permission/ident :permission/env.bootstrap
+  :permission/name "Bootstrap mission environment"
+  :permission/description "Allows :action/env.bootstrap handlers to materialize governed workspaces prior to any mutation."}
+
+ {:entity/type :permission/definition
+  :entity/path "/security/permissions/locks.manage"
+  :entity/name "Manage mission locks"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/created-by :mission/M-11
+  :entity/updated-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-11
+  :entity/description "Required for scope/queue locking in §3.2 and §3.3."
+  :permission/ident :permission/locks.manage
+  :permission/name "Acquire and release locks"
+  :permission/description "Authorizes :action/lock.acquire and :action/lock.release so mutually exclusive scopes remain enforced."}
+
+ {:entity/type :permission/definition
+  :entity/path "/security/permissions/tests.run"
+  :entity/name "Run governed tests"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/created-by :mission/M-11
+  :entity/updated-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-11
+  :entity/description "Cited by SYSTEM_SPEC.md §§3.1, 5.1 to ensure regression suites execute under change control."
+  :permission/ident :permission/tests.run
+  :permission/name "Execute acceptance suites"
+  :permission/description "Allows :action/test.run-suite to trigger mission-declared suites and capture §5 evidence."}
+
+ {:entity/type :permission/definition
+  :entity/path "/security/permissions/docs.write"
+  :entity/name "Write docs"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/created-by :mission/M-11
+  :entity/updated-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-11
+  :entity/description "Required for §4.2 and §4.9 documentation refresh flows."
+ :permission/ident :permission/docs.write
+  :permission/name "Write governed docs"
+  :permission/description "Enables :action/docs.sync and docgen actions that emit Markdown/EDN artifacts for steward review."}
+
+ {:entity/type :permission/definition
+  :entity/path "/security/permissions/spec.manage"
+  :entity/name "Manage specs"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-401
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-401
+  :entity/description "Required for SYSTEM_SPEC.md §§3.3–3.6, §4.1–4.2, §4.7, §9 spec intake."
+  :permission/ident :permission/spec.manage
+  :permission/name "Capture/validate/publish specs"
+  :permission/description "Allows :action/spec.capture, :action/spec.validate, and :action/spec.publish to execute."}
+
+ {:entity/type :permission/definition
+  :entity/path "/security/permissions/system-map.write"
+  :entity/name "Write system map"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/created-by :mission/M-11
+  :entity/updated-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-11
+  :entity/description "Backs §4.1 and §4.5 graph updates."
+  :permission/ident :permission/system-map.write
+  :permission/name "Update the system map"
+  :permission/description "Permits :action/system-map.refresh so graph nodes mirror the governed dictionary state."}
+
+ {:entity/type :permission/definition
+  :entity/path "/security/permissions/missions.manage"
+  :entity/name "Manage missions"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/created-by :mission/M-11
+  :entity/updated-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-11
+  :entity/description "Mandated by SYSTEM_SPEC.md §§2.1–2.2 & §3.6 for queue selection, transitions, and approvals."
+  :permission/ident :permission/missions.manage
+  :permission/name "Mission lifecycle management"
+  :permission/description "Allows mission validation, transitions, approvals, and JS/API governance checkpoints."}
+
+ {:entity/type :permission/definition
+  :entity/path "/security/permissions/missions.report"
+  :entity/name "Report missions"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/created-by :mission/M-11
+  :entity/updated-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-11
+  :entity/description "Captures §3.4–§3.5 evidence requirements."
+  :permission/ident :permission/missions.report
+  :permission/name "Submit governed mission report"
+  :permission/description "Authorizes :action/mission.report so worklogs/tests/docs/system-map artifacts land in steward review queues."}
+
+ {:entity/type :permission/definition
+  :entity/path "/security/permissions/missions.log"
+  :entity/name "Log work steps"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/created-by :mission/M-11
+  :entity/updated-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-11
+  :entity/description "Supports §3.4 and §9 worklog tracking."
+  :permission/ident :permission/missions.log
+ :permission/name "Append mission worklogs"
+  :permission/description "Allows :action/log.step to write evidence bundles tied to specific deliverables/tracks."}
+
+ {:entity/type :permission/definition
+  :entity/path "/security/permissions/security.approve"
+  :entity/name "Approve JS/API integrations"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-608
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-608
+  :entity/description "Restricts JS/API approval protocols to steward/ops roles per SYSTEM_SPEC §§2.1–2.2, §6, §10."
+  :permission/ident :permission/security.approve
+  :permission/name "Record JS/API approvals"
+  :permission/description "Allows :protocol/js-approve and :protocol/external-api-approve to record approval artifacts."}
+
+ {:entity/type :permission/definition
+  :entity/path "/security/permissions/deploy.manage"
+  :entity/name "Manage deployments"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/created-by :mission/M-11
+  :entity/updated-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-11
+  :entity/description "Required by SYSTEM_SPEC.md §§2.2 & §6 for staging, canary, promotion, and rollback."
+  :permission/ident :permission/deploy.manage
+  :permission/name "Deployment management"
+  :permission/description "Gives access to :action/deploy.* handlers and ensures traffic shifts capture §6 evidence."}
+
+ ;; Role definitions ---------------------------------------------------------
+ {:entity/type :role/definition
+  :entity/path "/security/roles/steward"
+  :entity/name "Steward"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/created-by :mission/M-11
+  :entity/updated-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-11
+  :entity/description "SYSTEM_SPEC.md §§2.1–2.2 stewards own final approvals, deployments, and JS/API governance."
+  :role/ident :role/steward
+  :role/name "Steward"
+  :role/permissions [:permission/env.bootstrap
+                     :permission/locks.manage
+                     :permission/tests.run
+                     :permission/docs.write
+                     :permission/spec.manage
+                     :permission/system-map.write
+                     :permission/missions.manage
+                     :permission/missions.report
+                     :permission/missions.log
+                     :permission/security.approve
+                     :permission/deploy.manage]
+  :role/description "Full lifecycle control including approvals, deployment flips, and evidence reviews."}
+
+ {:entity/type :role/definition
+  :entity/path "/security/roles/dictionary-engineer"
+  :entity/name "Dictionary engineer"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/created-by :mission/M-11
+  :entity/updated-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-11
+  :entity/description "Maintains schema/templates/apps per SYSTEM_SPEC.md §§2.2, 4.2, 4.9."
+  :role/ident :role/dictionary-engineer
+  :role/name "Dictionary engineer"
+  :role/permissions [:permission/env.bootstrap
+                     :permission/locks.manage
+                     :permission/tests.run
+                     :permission/docs.write
+                     :permission/spec.manage
+                     :permission/system-map.write
+                     :permission/missions.manage
+                     :permission/missions.report
+                     :permission/missions.log]
+  :role/description "Executes dictionary/mission work but does not manage production traffic directly."}
+
+ {:entity/type :role/definition
+  :entity/path "/security/roles/ops"
+  :entity/name "Ops"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/created-by :mission/M-11
+  :entity/updated-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-11
+  :entity/description "Runs deployments/recovery per SYSTEM_SPEC.md §§2.2 & 6."
+  :role/ident :role/ops
+  :role/name "Ops"
+  :role/permissions [:permission/env.bootstrap
+                     :permission/locks.manage
+                     :permission/tests.run
+                     :permission/missions.manage
+                     :permission/missions.report
+                     :permission/missions.log
+                     :permission/security.approve
+                     :permission/deploy.manage]
+  :role/description "Handles staging/canary/promotion cycles and associated mission artifacts."}
+
+ {:entity/type :role/definition
+  :entity/path "/security/roles/reader"
+  :entity/name "Reader"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/created-by :mission/M-11
+  :entity/updated-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-11
+  :entity/description "Read-only role enumerated in SYSTEM_SPEC.md §2.1."
+  :role/ident :role/reader
+  :role/name "Reader"
+  :role/permissions []
+  :role/description "May view dictionary/doc artifacts but cannot execute governed actions."}
+
+ {:entity/type :role/definition
+  :entity/path "/security/roles/mission-generator"
+  :entity/name "Mission generator"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/created-by :mission/M-11
+  :entity/updated-at #inst "2025-02-13T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-11
+  :entity/description "Prepares backlog entries per SYSTEM_SPEC.md §2.1 but does not operate production flows."
+  :role/ident :role/mission-generator
+  :role/name "Mission generator"
+  :role/permissions []
+  :role/description "Creates/curates missions but relies on stewards/engineers for execution."}]

@@ -1,0 +1,413 @@
+[
+ {:action/ident :action/env.bootstrap
+  :action/name "Bootstrap sandbox"
+  :action/description "Creates the isolated working directory + runtime metadata prior to mutation."
+  :action/invariants [:spec/p6.2 :spec/p7.1 :spec/p10.1]
+  :action/permissions [:permission/env.bootstrap]
+  :action/config-spec :action.env/bootstrap-config
+ :action/output-spec :action.env/bootstrap-output
+  :action/handler "intuition.sfs.actions.handlers/bootstrap-environment"
+  :action/tags [:action.tag/environment :action.tag/entrypoint]}
+ {:action/ident :action/git.branch.prepare
+  :action/name "Prepare mission branch"
+  :action/description "Generates the mission/<id>/<timestamp>-<agent> branch metadata + Markdown so SYSTEM_SPEC §6.2 sandbox isolation is auditable."
+  :action/invariants [:spec/p3.3 :spec/p3.4 :spec/p6.2]
+  :action/permissions [:permission/env.bootstrap]
+  :action/config-spec :action.git.branch/prepare-config
+  :action/output-spec :action.git.branch/prepare-output
+  :action/handler "intuition.sfs.actions.handlers/prepare-git-branch"
+  :action/tags [:action.tag/environment :action.tag/audit]}
+ {:action/ident :action/protocol.run
+  :action/name "Run nested protocol"
+  :action/description "Executes another ProtocolDefinition (e.g., :protocol/mission-sync) from inside a governing protocol so readiness steps stay reusable."
+  :action/invariants [:spec/p3.1 :spec/p3.3 :spec/p5.2]
+  :action/permissions [:permission/env.bootstrap]
+  :action/config-spec :action.protocol/run-config
+  :action/output-spec :action.protocol/run-output
+  :action/handler "intuition.sfs.actions.handlers/run-protocol"
+  :action/tags [:action.tag/protocol :action.tag/environment]}
+ {:action/ident :action/lock.acquire
+  :action/name "Acquire mission locks"
+  :action/description "Reserves work-tracks + scopes prior to editing so that governance constraints are upheld."
+  :action/invariants [:spec/p3.2 :spec/p3.3 :spec/p7.1]
+  :action/permissions [:permission/locks.manage]
+  :action/config-spec :action.lock/acquire-config
+  :action/output-spec :action.lock/acquire-output
+  :action/handler "intuition.sfs.actions.handlers/acquire-locks"
+  :action/tags [:action.tag/locks]}
+ {:action/ident :action/lock.release
+  :action/name "Release mission locks"
+  :action/description "Releases work-tracks + scopes at the end of a protocol."
+  :action/invariants [:spec/p3.2 :spec/p3.3 :spec/p7.1]
+  :action/permissions [:permission/locks.manage]
+  :action/config-spec :action.lock/release-config
+ :action/output-spec :action.lock/release-output
+ :action/handler "intuition.sfs.actions.handlers/release-locks"
+  :action/tags [:action.tag/locks]}
+ {:action/ident :action/lint.run
+  :action/name "Run lint suite"
+  :action/description "Executes governed lint command before the acceptance tests per SYSTEM_SPEC.md §5.3."
+  :action/invariants [:spec/p3.1 :spec/p5.3 :spec/p10.1]
+  :action/permissions [:permission/tests.run]
+  :action/config-spec :action.lint/run-config
+  :action/output-spec :action.lint/run-output
+  :action/handler "intuition.sfs.actions.handlers/run-lint"
+  :action/tags [:action.tag/tests :action.tag/lint]}
+ {:action/ident :action/test.run-suite
+  :action/name "Run acceptance suites"
+  :action/description "Executes the declared test suites so P3.1 + P5.1 stay enforced."
+  :action/invariants [:spec/p3.1 :spec/p3.2 :spec/p5.1 :spec/p10.1]
+  :action/permissions [:permission/tests.run]
+  :action/config-spec :action.test/run-suite-config
+  :action/output-spec :action.test/run-suite-output
+  :action/handler "intuition.sfs.actions.handlers/run-test-suite"
+  :action/tags [:action.tag/tests]}
+ {:action/ident :action/codetype.validate
+  :action/name "Validate CodeTypes"
+  :action/description "Loads CodeDefinition metadata (SYSTEM_SPEC.md §4.7) and records validator coverage before review."
+  :action/invariants [:spec/p3.3 :spec/p4.7 :spec/p5.1 :spec/p9.1]
+  :action/permissions [:permission/tests.run]
+  :action/config-spec :action.codetype/validate-config
+ :action/output-spec :action.codetype/validate-output
+  :action/handler "intuition.sfs.actions.handlers/codetype-validate"
+  :action/tags [:action.tag/tests :action.tag/code]}
+
+ {:action/ident :action/codetype.generate
+  :action/name "Generate CodeType artifacts"
+  :action/description "Renders CodeType templates into sandboxed files and logs checksums (§§3.3–3.6, §4.7, §5.1, §5.3)."
+  :action/invariants [:spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p3.6 :spec/p4.7 :spec/p5.1 :spec/p5.3]
+  :action/permissions [:permission/env.bootstrap]
+  :action/config-spec :action.codetype/generate-config
+  :action/output-spec :action.codetype/generate-output
+  :action/handler "intuition.sfs.actions.handlers/codetype-generate"
+  :action/tags [:action.tag/code :action.tag/environment]}
+
+ {:action/ident :action/ci.run-profile
+  :action/name "Run CI profile"
+  :action/description "Executes the dictionary-driven CI profile (lint/tests/codetype) and writes ci-run logs so SYSTEM_SPEC §§3.3–3.6, §5.1, §5.3, §6.2 evidence exists for every edit."
+  :action/invariants [:spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p3.6 :spec/p5.1 :spec/p5.3 :spec/p6.2]
+  :action/permissions [:permission/tests.run]
+  :action/config-spec :action.ci/run-profile-config
+  :action/output-spec :action.ci/run-profile-output
+  :action/handler "intuition.sfs.actions.handlers/run-ci-profile"
+  :action/tags [:action.tag/tests :action.tag/audit]}
+
+ {:action/ident :action/spec.capture
+  :action/name "Capture target spec"
+  :action/description "Normalizes an EDN target spec into governed storage per SYSTEM_SPEC.md §§3.3–3.6 & §4.1–§4.2."
+  :action/invariants [:spec/p3.3 :spec/p3.4 :spec/p4.1 :spec/p4.2 :spec/p4.7 :spec/p9.1]
+  :action/permissions [:permission/spec.manage]
+  :action/config-spec :action.spec/capture-config
+  :action/output-spec :action.spec/capture-output
+  :action/handler "intuition.sfs.actions.handlers/spec-capture"
+  :action/tags [:action.tag/spec :action.tag/docs]}
+
+ {:action/ident :action/spec.validate
+  :action/name "Validate target spec"
+  :action/description "Enforces required fields, CodeType/test links, and artifact paths (§§3.3–3.6, 4.7, 5.1, 9)."
+  :action/invariants [:spec/p3.3 :spec/p3.5 :spec/p4.7 :spec/p5.1 :spec/p9.1]
+  :action/permissions [:permission/spec.manage]
+  :action/config-spec :action.spec/validate-config
+  :action/output-spec :action.spec/validate-output
+  :action/handler "intuition.sfs.actions.handlers/spec-validate"
+  :action/tags [:action.tag/spec :action.tag/tests]}
+
+ {:action/ident :action/spec.publish
+  :action/name "Publish target spec"
+  :action/description "Marks validated specs as official targets and records §9 audit logs."
+  :action/invariants [:spec/p3.3 :spec/p3.5 :spec/p9.1]
+ :action/permissions [:permission/spec.manage]
+ :action/config-spec :action.spec/publish-config
+ :action/output-spec :action.spec/publish-output
+ :action/handler "intuition.sfs.actions.handlers/spec-publish"
+ :action/tags [:action.tag/spec :action.tag/audit]}
+
+ {:action/ident :action/spec.plan.generate
+  :action/name "Generate plan from spec"
+  :action/description "Applies deterministic heuristics to emit a WorkPlan + generation log (SYSTEM_SPEC §§3.3–3.6, §4.7, §5.1, §5.3, §9; plan.md §3.a)."
+  :action/invariants [:spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p3.6 :spec/p4.7 :spec/p5.1 :spec/p5.3 :spec/p9.1]
+  :action/permissions [:permission/spec.manage]
+ :action/config-spec :action.spec.plan/generate-config
+  :action/output-spec :action.spec.plan/generate-output
+  :action/handler "intuition.sfs.actions.handlers/spec-plan-generate"
+  :action/tags [:action.tag/spec :action.tag/docs]}
+
+ {:action/ident :action/version.snapshot-spec
+  :action/name "Record spec snapshot"
+  :action/description "Writes version-snapshot.edn with spec validation+publish evidence (§§3.3–3.6, §4.1, §4.7, §5.1, §8.1)."
+  :action/invariants [:spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p4.1 :spec/p4.7 :spec/p5.1 :spec/p9.1]
+  :action/permissions [:permission/spec.manage]
+  :action/config-spec :action.version/snapshot-spec-config
+  :action/output-spec :action.version/snapshot-spec-output
+  :action/handler "intuition.sfs.actions.handlers/version-snapshot-spec"
+  :action/tags [:action.tag/spec :action.tag/audit]}
+
+ {:action/ident :action/work-plan.validate
+  :action/name "Validate work plan"
+  :action/description "Runs coverage (requirements+tests), DAG, and resource-conflict validators before steward review (§§3.3–3.6, §4.7, §5.1, §9)."
+  :action/invariants [:spec/p3.3 :spec/p3.5 :spec/p4.7 :spec/p5.1 :spec/p9.1]
+  :action/permissions [:permission/spec.manage]
+  :action/config-spec :action.work-plan/validate-config
+  :action/output-spec :action.work-plan/validate-output
+  :action/handler "intuition.sfs.actions.handlers/work-plan-validate"
+  :action/tags [:action.tag/spec :action.tag/tests]}
+
+ {:action/ident :action/work-plan.publish
+  :action/name "Publish work plan"
+  :action/description "Updates WorkPlan status and records the §9 audit log once validations pass (§§3.3–3.6, §5.1, §9)."
+  :action/invariants [:spec/p3.3 :spec/p3.5 :spec/p9.1]
+  :action/permissions [:permission/spec.manage]
+ :action/config-spec :action.work-plan/publish-config
+ :action/output-spec :action.work-plan/publish-output
+ :action/handler "intuition.sfs.actions.handlers/work-plan-publish"
+ :action/tags [:action.tag/spec :action.tag/audit]}
+
+ {:action/ident :action/version.snapshot-plan
+  :action/name "Record plan snapshot"
+  :action/description "Captures WorkPlan coverage + spec linkage inside version-snapshot.edn (§§3.3–3.6, §4.7, §5.1, §8.1)."
+  :action/invariants [:spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p4.7 :spec/p5.1 :spec/p9.1]
+  :action/permissions [:permission/spec.manage]
+  :action/config-spec :action.version/snapshot-plan-config
+  :action/output-spec :action.version/snapshot-plan-output
+  :action/handler "intuition.sfs.actions.handlers/version-snapshot-plan"
+  :action/tags [:action.tag/spec :action.tag/audit]}
+
+ {:action/ident :action/docs.sync
+  :action/name "Sync docs"
+  :action/description "Refreshes doc templates so the system stays computable."
+  :action/invariants [:spec/p4.2 :spec/p9.1]
+  :action/permissions [:permission/docs.write]
+  :action/config-spec :action.docs/sync-config
+  :action/output-spec :action.docs/sync-output
+  :action/handler "intuition.sfs.actions.handlers/sync-docs"
+  :action/tags [:action.tag/docs]}
+ {:action/ident :action/docgen.types
+  :action/name "Generate type docs"
+  :action/description "Renders TemplateDefinition-bound type docs into Markdown/EDN outputs (SYSTEM_SPEC.md §§4.9 & 7)."
+  :action/invariants [:spec/p4.2 :spec/p4.9 :spec/p7.1]
+  :action/permissions [:permission/docs.write]
+  :action/config-spec :action.docgen/types-config
+ :action/output-spec :action.docgen/output
+ :action/handler "intuition.sfs.actions.handlers/docgen-types"
+  :action/tags [:action.tag/docs]}
+ {:action/ident :action/docgen.missions
+  :action/name "Generate mission docs"
+  :action/description "Produces mission track documentation so steward reviews can cite §3 + §7 requirements."
+  :action/invariants [:spec/p3.4 :spec/p4.2 :spec/p7.1]
+  :action/permissions [:permission/docs.write]
+  :action/config-spec :action.docgen/missions-config
+  :action/output-spec :action.docgen/output
+ :action/handler "intuition.sfs.actions.handlers/docgen-missions"
+  :action/tags [:action.tag/docs]}
+ {:action/ident :action/mission.from-plan
+  :action/name "Instantiate mission from WorkPlan"
+  :action/description "Reads a validated WorkPlan node and emits the mission binding/resources before sandboxing (§§3.3–3.6, §4.7, §5.1, §6.2, §9)."
+  :action/invariants [:spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p3.6 :spec/p4.7 :spec/p5.1 :spec/p6.2 :spec/p9.1]
+  :action/permissions [:permission/missions.manage]
+  :action/config-spec :action.mission/from-plan-config
+  :action/output-spec :action.mission/from-plan-output
+  :action/handler "intuition.sfs.actions.handlers/mission-from-plan"
+  :action/tags [:action.tag/missions :action.tag/spec]}
+ {:action/ident :action/mission.lock.resolve
+  :action/name "Resolve mission locks"
+  :action/description "Normalizes mission resources into lock requests and fails fast on conflicts (§§3.3–3.6, §5.1, §9)."
+  :action/invariants [:spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p9.1]
+  :action/permissions [:permission/locks.manage]
+  :action/config-spec :action.mission/lock-resolve-config
+  :action/output-spec :action.mission/lock-resolve-output
+  :action/handler "intuition.sfs.actions.handlers/mission-lock-resolve"
+  :action/tags [:action.tag/missions :action.tag/locks]}
+ {:action/ident :action/mission.sandbox.prepare
+  :action/name "Prepare mission sandbox"
+  :action/description "Runs env bootstrap + branch snapshot for the new mission and records sandbox-manifest.edn (§§3.3–3.6, §6.2, §9)."
+  :action/invariants [:spec/p3.3 :spec/p3.4 :spec/p6.2 :spec/p9.1]
+  :action/permissions [:permission/env.bootstrap]
+  :action/config-spec :action.mission/sandbox-prepare-config
+  :action/output-spec :action.mission/sandbox-prepare-output
+  :action/handler "intuition.sfs.actions.handlers/mission-sandbox-prepare"
+  :action/tags [:action.tag/environment :action.tag/missions]}
+ {:action/ident :action/mission.list-ready
+  :action/name "List ready missions"
+  :action/description "Returns queue-grouped mission summaries so §3.6 assignment tooling stays governed."
+  :action/invariants [:spec/p3.6 :spec/p3.7]
+  :action/permissions [:permission/missions.manage]
+  :action/config-spec :action.mission/list-ready-config
+  :action/output-spec :action.mission/list-ready-output
+  :action/handler "intuition.sfs.missions.runtime/list-ready-action"
+  :action/tags [:action.tag/missions :action.tag/queues]}
+ {:action/ident :action/mission.start
+  :action/name "Start mission"
+  :action/description "Selects the highest-priority ready mission (queue-aware) then runs bootstrap/locks per SYSTEM_SPEC.md §§3.6–3.7 & §3.12."
+  :action/invariants [:spec/p3.2 :spec/p3.3 :spec/p3.6 :spec/p3.12]
+  :action/permissions [:permission/missions.manage]
+  :action/config-spec :action.mission/start-config
+  :action/output-spec :action.mission/start-output
+  :action/handler "intuition.sfs.missions.runtime/start-mission-action"
+  :action/tags [:action.tag/missions :action.tag/entrypoint]}
+ {:action/ident :action/mission.merge.prepare
+  :action/name "Prepare mission merge"
+  :action/description "Rebases the mission branch onto main, reruns the CI profile, and records merge readiness artifacts so SYSTEM_SPEC §§3.3–3.6, §5.1, §5.3, §6.2 can be cited during steward review."
+  :action/invariants [:spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p3.6 :spec/p5.1 :spec/p5.3 :spec/p6.2]
+  :action/permissions [:permission/missions.manage]
+  :action/config-spec :action.mission/merge-prepare-config
+  :action/output-spec :action.mission/merge-prepare-output
+  :action/handler "intuition.sfs.actions.handlers/mission-merge-prepare"
+  :action/tags [:action.tag/missions :action.tag/tests :action.tag/audit]}
+ {:action/ident :action/mission.merge.execute
+  :action/name "Execute mission merge"
+  :action/description "Applies the prepared merge, handles conflicts, and emits merge-log/merge-failure evidence covering SYSTEM_SPEC §§3.3–3.6, §5.1, §5.3, §6.2."
+  :action/invariants [:spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p3.6 :spec/p5.1 :spec/p5.3 :spec/p6.2]
+  :action/permissions [:permission/missions.manage]
+  :action/config-spec :action.mission/merge-execute-config
+  :action/output-spec :action.mission/merge-execute-output
+  :action/handler "intuition.sfs.actions.handlers/mission-merge-execute"
+  :action/tags [:action.tag/missions :action.tag/audit]}
+
+ {:action/ident :action/version.snapshot-mission
+  :action/name "Record mission snapshot"
+  :action/description "Bundles mission report + merge log into version-snapshot.edn for §6.2/§8.1 traceability."
+  :action/invariants [:spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p3.6 :spec/p5.1 :spec/p5.3 :spec/p6.2 :spec/p9.1]
+  :action/permissions [:permission/missions.manage]
+  :action/config-spec :action.version/snapshot-mission-config
+  :action/output-spec :action.version/snapshot-mission-output
+  :action/handler "intuition.sfs.actions.handlers/version-snapshot-mission"
+  :action/tags [:action.tag/missions :action.tag/audit]}
+
+ {:action/ident :action/mission.report
+  :action/name "Report mission"
+  :action/description "Collects artifacts/tests plus doc & system-map outputs for steward approval (§3.4–§3.6, P10)."
+  :action/invariants [:spec/p3.4 :spec/p3.5 :spec/p10.1]
+  :action/permissions [:permission/missions.report]
+  :action/config-spec :action.mission/report-config
+  :action/output-spec :action.mission/report-output
+  :action/handler "intuition.sfs.missions.runtime/report-action"
+  :action/tags [:action.tag/missions :action.tag/audit]}
+ {:action/ident :action/mission.approve
+  :action/name "Approve mission"
+  :action/description "Persists steward sign-off tied to the submitted report (§3.5, §3.6)."
+  :action/invariants [:spec/p3.5 :spec/p3.6 :spec/p10.1]
+  :action/permissions [:permission/missions.manage]
+  :action/config-spec :action.mission/approve-config
+  :action/output-spec :action.mission/approve-output
+  :action/handler "intuition.sfs.missions.runtime/approve-action"
+  :action/tags [:action.tag/missions :action.tag/governance]}
+ {:action/ident :action/mission.archive
+  :action/name "Archive mission"
+  :action/description "Captures final artifacts (report + approval references) before lifecycle archival (§3.4, §3.8)."
+  :action/invariants [:spec/p3.4 :spec/p3.8 :spec/p10.1]
+  :action/permissions [:permission/missions.manage]
+  :action/config-spec :action.mission/archive-config
+ :action/output-spec :action.mission/archive-output
+  :action/handler "intuition.sfs.missions.runtime/archive-action"
+  :action/tags [:action.tag/missions :action.tag/audit]}
+
+ {:action/ident :action/js.component.register
+ :action/name "Register JS components"
+ :action/description "Validates bundle manifests + dependencies before any mission executes JS (§§4.8, 6, 10.2)."
+ :action/invariants [:spec/p4.8 :spec/p6.1 :spec/p10.2]
+ :action/permissions [:permission/missions.manage :permission/security.approve]
+  :action/config-spec :action.js.component/register-config
+  :action/output-spec :action.js.component/register-output
+  :action/handler "intuition.js.runtime/register-components-action"
+  :action/tags [:action.tag/security]}
+
+ {:action/ident :action/external.api.register
+ :action/name "Register external APIs"
+ :action/description "Captures outbound integration metadata plus HTTPS constraints (§§4.8, 6, 10.2)."
+ :action/invariants [:spec/p4.8 :spec/p6.6 :spec/p10.2]
+ :action/permissions [:permission/missions.manage :permission/security.approve]
+  :action/config-spec :action.external.api/register-config
+  :action/output-spec :action.external.api/register-output
+  :action/handler "intuition.js.runtime/register-apis-action"
+  :action/tags [:action.tag/security]}
+
+ {:action/ident :action/integration.scan-usage
+ :action/name "Scan integration usage"
+ :action/description "Analyzes call paths + endpoints to ensure bundles/APIs stay within declared scope (§§6, 10.2)."
+ :action/invariants [:spec/p4.8 :spec/p6.3 :spec/p10.2]
+ :action/permissions [:permission/missions.manage :permission/security.approve]
+  :action/config-spec :action.integration/scan-config
+  :action/output-spec :action.integration/scan-output
+  :action/handler "intuition.js.runtime/scan-usage-action"
+  :action/tags [:action.tag/security :action.tag/tests]}
+
+ {:action/ident :action/integration.request-approval
+ :action/name "Request integration approval"
+ :action/description "Writes the structured approval artifact with risk profile + call graph (§§3.5, 6, 10.2)."
+ :action/invariants [:spec/p3.5 :spec/p4.8 :spec/p10.2]
+ :action/permissions [:permission/missions.manage :permission/security.approve]
+  :action/config-spec :action.integration/approval-config
+  :action/output-spec :action.integration/approval-output
+  :action/handler "intuition.js.runtime/request-approval-action"
+  :action/tags [:action.tag/security :action.tag/audit]}
+
+ {:action/ident :action/integration.revoke-access
+ :action/name "Revoke integration access"
+ :action/description "Records revocation artifacts + ensures JS/API entrypoints are disabled (§§6, 10.2)."
+ :action/invariants [:spec/p4.8 :spec/p6.4 :spec/p10.2]
+ :action/permissions [:permission/missions.manage :permission/security.approve]
+  :action/config-spec :action.integration/revoke-config
+ :action/output-spec :action.integration/revoke-output
+  :action/handler "intuition.js.runtime/revoke-access-action"
+  :action/tags [:action.tag/security]}
+
+ {:action/ident :action/deploy.stage-build
+  :action/name "Stage deployment build"
+  :action/description "Stages the declared artifact on the idle slot and enforces required approvals (§§6.3, 8)."
+  :action/invariants [:spec/p6.3 :spec/p8.1]
+  :action/permissions [:permission/deploy.manage]
+  :action/config-spec :action.deploy/stage-config
+  :action/output-spec :action.deploy/stage-output
+  :action/handler "intuition.deploy.runtime/stage-build-action"
+  :action/tags [:action.tag/deploy :action.tag/ops]}
+
+ {:action/ident :action/deploy.flip-blue-green
+  :action/name "Flip blue/green traffic"
+  :action/description "Swaps traffic between blue and green slots once health checks pass and writes evidence (§6.3)."
+  :action/invariants [:spec/p6.3 :spec/p8.1 :spec/p10.1]
+  :action/permissions [:permission/deploy.manage]
+  :action/config-spec :action.deploy/flip-config
+  :action/output-spec :action.deploy/flip-output
+  :action/handler "intuition.deploy.runtime/flip-blue-green-action"
+  :action/tags [:action.tag/deploy :action.tag/ops]}
+
+ {:action/ident :action/deploy.start-canary
+  :action/name "Start canary"
+  :action/description "Applies partial traffic weights and records the canary cycle metadata (§6.3)."
+  :action/invariants [:spec/p6.3 :spec/p8.1]
+  :action/permissions [:permission/deploy.manage]
+  :action/config-spec :action.deploy/start-canary-config
+  :action/output-spec :action.deploy/start-canary-output
+  :action/handler "intuition.deploy.runtime/start-canary-action"
+  :action/tags [:action.tag/deploy :action.tag/ops :action.tag/traffic]}
+
+ {:action/ident :action/deploy.stop-canary
+  :action/name "Stop canary"
+  :action/description "Collects health metrics, drains canary traffic, and emits deploy-canary evidence (§§6.3, 10.1)."
+  :action/invariants [:spec/p6.3 :spec/p8.1 :spec/p10.1]
+  :action/permissions [:permission/deploy.manage]
+  :action/config-spec :action.deploy/stop-canary-config
+  :action/output-spec :action.deploy/stop-canary-output
+  :action/handler "intuition.deploy.runtime/stop-canary-action"
+  :action/tags [:action.tag/deploy :action.tag/ops :action.tag/traffic]}
+
+ {:action/ident :action/deploy.promote
+  :action/name "Promote deployment"
+  :action/description "Promotes the staged/canary build to 100% traffic after approvals (§§6.3, 8)."
+  :action/invariants [:spec/p6.3 :spec/p8.1]
+  :action/permissions [:permission/deploy.manage]
+  :action/config-spec :action.deploy/promote-config
+  :action/output-spec :action.deploy/promote-output
+  :action/handler "intuition.deploy.runtime/promote-action"
+  :action/tags [:action.tag/deploy :action.tag/ops]}
+
+ {:action/ident :action/deploy.rollback
+  :action/name "Rollback deployment"
+  :action/description "Restores traffic to the previous slot and logs rollback evidence (§§6.3, 8, 10.1)."
+  :action/invariants [:spec/p6.3 :spec/p8.1 :spec/p10.1]
+  :action/permissions [:permission/deploy.manage]
+  :action/config-spec :action.deploy/rollback-config
+  :action/output-spec :action.deploy/rollback-output
+  :action/handler "intuition.deploy.runtime/rollback-action"
+  :action/tags [:action.tag/deploy :action.tag/ops :action.tag/safety]}
+ ]

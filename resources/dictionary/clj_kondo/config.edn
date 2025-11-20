@@ -1,0 +1,9 @@
+;; clj-kondo governance config (SYSTEM_SPEC.md §§1.2, 5.3)
+{:linters {:unresolved-symbol {:level :error}
+           :unresolved-namespace {:level :error}
+           :unused-binding {:level :error}
+           :unused-private-var {:level :error}
+           :redundant-let {:level :warning}
+           :redundant-do {:level :warning}}
+:lint-as {integration.mission-flow-test/with-temp-dir clojure.core/let
+          clojure.test/deftest clj-kondo.lint-as/def-catch-all}}

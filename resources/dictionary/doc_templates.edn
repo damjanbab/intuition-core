@@ -1,0 +1,128 @@
+[
+ {:entity/type :template/definition
+  :entity/path "/dictionary/doc-templates/type"
+  :entity/name "Dictionary Type Doc"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-18T00:00:00.000-00:00"
+  :entity/created-by :mission/M-06
+  :entity/updated-at #inst "2025-11-18T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-06
+  :entity/description "Renders TypeDefinition references with attribute docs per SYSTEM_SPEC.md §§4.2 & 7."
+  :template/ident :template/doc.type
+  :template/name "Type documentation"
+  :template/version 1
+  :template/category :template.category/doc
+  :template/config-schema "{:doc/slug string? :doc/title string? :doc/type-ident keyword? :doc/attribute-order [keyword?] :doc/spec-sections [string?]}"
+  :template/contract "Consumes a TypeDefinition + AttributeDefinitions and produces Markdown + EDN summaries with spec citations."
+  :template/meta {:doc/categories [:doc.category/dictionary :doc.category/spec]
+                  :spec/sections ["4.2" "4.9" "7"]}}
+
+ {:entity/type :template/definition
+  :entity/path "/dictionary/doc-templates/mission"
+  :entity/name "Mission Doc"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-18T00:00:00.000-00:00"
+  :entity/created-by :mission/M-06
+  :entity/updated-at #inst "2025-11-18T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-06
+  :entity/description "Structured doc for MissionDefinitions covering scope/work tracks/tests (§§3.1–3.6 & §7)."
+  :template/ident :template/doc.mission
+  :template/name "Mission documentation"
+  :template/version 1
+  :template/category :template.category/doc
+  :template/config-schema "{:doc/slug string? :doc/title string? :doc/spec-sections [string?] :doc/mission-id string? :doc/mission map?}"
+  :template/contract "Summarizes a mission, including summary, scope, deliverables, tests, and approvals in Markdown + EDN."
+  :template/meta {:doc/categories [:doc.category/missions :doc.category/spec]
+                  :spec/sections ["3.4" "3.5" "7"]}}
+
+ {:entity/type :template/instance
+  :entity/path "/dictionary/doc-templates/type/mission-record"
+  :entity/name "Mission record type doc"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-18T00:00:00.000-00:00"
+  :entity/created-by :mission/M-06
+  :entity/updated-at #inst "2025-11-18T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-06
+  :entity/description "Documents the :mission/record TypeDefinition per §3 & §7."
+  :template.instance/ident :template.instance/doc.type.mission-record
+  :template.instance/definition :template/doc.type
+  :template.instance/status :template.instance.status/active
+  :template.instance/config {:doc/slug "types/mission-record"
+                             :doc/title "Type – :mission/record"
+                             :doc/spec-sections ["1.2" "3.1" "3.5" "4.2" "7"]
+                             :doc/type-ident :mission/record
+                             :doc/attribute-order [:mission/id
+                                                   :mission/title
+                                                   :mission/summary
+                                                   :mission/status
+                                                   :mission/work-tracks
+                                                   :mission/tests]}
+  :template.instance/meta {:doc/owner :role/steward}}
+
+ {:entity/type :template/instance
+  :entity/path "/dictionary/doc-templates/mission/m-20251117-001"
+  :entity/name "Mission lifecycle nucleus doc"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-18T00:00:00.000-00:00"
+  :entity/created-by :mission/M-06
+  :entity/updated-at #inst "2025-11-18T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-06
+  :entity/description "Docs for mission M-20251117-001 so doc templates stay computable (§§3.4–3.6)."
+  :template.instance/ident :template.instance/doc.mission.lifecycle
+  :template.instance/definition :template/doc.mission
+  :template.instance/status :template.instance.status/active
+ :template.instance/config {:doc/slug "missions/m-20251117-001"
+                             :doc/title "Mission lifecycle nucleus"
+                             :doc/spec-sections ["3.1" "3.3" "3.5" "7"]
+                             :doc/mission-id "M-20251117-001"}
+  :template.instance/meta {:doc/owner :role/steward}}
+
+ {:entity/type :template/instance
+  :entity/path "/dictionary/doc-templates/type/js-component"
+  :entity/name "JS component type doc"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "Documents :js/component schema so approvals cite §§4.8 & 10.2."
+  :template.instance/ident :template.instance/doc.type.js-component
+  :template.instance/definition :template/doc.type
+  :template.instance/status :template.instance.status/active
+  :template.instance/config {:doc/slug "types/js-component"
+                             :doc/title "Type – :js/component"
+                             :doc/spec-sections ["4.8" "6" "10.2"]
+                             :doc/type-ident :js/component
+                             :doc/attribute-order [:js.component/ident
+                                                   :js.component/bundle-path
+                                                   :js.component/dependencies
+                                                   :js.component/risk-profile]}
+  :template.instance/meta {:doc/owner :role/steward}}
+
+ {:entity/type :template/instance
+  :entity/path "/dictionary/doc-templates/type/external-api"
+  :entity/name "External API type doc"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/created-by :mission/M-09
+  :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-09
+  :entity/description "Documents :external/api data model for outbound governance (§§4.8, 6, 10.2)."
+  :template.instance/ident :template.instance/doc.type.external-api
+  :template.instance/definition :template/doc.type
+  :template.instance/status :template.instance.status/active
+  :template.instance/config {:doc/slug "types/external-api"
+                             :doc/title "Type – :external/api"
+                             :doc/spec-sections ["4.8" "6" "10.2"]
+                             :doc/type-ident :external/api
+                             :doc/attribute-order [:external.api/ident
+                                                   :external.api/base-url
+                                                   :external.api/endpoints
+                                                   :external.api/risk-profile]}
+  :template.instance/meta {:doc/owner :role/steward}}]

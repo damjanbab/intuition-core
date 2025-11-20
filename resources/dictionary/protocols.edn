@@ -1,0 +1,517 @@
+[
+ {:protocol/ident :protocol/mission-standard
+  :protocol/name "Mission standard"
+  :protocol/description "Bootstraps an env, acquires locks, executes tests/docs/system-map refresh, and unlocks."
+  :protocol/owner :role/dictionary-engineer
+  :protocol/escalation [:role/steward]
+  :protocol/invariants [:spec/p3.1 :spec/p3.2 :spec/p4.1 :spec/p4.2 :spec/p5.1 :spec/p9.1]
+ :protocol/locks [:lock/dictionary]
+ :protocol/required-work-tracks [:work-track/tests :work-track/docs :work-track/system-map]
+ :protocol/steps
+   [{:step/id :step/mission-sync
+    :step/action :action/protocol.run
+    :step/description "Execute mission-sync (env bootstrap + branch snapshot) before locks/tests."
+    :step/config {:mission/id [:context :mission/id]
+                  :agent/id [:context :agent/id]
+                  :protocol/ident :protocol/mission-sync
+                  :protocol/context {:mission/id [:context :mission/id]
+                                     :agent/id [:context :agent/id]
+                                     :workspace/root [:context :workspace/root]
+                                     :branch/prefix [:context :branch/prefix]}}
+    :step/required? true}
+   {:step/id :step/acquire-locks
+    :step/action :action/lock.acquire
+    :step/description "Acquire dictionaries + scope locks"
+    :step/config {:mission/id [:context :mission/id]
+                  :locks [:protocol :protocol/locks]}
+    :step/acquires-locks? true}
+   {:step/id :step/lint
+    :step/action :action/lint.run
+    :step/description "Run governed lint before executing acceptance suites"
+    :step/config {:mission/id [:context :mission/id]
+                  :lint/paths [:context :lint/paths]
+                  :lint/command [:context :lint/command]}
+    :step/when [:context :tests/enabled?]
+    :step/work-track :work-track/tests
+    :step/required? true
+    :step/requires-locks? true}
+   {:step/id :step/run-tests
+    :step/action :action/test.run-suite
+    :step/description "Run all declared suites"
+    :step/config {:mission/id [:context :mission/id]
+                  :test/suite [:context :tests/suite]
+                  :test/paths [:context :tests/paths]
+                  :test/error-mode [:context :tests/error-mode]}
+    :step/when [:context :tests/enabled?]
+    :step/work-track :work-track/tests
+    :step/required? true
+    :step/requires-locks? true}
+   {:step/id :step/codetype
+    :step/action :action/codetype.validate
+    :step/description "Validate touched CodeDefinitions before steward review (§§4.7, 5.1)."
+    :step/config {:mission/id [:context :mission/id]
+                  :agent/id [:context :agent/id]
+                  :codetype/paths [:context :codetype/paths]}
+    :step/work-track :work-track/code
+    :step/required? true
+    :step/requires-locks? true}
+   {:step/id :step/docs
+    :step/action :action/docs.sync
+    :step/description "Sync user/system docs"
+    :step/config {:mission/id [:context :mission/id]
+                  :docs/paths [:context :docs/paths]}
+    :step/work-track :work-track/docs
+    :step/required? true
+    :step/requires-locks? true}
+   {:step/id :step/system-map
+    :step/action :action/system-map.refresh
+    :step/description "Refresh system map nodes"
+    :step/config {:mission/id [:context :mission/id]
+                  :system-map/entities [:context :system-map/entities]}
+    :step/work-track :work-track/system-map
+    :step/required? true
+    :step/requires-locks? true}
+   {:step/id :step/release-locks
+    :step/action :action/lock.release
+    :step/description "Release dictionaries + scope locks"
+    :step/config {:mission/id [:context :mission/id]
+                  :locks [:protocol :protocol/locks]}
+    :step/releases-locks? true}]}
+ {:protocol/ident :protocol/mission-sync
+  :protocol/name "Mission sandbox sync"
+  :protocol/description "Bootstraps the sandbox and records the branch snapshot artifact to satisfy SYSTEM_SPEC.md §6.2."
+  :protocol/owner :role/dictionary-engineer
+  :protocol/escalation [:role/steward]
+  :protocol/invariants [:spec/p3.3 :spec/p3.4 :spec/p6.2]
+  :protocol/locks []
+  :protocol/required-work-tracks []
+  :protocol/steps
+   [{:step/id :step/env-bootstrap
+     :step/action :action/env.bootstrap
+     :step/description "Prepare the sandbox for mission work"
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :workspace/root [:context :workspace/root]}}
+ {:step/id :step/git-branch
+     :step/action :action/git.branch.prepare
+     :step/description "Write the branch.edn + branch.md artifacts for reviewers."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :branch/prefix [:context :branch/prefix]
+                   :sandbox/root [:state :step-results :step/env-bootstrap :sandbox/root]}
+     :step/required? true}]}
+ {:protocol/ident :protocol/mission-instantiation
+  :protocol/name "Mission instantiation"
+  :protocol/description "Transitions a validated WorkPlan node into a sandbox-ready mission with locks + evidence (§§3.3–3.6, §4.7, §5.1, §6.2, §9)."
+  :protocol/owner :role/dictionary-engineer
+  :protocol/escalation [:role/steward]
+  :protocol/invariants [:spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p3.6 :spec/p4.7 :spec/p5.1 :spec/p6.2 :spec/p9.1]
+  :protocol/locks []
+  :protocol/required-work-tracks []
+  :protocol/steps
+  [{:step/id :step/mission-from-plan
+    :step/action :action/mission.from-plan
+    :step/description "Read the WorkPlan node and emit mission binding/resources."
+    :step/config {:mission/id [:context :mission/id]
+                  :agent/id [:context :agent/id]
+                  :work.plan/id [:context :work.plan/id]
+                  :plan.node/id [:context :plan.node/id]
+                  :mission/template [:context :mission/template]
+                  :work-plan/resource-path [:context :work-plan/resource-path]}
+    :step/required? true}
+   {:step/id :step/mission-locks
+    :step/action :action/mission.lock.resolve
+    :step/description "Translate mission resources into lock requests and detect conflicts."
+    :step/config {:mission/id [:context :mission/id]
+                  :agent/id [:context :agent/id]
+                  :mission/resources [:state :step-results :step/mission-from-plan :mission/resources]
+                  :locks/current [:context :locks/current]}
+    :step/required? true}
+   {:step/id :step/mission-sandbox
+    :step/action :action/mission.sandbox.prepare
+    :step/description "Provision sandbox root + branch manifest."
+    :step/config {:mission/id [:context :mission/id]
+                  :agent/id [:context :agent/id]
+                  :workspace/root [:context :workspace/root]
+                  :branch/prefix [:context :branch/prefix]}
+    :step/required? true}]}
+ {:protocol/ident :protocol/spec-intake
+  :protocol/name "Spec intake"
+  :protocol/description "Capture→validate→publish target specs per SYSTEM_SPEC §§3.3–3.6, §4.1–4.2, §4.7, §5.1, §9."
+  :protocol/owner :role/dictionary-engineer
+  :protocol/escalation [:role/steward]
+  :protocol/invariants [:spec/p3.3 :spec/p3.5 :spec/p4.1 :spec/p4.2 :spec/p4.7 :spec/p5.1 :spec/p9.1]
+  :protocol/locks []
+  :protocol/required-work-tracks [:work-track/docs :work-track/tests]
+ :protocol/steps
+   [{:step/id :step/spec-capture
+     :step/action :action/spec.capture
+     :step/description "Normalize the EDN target spec into governed storage."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :spec/input-path [:context :spec/input-path]
+                   :spec/id [:context :spec/id]}
+     :step/work-track :work-track/docs
+     :step/required? true}
+    {:step/id :step/spec-validate
+     :step/action :action/spec.validate
+     :step/description "Enforce required fields, CodeType coverage, and artifact existence."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :spec/id [:state :step-results :step/spec-capture :spec/id]
+                   :spec/resource-path [:state :step-results :step/spec-capture :spec/resource-path]}
+     :step/work-track :work-track/tests
+     :step/required? true}
+    {:step/id :step/spec-publish
+     :step/action :action/spec.publish
+     :step/description "Record the publish decision and update :spec/status."
+    :step/config {:mission/id [:context :mission/id]
+                  :agent/id [:context :agent/id]
+                  :spec/id [:state :step-results :step/spec-validate :spec/id]
+                  :spec/status :spec.status/validated}
+    :step/work-track :work-track/docs
+    :step/required? true}
+    {:step/id :step/spec-version-snapshot
+     :step/action :action/version.snapshot-spec
+     :step/description "Capture the spec snapshot (validation report + publish log) for §8.1 lineage."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :spec/id [:state :step-results :step/spec-publish :spec/id]
+                   :spec/resource-path [:state :step-results :step/spec-capture :spec/resource-path]
+                   :spec/validation-path [:state :step-results :step/spec-validate :spec/validation-path]
+                   :spec/publish-log [:state :step-results :step/spec-publish :spec/publish-log]}
+     :step/work-track :work-track/docs
+     :step/required? true}]}
+
+ {:protocol/ident :protocol/spec-plan-generate
+  :protocol/name "Spec → plan generation"
+  :protocol/description "Runs the deterministic planner heuristics to produce a WorkPlan and generation log (SYSTEM_SPEC §§3.3–3.6, §4.7, §5.1, §5.3, §9; plan.md §3.a)."
+  :protocol/owner :role/dictionary-engineer
+  :protocol/escalation [:role/steward]
+  :protocol/invariants [:spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p3.6 :spec/p4.7 :spec/p5.1 :spec/p5.3 :spec/p9.1]
+  :protocol/locks []
+  :protocol/required-work-tracks [:work-track/planning :work-track/docs :work-track/tests]
+  :protocol/steps
+  [{:step/id :step/spec-plan-generate
+    :step/action :action/spec.plan.generate
+    :step/description "Apply planner heuristics to a validated spec."
+    :step/config {:mission/id [:context :mission/id]
+                  :agent/id [:context :agent/id]
+                  :spec/id [:context :spec/id]
+                  :spec/version [:context :spec/version]
+                  :spec/resource-path [:context :spec/resource-path]
+                  :planner/heuristics-path [:context :planner/heuristics-path]
+                  :plan/output-path [:context :plan/output-path]
+                  :planner/generation-log-path [:context :planner/generation-log-path]}
+    :step/work-track :work-track/planning
+    :step/required? true}
+   {:step/id :step/spec-plan-validate
+    :step/action :action/work-plan.validate
+    :step/description "Run WorkPlan validators against generated nodes/edges/coverage."
+    :step/config {:mission/id [:context :mission/id]
+                  :agent/id [:context :agent/id]
+                  :work.plan/id [:state :step-results :step/spec-plan-generate :plan.generation/work-plan-id]
+                  :work-plan/resource-path [:state :step-results :step/spec-plan-generate :work-plan/resource-path]
+                  :spec/resource-path [:context :spec/resource-path]}
+    :step/work-track :work-track/tests
+    :step/required? true}]}
+
+ {:protocol/ident :protocol/work-plan-intake
+  :protocol/name "Work plan intake"
+ :protocol/description "Capture→validate→publish WorkPlans so every spec has a governed DAG and coverage (SYSTEM_SPEC §§3.3–3.6, §4.7, §5.1, §9)."
+  :protocol/owner :role/dictionary-engineer
+  :protocol/escalation [:role/steward]
+  :protocol/invariants [:spec/p3.3 :spec/p3.5 :spec/p4.7 :spec/p5.1 :spec/p9.1]
+  :protocol/locks []
+  :protocol/required-work-tracks [:work-track/planning :work-track/tests :work-track/docs]
+  :protocol/steps
+   [{:step/id :step/spec-plan-generate
+     :step/action :action/spec.plan.generate
+     :step/description "Generator-only intake: produce the WorkPlan + generation log from a validated spec (manual capture deprecated)."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :spec/id [:context :spec/id]
+                   :spec/version [:context :spec/version]
+                   :spec/resource-path [:context :spec/resource-path]
+                   :planner/heuristics-path [:context :planner/heuristics-path]
+                   :plan/output-path [:context :plan/output-path]
+                   :planner/generation-log-path [:context :planner/generation-log-path]
+                   :plan/overrides-path [:context :plan/overrides-path]}
+     :step/work-track :work-track/planning
+     :step/required? true}
+    {:step/id :step/spec-plan-validate
+     :step/action :action/work-plan.validate
+     :step/description "Re-validate the generated plan so coverage/DAG/resource checks run after any overrides."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :work.plan/id [:state :step-results :step/spec-plan-generate :plan.generation/work-plan-id]
+                   :work-plan/resource-path [:state :step-results :step/spec-plan-generate :work-plan/resource-path]
+                   :spec/resource-path [:context :spec/resource-path]}
+     :step/work-track :work-track/tests
+     :step/required? true}]}
+ {:protocol/ident :protocol/mission-report
+  :protocol/name "Mission report"
+  :protocol/description "Verifies mission worklogs/tests/docs/system-map outputs and persists the report artifact."
+  :protocol/owner :role/dictionary-engineer
+  :protocol/escalation [:role/steward]
+  :protocol/invariants [:spec/p3.4 :spec/p3.5 :spec/p10.1]
+  :protocol/locks []
+  :protocol/required-work-tracks []
+  :protocol/steps
+   [{:step/id :step/mission-report
+     :step/action :action/mission.report
+     :step/description "Write the structured mission report (worklogs, tests, doc/system-map references)."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :report/summary [:context :report :summary]
+                   :report/artifacts [:context :report :artifacts]
+                   :mission.report/worklogs [:context :report :worklogs]
+                   :mission.report/tests [:context :report :tests]
+                   :mission.report/docgen [:context :report :docgen]
+                   :mission.report/system-map [:context :report :system-map]}
+     :step/work-track :work-track/doc
+     :step/required? true}]}
+ {:protocol/ident :protocol/mission-approve
+  :protocol/name "Mission approval"
+  :protocol/description "Records steward sign-off referencing the submitted mission report."
+  :protocol/owner :role/steward
+  :protocol/escalation [:role/dictionary-engineer]
+  :protocol/invariants [:spec/p3.5 :spec/p3.6 :spec/p10.1]
+  :protocol/locks []
+  :protocol/required-work-tracks []
+  :protocol/steps
+   [{:step/id :step/mission-approve
+     :step/action :action/mission.approve
+     :step/description "Persist steward approval metadata tied to the report path."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :mission/report [:context :approval :report]
+                   :mission/approval [:context :approval :details]}
+     :step/required? true}]}
+ {:protocol/ident :protocol/mission-archive
+  :protocol/name "Mission archive"
+  :protocol/description "Captures the final report/approval artifacts prior to archiving the mission."
+  :protocol/owner :role/steward
+  :protocol/escalation [:role/dictionary-engineer]
+  :protocol/invariants [:spec/p3.4 :spec/p3.8 :spec/p10.1]
+  :protocol/locks []
+  :protocol/required-work-tracks []
+ :protocol/steps
+   [{:step/id :step/mission-archive
+     :step/action :action/mission.archive
+     :step/description "Persist archive manifest linking report + approval evidence."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :mission/report [:context :archive :report]
+                   :mission/approval [:context :archive :approval]
+                   :archive/summary [:context :archive :summary]
+                   :archive/artifacts [:context :archive :artifacts]}
+     :step/required? true}]}
+
+ {:protocol/ident :protocol/mission-merge
+  :protocol/name "Mission merge automation"
+  :protocol/description "Rebases the mission branch, reruns CI, and merges when evidence passes (SYSTEM_SPEC §§3.3–3.6, §5.1, §5.3, §6.2)."
+  :protocol/owner :role/dictionary-engineer
+  :protocol/escalation [:role/steward]
+  :protocol/invariants [:spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p3.6 :spec/p5.1 :spec/p5.3 :spec/p6.2]
+  :protocol/locks []
+  :protocol/required-work-tracks [:work-track/tests]
+  :protocol/steps
+   [{:step/id :step/merge-prepare
+     :step/action :action/mission.merge.prepare
+     :step/description "Rebase mission branch onto main and run the configured CI profile."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :merge/branch [:context :merge/branch]
+                   :merge/base-branch [:context :merge/base-branch]
+                   :sandbox/root [:context :sandbox/root]
+                   :ci/profile [:context :ci/profile]
+                   :ci/log-root [:context :ci/log-root]
+                   :merge/log-root [:context :merge/log-root]}
+     :step/work-track :work-track/tests
+     :step/required? true}
+    {:step/id :step/merge-execute
+     :step/action :action/mission.merge.execute
+     :step/description "Record merge-log.edn or merge-failure.edn after applying the rebased branch."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :merge/branch [:context :merge/branch]
+                   :merge/base-branch [:context :merge/base-branch]
+                   :merge/run [:state :step-results :step/merge-prepare :merge/run]
+                   :merge/log-root [:context :merge/log-root]}
+     :step/work-track :work-track/tests
+     :step/required? true}
+    {:step/id :step/mission-version-snapshot
+     :step/action :action/version.snapshot-mission
+     :step/description "Persist the mission snapshot linking reports to merge evidence (§8.1)."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :merge/log-path [:state :step-results :step/merge-execute :merge/log-path]
+                   :work.plan/id [:context :work.plan/id]}
+     :step/work-track :work-track/tests
+     :step/required? true}]}
+
+ {:protocol/ident :protocol/js-approve
+  :protocol/name "JS component approval"
+  :protocol/description "Registers JS bundles, scans their call paths, and writes the approval artifact before execution."
+  :protocol/owner :role/steward
+  :protocol/escalation [:role/dictionary-engineer]
+  :protocol/invariants [:spec/p4.8 :spec/p6.1 :spec/p10.2]
+  :protocol/locks []
+  :protocol/required-work-tracks []
+  :protocol/steps
+   [{:step/id :step/register-components
+     :step/action :action/js.component.register
+     :step/description "Validate JS bundle manifests."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :js/components [:context :js/components]}
+     :step/required? true}
+    {:step/id :step/scan-usage
+     :step/action :action/integration.scan-usage
+     :step/description "Ensure call paths stay inside the declared sandbox."
+     :step/config {:mission/id [:context :mission/id]
+                   :integration/components [:state :step-results :step/register-components :integration/components]
+                   :integration/apis [:context :external/apis]}
+     :step/required? true}
+    {:step/id :step/request-approval
+     :step/action :action/integration.request-approval
+     :step/description "Persist the JS approval artifact with risk/justification."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :integration/type [:context :security/integration-type]
+                   :integration/components [:state :step-results :step/register-components :integration/components]
+                   :integration/apis [:context :external/apis]
+                   :integration/call-graph [:state :step-results :step/scan-usage :integration/call-graph]
+                   :integration/approver [:context :security/approver]
+                   :integration/justification [:context :security/justification]}
+     :step/required? true}]}
+
+ {:protocol/ident :protocol/external-api-approve
+  :protocol/name "External API approval"
+  :protocol/description "Registers outbound integrations, scans call paths, and records steward approval."
+  :protocol/owner :role/steward
+  :protocol/escalation [:role/dictionary-engineer]
+  :protocol/invariants [:spec/p4.8 :spec/p6.6 :spec/p10.2]
+  :protocol/locks []
+  :protocol/required-work-tracks []
+  :protocol/steps
+   [{:step/id :step/register-apis
+     :step/action :action/external.api.register
+     :step/description "Validate external API definitions."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :external/apis [:context :external/apis]}
+     :step/required? true}
+    {:step/id :step/scan-api-usage
+     :step/action :action/integration.scan-usage
+     :step/description "Ensure outbound call paths match approved endpoints."
+     :step/config {:mission/id [:context :mission/id]
+                   :integration/components [:context :js/components]
+                   :integration/apis [:state :step-results :step/register-apis :integration/apis]}
+     :step/required? true}
+    {:step/id :step/request-api-approval
+     :step/action :action/integration.request-approval
+     :step/description "Persist the external API approval artifact."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :integration/type [:context :security/integration-type]
+                   :integration/components [:context :js/components]
+                   :integration/apis [:state :step-results :step/register-apis :integration/apis]
+                   :integration/call-graph [:state :step-results :step/scan-api-usage :integration/call-graph]
+                   :integration/approver [:context :security/approver]
+                   :integration/justification [:context :security/justification]}
+     :step/required? true}]}
+
+ {:protocol/ident :protocol/js-revoke
+  :protocol/name "JS integration revocation"
+  :protocol/description "Captures the revocation artifact showing JS/API entrypoints were disabled."
+  :protocol/owner :role/steward
+  :protocol/escalation [:role/ops]
+  :protocol/invariants [:spec/p4.8 :spec/p6.4 :spec/p10.2]
+  :protocol/locks []
+  :protocol/required-work-tracks []
+ :protocol/steps
+   [{:step/id :step/revoke
+     :step/action :action/integration.revoke-access
+     :step/description "Write revocation manifest for the governed entrypoints."
+     :step/config {:mission/id [:context :mission/id]
+                   :agent/id [:context :agent/id]
+                   :integration/type [:context :security/integration-type]
+                   :integration/components [:context :js/components]
+                   :integration/apis [:context :external/apis]
+                   :integration/reason [:context :security/revocation-reason]}
+     :step/required? true}]}
+
+ {:protocol/ident :protocol/deploy-blue-green
+  :protocol/name "Deploy blue/green"
+  :protocol/description "Stages a build on the idle slot and flips production traffic with recorded evidence (§§6.3, 8)."
+  :protocol/owner :role/ops
+  :protocol/escalation [:role/steward]
+  :protocol/invariants [:spec/p6.3 :spec/p8.1 :spec/p10.1]
+  :protocol/locks []
+  :protocol/required-work-tracks []
+  :protocol/steps
+   [{:step/id :step/stage-build
+     :step/action :action/deploy.stage-build
+     :step/description "Stage the declared build on the idle blue/green slot."
+     :step/config {:mission/id [:context :mission/id]
+                   :deploy/cycle [:context :deploy/cycle]}
+     :step/required? true}
+    {:step/id :step/flip-traffic
+     :step/action :action/deploy.flip-blue-green
+     :step/description "Flip production traffic over to the staged slot and capture evidence."
+     :step/config {:mission/id [:context :mission/id]
+                   :deploy/cycle [:context :deploy/cycle]}
+     :step/required? true}]}
+
+ {:protocol/ident :protocol/deploy-canary
+  :protocol/name "Deploy canary"
+  :protocol/description "Stages a build, ramps a canary slice, records health, and promotes on success (§§6.3, 8)."
+  :protocol/owner :role/ops
+  :protocol/escalation [:role/steward]
+  :protocol/invariants [:spec/p6.3 :spec/p8.1 :spec/p10.1]
+  :protocol/locks []
+  :protocol/required-work-tracks []
+  :protocol/steps
+   [{:step/id :step/stage-canary-build
+     :step/action :action/deploy.stage-build
+     :step/description "Stage the build assets for the canary cycle."
+     :step/config {:mission/id [:context :mission/id]
+                   :deploy/cycle [:context :deploy/cycle]}
+     :step/required? true}
+    {:step/id :step/start-canary
+     :step/action :action/deploy.start-canary
+     :step/description "Shift partial traffic to the canary weights."
+     :step/config {:mission/id [:context :mission/id]
+                   :deploy/cycle [:context :deploy/cycle]}
+     :step/required? true}
+    {:step/id :step/stop-canary
+     :step/action :action/deploy.stop-canary
+     :step/description "Collect health metrics and drain the canary slice."
+     :step/config {:mission/id [:context :mission/id]
+                   :deploy/cycle [:context :deploy/cycle]}
+     :step/required? true}
+    {:step/id :step/promote-canary
+     :step/action :action/deploy.promote
+     :step/description "Promote the canary build to 100% traffic once health is acceptable."
+     :step/config {:mission/id [:context :mission/id]
+                   :deploy/cycle [:context :deploy/cycle]}
+     :step/required? true}]}
+
+ {:protocol/ident :protocol/deploy-rollback
+  :protocol/name "Deploy rollback"
+  :protocol/description "Restores the previous slot and records a rollback artifact (§§6.3, 8)."
+  :protocol/owner :role/ops
+  :protocol/escalation [:role/steward]
+  :protocol/invariants [:spec/p6.3 :spec/p8.1 :spec/p10.1]
+  :protocol/locks []
+  :protocol/required-work-tracks []
+  :protocol/steps
+   [{:step/id :step/rollback
+     :step/action :action/deploy.rollback
+     :step/description "Return traffic to the prior slot and capture rollback evidence."
+     :step/config {:mission/id [:context :mission/id]
+                   :deploy/cycle [:context :deploy/cycle]}
+     :step/required? true}]}
+]
