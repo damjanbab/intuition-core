@@ -29,6 +29,64 @@
     :mission.status/awaiting-review
     :mission.status/done})
 
+(def ^:private llm-plan-resource "dictionary/llm_integration_plan.edn")
+
+(def ^:private pipeline->stages
+  {:pipeline/planner #{:plan/validate}
+   :pipeline/edit-graph #{:edit/graph :mission/standard}
+   :pipeline/mission-standard #{:mission/standard}
+   :pipeline/analytics #{:analytics/emit :merge/simulate}})
+
+(defn- load-llm-plan
+  []
+  (let [resource (or (io/resource llm-plan-resource)
+                     (io/resource (str "resources/" llm-plan-resource))
+                     (let [f (io/file llm-plan-resource)]
+                       (when (.exists f) f))
+                     (let [f (io/file "resources" llm-plan-resource)]
+                       (when (.exists f) f)))]
+    (some-> resource slurp edn/read-string)))
+
+(defn- llm-stage-set
+  [bundle]
+  (set (or (:run/stages bundle) [])))
+
+(defn- llm-surfaces-for-bundle
+  [plan bundle]
+  (let [stages (llm-stage-set bundle)]
+    (->> (:llm.integration/surfaces (or plan {}))
+         (filter (fn [{:llm.integration/keys [pipeline]}]
+                   (let [stage-set (get pipeline->stages pipeline)]
+                     (boolean (some stages stage-set)))))
+         vec)))
+
+(defn- llm-surface-summary
+  [plan environment surface]
+  (let [feature-flag (:llm.integration/feature-flag surface)
+        env (or environment :env/ci)
+        mode (or (get-in plan [:llm.integration/env-defaults env feature-flag]) :off)]
+    {:llm.surface/ident (:llm.surface/ident surface)
+     :llm.integration/pipeline (:llm.integration/pipeline surface)
+     :llm.integration/feature-flag feature-flag
+     :llm.integration/mode mode}))
+
+(defn- llm-config
+  [{:keys [bundle environment call]}]
+  (let [plan (or (load-llm-plan) {})
+        env (or environment (:llm/environment bundle))
+        surfaces (llm-surfaces-for-bundle plan bundle)]
+    {:llm/environment env
+     :llm/call call
+     :llm.integration/id (:llm.integration/id plan)
+     :llm.integration/description (:llm.integration/description plan)
+     :llm/surfaces (mapv #(llm-surface-summary plan env %) surfaces)}))
+
+(defn- process-env
+  [llm-config]
+  (cond-> {}
+    (:llm/environment llm-config) (assoc "LLM_ENVIRONMENT" (str (:llm/environment llm-config)))
+    (:llm/call llm-config) (assoc "LLM_CALL" (str (:llm/call llm-config)))))
+
 (defn- canonical-path
   [path]
   (some-> path io/file .getCanonicalPath))
@@ -74,21 +132,26 @@
     (mapv #(str/replace % (str token) "<redacted>") command)))
 
 (defn- build-gateway-payload
-  [{:keys [mission agent-id bundle-path token queue-tags locks attempt run-id]}]
+  [{:keys [mission agent-id bundle-path token queue-tags locks attempt run-id llm-config]}]
   (let [priority (:mission/priority mission)]
-    {:mission/id (:mission/id mission)
-     :context/bundle-path bundle-path
-     :agent/id agent-id
-     :auth/token token
-     :mission/priority priority
-     :mission/queue-tags (vec queue-tags)
-     :locks/requested (vec locks)
-      :trace {:channel :scheduler
-              :scheduler/agent agent-id
-              :scheduler/attempt attempt
-              :run-id run-id
-              :queue/tags (vec queue-tags)
-              :mission/priority priority}}))
+    (cond-> {:mission/id (:mission/id mission)
+             :context/bundle-path bundle-path
+             :agent/id agent-id
+             :auth/token token
+             :mission/priority priority
+             :mission/queue-tags (vec queue-tags)
+             :locks/requested (vec locks)
+             :trace {:channel :scheduler
+                     :scheduler/agent agent-id
+                     :scheduler/attempt attempt
+                     :run-id run-id
+                     :queue/tags (vec queue-tags)
+                     :mission/priority priority}}
+      (:llm/environment llm-config) (assoc :llm/environment (:llm/environment llm-config))
+      (:llm/call llm-config) (assoc :llm/call (:llm/call llm-config))
+      (seq (:llm/surfaces llm-config)) (assoc :llm/surfaces (:llm/surfaces llm-config))
+      (:llm.integration/id llm-config) (assoc :llm.integration/id (:llm.integration/id llm-config))
+      (:llm.integration/description llm-config) (assoc :llm.integration/description (:llm.integration/description llm-config)))))
 
 (defn- normalize-queue-tags
   [tags]
@@ -146,8 +209,11 @@
           (or (seq template) default-command-template))))
 
 (defn- default-command-runner
-  [{:keys [command]}]
-  (apply shell/sh command))
+  [{:keys [command] :as opts}]
+  (let [env (:process/env opts)
+        base-env (into {} (System/getenv))
+        merged-env (when env (merge base-env env))]
+    (apply shell/sh (concat command (when merged-env [:env merged-env])))))
 
 (def ^:private datomic-lock
   (io/file "data/datomic-spec/spec-system/intuition-core/.lock"))
@@ -219,6 +285,9 @@
   - :scheduler/list-ready-fn – dependency injection hook for list-ready-missions.
   - :scheduler/fetch-mission-fn – hook for fetching mission status post-launch.
   - :scheduler/command-runner – hook for executing the agent command.
+  - :llm/enabled? – enable llm integration defaults (:env/dev-local + codex one-shot call).
+  - :llm/environment – override the llm environment keyword (e.g. :env/dev-local).
+  - :llm/call – call strategy token (e.g. :llm.call/codex-oneshot).
   - :scheduler/now-fn – injectable clock for tests."
   [opts]
   (let [queue-tags (normalize-queue-tags (:queue/tags opts))
@@ -235,6 +304,16 @@
         bundle (load-bundle bundle-path)
         mission-id (or mission-id-override (:mission/id bundle))
         mission-record (:mission/record bundle)
+        llm-environment (or (:llm/environment opts)
+                            (:llm/environment bundle)
+                            (when (:llm/enabled? opts) :env/dev-local))
+        llm-call (or (:llm/call opts)
+                     (:llm/call bundle)
+                     (when (:llm/enabled? opts) :llm.call/codex-oneshot))
+        llm-conf (llm-config {:bundle bundle
+                              :environment llm-environment
+                              :call llm-call})
+        process-env (process-env llm-conf)
         ready (if mission-record
                 {:mission/list [(merge {:mission/id mission-id
                                         :mission/status :mission.status/ready}
@@ -261,13 +340,14 @@
                       (let [start (now-fn)
                             run-id (format "scheduler-%s-%s-%d" mission-id attempt (.toEpochMilli ^Instant start))
                             payload (build-gateway-payload {:mission mission
-                                                            :agent-id agent-id
-                                                            :bundle-path bundle-path
-                                                            :token token
-                                                            :queue-tags mission-queue-tags
-                                                            :run-id run-id
-                                                            :locks locks
-                                                            :attempt attempt})
+                                                           :agent-id agent-id
+                                                           :bundle-path bundle-path
+                                                           :token token
+                                                           :queue-tags mission-queue-tags
+                                                           :run-id run-id
+                                                           :locks locks
+                                                           :llm-config llm-conf
+                                                           :attempt attempt})
                             command (build-mission-command mission
                                                            agent-id
                                                            command-template
@@ -279,7 +359,9 @@
                                              (or (command-runner {:command command
                                                                   :mission mission
                                                                   :agent/id agent-id
-                                                                  :gateway/payload payload})
+                                                                  :gateway/payload payload
+                                                                  :process/env process-env
+                                                                  :llm/config llm-conf})
                                                  {:exit 0})
                                              (catch Exception e
                                                {:exit -1
@@ -297,18 +379,20 @@
                             summary (summarize-mission mission)
                             run-data (cond-> {:mission summary
                                               :mission/priority (:mission/priority summary)
-                                              :mission/queue-tags mission-queue-tags
-                                              :locks/requested locks
-                                              :context/bundle-path bundle-path
-                                              :trace/run-id run-id
-                                              :auth/token-path token-path
-                                              :auth/token-present? (boolean token)
-                                              :scheduler/retry retry-details
-                                              :scheduler/agent-id agent-id
-                                              :scheduler/command (redact-command command token)
-                                              :scheduler/start-time (str start)
-                                              :scheduler/end-time (str end)
-                                              :scheduler/duration-ms (duration-ms start end)
+                            :mission/queue-tags mission-queue-tags
+                            :locks/requested locks
+                            :context/bundle-path bundle-path
+                            :trace/run-id run-id
+                            :auth/token-path token-path
+                            :auth/token-present? (boolean token)
+                            :scheduler/retry retry-details
+                            :scheduler/agent-id agent-id
+                            :llm/config llm-conf
+                            :scheduler/process-env process-env
+                            :scheduler/command (redact-command command token)
+                            :scheduler/start-time (str start)
+                            :scheduler/end-time (str end)
+                            :scheduler/duration-ms (duration-ms start end)
                                               :mission/status mission-status
                                               :mission/progressing? (mission-progressing? mission-status)
                                               :command/result (select-keys command-result [:exit :out :err])

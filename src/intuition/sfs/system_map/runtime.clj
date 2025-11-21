@@ -405,111 +405,122 @@
   no-dangling-nodes/edges invariant. Returns the action-style payload used by
   Mission protocols."
   [{:keys [conn entities log!] :as opts}]
-  (when-not conn
-    (throw (ex-info "Missing Datomic connection" {:type :system-map/missing-conn})))
-  (let [log! (or log! default-log)
-        conn (ensure-schema! conn)
-        db (d/db conn)
-        include-code-graph? (if (contains? opts :code-graph/enabled?)
-                              (:code-graph/enabled? opts)
-                              true)
-        code-graph (when include-code-graph?
-                     (load-code-graph {:log! log!
-                                       :path (:code-graph/path opts)
-                                       :graph (:code-graph/graph opts)}))
-        code-nodes (vec (keep code-graph-node->system-node (:nodes code-graph)))
-        doc-source (some #(when (= :code/intuition.docs.runtime (:entity %))
-                            (:entity %))
-                         code-nodes)
-        doc-targets (map :entity (filter #(= :system-map.entity/doc (:entity-kind %)) code-nodes))
-        graph-edges (keep code-graph-edge->system-edge (:edges code-graph))
-        synthetic-doc-edges (if (and doc-source (seq doc-targets))
-                              (map (fn [doc-ident]
-                                     {:ident (system-edge-ident :system-map.relation/documented-by
-                                                                doc-source
-                                                                doc-ident)
-                                      :from doc-source
-                                      :to doc-ident
-                                      :relation :system-map.relation/documented-by
-                                      :spec-refs ["4.10" "7" "9"]
-                                      :tags [:system-map.tag/docs]})
-                                   doc-targets)
-                              [])
-        code-edges (vec (concat graph-edges synthetic-doc-edges))
-        requested (dedupe-preserving-order (seq entities))
-        default-entities (->> (all-entity-idents db)
-                              set
-                              (sort-by str)
-                              vec)
-        target-entities (if (seq requested)
-                          requested
-                          default-entities)]
-    (when-not (seq target-entities)
-      (throw (ex-info "No dictionary entities available for system-map refresh."
-                      {:type :system-map/no-entities})))
-    (log! :system-map/refresh {:entities target-entities})
-    (let [details (map (fn [ident]
-                         [ident (resolve-dictionary-entity db ident)])
-                       target-entities)
-          missing (map first (filter (comp nil? second) details))]
-      (when (seq missing)
-        (throw (ex-info "Unknown dictionary entities referenced by system-map refresh."
-                        {:type :system-map/missing-dictionary-entities
-                         :system-map/entities (vec missing)})))
-      (let [merged-nodes (->> (concat (map second details) code-nodes)
+  (if (:system-map/skip? opts)
+    (let [entities' (vec (or entities []))]
+      (log/infof "[system-map] skip requested; entities=%s" entities')
+      {:action/status :status/ok
+       :system-map/entities entities'
+       :system-map/skipped? true})
+    (do
+      (when-not conn
+        (throw (ex-info "Missing Datomic connection" {:type :system-map/missing-conn})))
+      (let [log! (or log! default-log)
+            conn (ensure-schema! conn)
+            db (d/db conn)
+            include-code-graph? (if (contains? opts :code-graph/enabled?)
+                                  (:code-graph/enabled? opts)
+                                  true)
+            code-graph (when include-code-graph?
+                         (load-code-graph {:log! log!
+                                           :path (:code-graph/path opts)
+                                           :graph (:code-graph/graph opts)}))
+            code-nodes (vec (keep code-graph-node->system-node (:nodes code-graph)))
+            doc-source (some #(when (= :code/intuition.docs.runtime (:entity %))
+                                (:entity %))
+                             code-nodes)
+            doc-targets (map :entity (filter #(= :system-map.entity/doc (:entity-kind %)) code-nodes))
+            graph-edges (keep code-graph-edge->system-edge (:edges code-graph))
+            synthetic-doc-edges (if (and doc-source (seq doc-targets))
+                                  (map (fn [doc-ident]
+                                         {:ident (system-edge-ident :system-map.relation/documented-by
+                                                                    doc-source
+                                                                    doc-ident)
+                                          :from doc-source
+                                          :to doc-ident
+                                          :relation :system-map.relation/documented-by
+                                          :spec-refs ["4.10" "7" "9"]
+                                          :tags [:system-map.tag/docs]})
+                                       doc-targets)
+                                  [])
+            code-edges (vec (concat graph-edges synthetic-doc-edges))
+            requested (dedupe-preserving-order (seq entities))
+            default-entities (->> (all-entity-idents db)
+                                  set
+                                  (sort-by str)
+                                  vec)
+            target-entities (if (seq requested)
+                              requested
+                              default-entities)]
+        (when-not (seq target-entities)
+          (throw (ex-info "No dictionary entities available for system-map refresh."
+                          {:type :system-map/no-entities})))
+        (log! :system-map/refresh {:entities target-entities})
+        (let [details (map (fn [ident]
+                             [ident (resolve-dictionary-entity db ident)])
+                           target-entities)
+              missing (map first (filter (comp nil? second) details))]
+          (when (seq missing)
+            (throw (ex-info "Unknown dictionary entities referenced by system-map refresh."
+                            {:type :system-map/missing-dictionary-entities
+                             :system-map/entities (vec missing)})))
+          (let [merged-nodes (->> (concat (map second details) code-nodes)
+                                  (remove nil?)
+                                  (reduce (fn [acc node]
+                                            (let [entity (:entity node)]
+                                              (assoc acc entity (merge-node-details (or (get acc entity)
+                                                                                         {:entity entity})
+                                                                                    node))))
+                                          {})
+                                  vals)
+                tx-data (->> merged-nodes
+                             (map node-tx)
+                             (remove nil?)
+                             vec)
+                tx-edges (->> code-edges
+                              (map edge-tx)
                               (remove nil?)
-                              (reduce (fn [acc node]
-                                        (let [entity (:entity node)]
-                                          (assoc acc entity (merge-node-details (or (get acc entity)
-                                                                                     {:entity entity})
-                                                                                node))))
-                                      {})
-                              vals)
-            tx-data (->> merged-nodes
-                         (map node-tx)
-                         (remove nil?)
-                         vec)
-            tx-edges (->> code-edges
-                          (map edge-tx)
-                          (remove nil?)
-                          vec)
-            tx (vec (concat tx-data tx-edges))]
-        (when (seq tx)
-          (d/transact conn {:tx-data tx}))
-        (let [db' (d/db conn)
-              nodes (load-nodes db')
-              edges (load-edges db')
-              node-idents (set (map :system-map.node/ident nodes))
-              dangling-nodes (vec (dangling-nodes db' nodes (set (map :entity code-nodes))))
-              dangling-edges (vec (dangling-edges node-idents edges))]
-          (when (seq dangling-nodes)
-            (throw (ex-info "System-map nodes reference dictionary entries that do not exist."
-                            {:type :system-map/dangling-nodes
-                             :system-map/nodes dangling-nodes})))
-          (when (seq dangling-edges)
-            (throw (ex-info "System-map edges reference unknown nodes."
-                            {:type :system-map/dangling-edges
-                             :system-map/edges dangling-edges})))
-          (let [reported-entities (dedupe-preserving-order
-                                   (concat target-entities (map :entity code-nodes)))
-                result {:action/status :status/ok
-                        :system-map/entities (vec reported-entities)
-                        :system-map/nodes (count nodes)
-                        :system-map/edges (count edges)}]
-            (when code-graph
-              (log! :system-map/code-graph {:path (or (:code-graph/path opts)
-                                                      default-code-graph-path)
-                                            :nodes (count code-nodes)
-                                            :edges (count code-edges)}))
-            (log! :system-map/success result)
-            result))))))
+                              vec)
+                tx (vec (concat tx-data tx-edges))]
+            (when (seq tx)
+              (d/transact conn {:tx-data tx}))
+            (let [db' (d/db conn)
+                  nodes (load-nodes db')
+                  edges (load-edges db')
+                  node-idents (set (map :system-map.node/ident nodes))
+                  dangling-nodes (vec (dangling-nodes db' nodes (set (map :entity code-nodes))))
+                  dangling-edges (vec (dangling-edges node-idents edges))]
+              (when (seq dangling-nodes)
+                (throw (ex-info "System-map nodes reference dictionary entries that do not exist."
+                                {:type :system-map/dangling-nodes
+                                 :system-map/nodes dangling-nodes})))
+              (when (seq dangling-edges)
+                (throw (ex-info "System-map edges reference unknown nodes."
+                                {:type :system-map/dangling-edges
+                                 :system-map/edges dangling-edges})))
+              (let [reported-entities (dedupe-preserving-order
+                                       (concat target-entities (map :entity code-nodes)))
+                    result {:action/status :status/ok
+                            :system-map/entities (vec reported-entities)
+                            :system-map/nodes (count nodes)
+                            :system-map/edges (count edges)}]
+                (when code-graph
+                  (log! :system-map/code-graph {:path (or (:code-graph/path opts)
+                                                          default-code-graph-path)
+                                                :nodes (count code-nodes)
+                                                :edges (count code-edges)}))
+                (log! :system-map/success result)
+                result))))))))
 
 (defn refresh-action
   "Action handler wrapper so `:action/system-map.refresh` can call `refresh!`."
   [{:keys [conn config log!]}]
-  (refresh! {:conn conn
-             :entities (:system-map/entities config)
-             :code-graph/enabled? (:code-graph/enabled? config)
-             :code-graph/path (:code-graph/path config)
-              :code-graph/graph (:code-graph/graph config)
-             :log! log!}))
+  (let [env-skip (let [env (System/getenv "SYSTEM_MAP_SKIP")]
+                   (some #(= env %) ["true" "1" "yes" "on"]))
+        skip? (boolean (or (:system-map/skip? config) env-skip))]
+    (refresh! {:conn conn
+               :entities (:system-map/entities config)
+               :code-graph/enabled? (:code-graph/enabled? config)
+               :code-graph/path (:code-graph/path config)
+               :code-graph/graph (:code-graph/graph config)
+               :system-map/skip? skip?
+               :log! log!})))

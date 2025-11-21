@@ -24,6 +24,9 @@
     "  --command <edn-vector>          EDN vector of command tokens. Placeholders: {{mission-id}},"
     "                                  {{agent-id}}, {{mission-edn}}, {{bundle-path}},"
     "                                  {{mission-queue}}, {{auth-token}}, and {{payload-edn}}."
+    "  --llm                           Enable LLM surfaces using dev-local integration defaults."
+    "  --llm-env <env>                 Override LLM environment (e.g. env/dev-local, env/ci)."
+    "  --llm-call <strategy>           LLM call strategy token (e.g. llm.call/codex-oneshot)."
     "  --simulate                      Use a stubbed ready mission for dry runs."
     "  --simulate-failure              Same as --simulate plus a forced failure outcome."
     "  --help                          Print this help text."]))
@@ -71,6 +74,21 @@
           (when-not command-value
             (throw (ex-info "--command requires an EDN vector argument" {})))
           (recur (assoc opts :command-template (parse-command-template command-value)) more))
+
+        "--llm"
+        (recur (assoc opts :llm/enabled? true) (rest remaining))
+
+        "--llm-env"
+        (let [[env-value & more] (rest remaining)]
+          (when-not env-value
+            (throw (ex-info "--llm-env requires an environment keyword" {})))
+          (recur (assoc opts :llm/environment (keyword env-value)) more))
+
+        "--llm-call"
+        (let [[call-value & more] (rest remaining)]
+          (when-not call-value
+            (throw (ex-info "--llm-call requires a strategy token" {})))
+          (recur (assoc opts :llm/call (keyword call-value)) more))
 
         "--log-root"
         (let [[root & more] (rest remaining)]
@@ -147,7 +165,10 @@
           (:agent/id parsed) (assoc :agent/id (:agent/id parsed))
           (:command-template parsed) (assoc :scheduler/command-template (:command-template parsed))
           (:scheduler/log-root parsed) (assoc :scheduler/log-root (:scheduler/log-root parsed))
-          (:context/bundle-path parsed) (assoc :context/bundle-path (:context/bundle-path parsed)))
+          (:context/bundle-path parsed) (assoc :context/bundle-path (:context/bundle-path parsed))
+          (:llm/enabled? parsed) (assoc :llm/enabled? true)
+          (:llm/environment parsed) (assoc :llm/environment (:llm/environment parsed))
+          (:llm/call parsed) (assoc :llm/call (:llm/call parsed)))
       (apply-simulate parsed)))
 
 (defn- run-analytics-hook!

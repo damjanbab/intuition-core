@@ -1,0 +1,65 @@
+{:analytics/report
+ {:analytics.report/id "analytics-20251121-173644",
+  :analytics.report/recorded-at "2025-11-21T17:36:44.815020717Z",
+  :analytics.report/missions
+  ["M-20251121-823-BASE" "M-20251121-823-LLM"],
+  :analytics.report/metrics
+  [{:analytics.metric/key :analytics.metric/lock-waits,
+    :analytics.metric/unit :unit/summary,
+    :analytics.metric/value
+    "{:total-events 0, :total-locks 0, :total-wait-ms 0, :details ()}",
+    :analytics.metric/context
+    "{:spec/sections [\"3.3\" \"3.4\" \"3.5\" \"3.6\" \"5.1\" \"5.3\" \"9\"], :analytics/new-step :analytics.step/post-dry-run, :metric/name :lock-waits}"}
+   {:analytics.metric/key :analytics.metric/ci-reruns,
+    :analytics.metric/unit :unit/summary,
+    :analytics.metric/value
+    "{:total-runs 0, :total-reruns 0, :details ()}",
+    :analytics.metric/context
+    "{:spec/sections [\"3.3\" \"3.4\" \"3.5\" \"3.6\" \"5.1\" \"5.3\" \"9\"], :analytics/new-step :analytics.step/post-dry-run, :metric/name :ci-reruns}"}
+   {:analytics.metric/key :analytics.metric/validator-failures,
+    :analytics.metric/unit :unit/summary,
+    :analytics.metric/value "{:total-failures 0, :details ()}",
+    :analytics.metric/context
+    "{:spec/sections [\"3.3\" \"3.4\" \"3.5\" \"3.6\" \"5.1\" \"5.3\" \"9\"], :analytics/new-step :analytics.step/post-dry-run, :metric/name :validator-failures}"}
+   {:analytics.metric/key :analytics.metric/requirement-coverage,
+    :analytics.metric/unit :unit/vector,
+    :analytics.metric/value "()",
+    :analytics.metric/context
+    "{:spec/sections [\"3.3\" \"3.4\" \"3.5\" \"3.6\" \"5.1\" \"5.3\" \"9\"], :analytics/new-step :analytics.step/post-dry-run, :metric/name :requirement-coverage}"}
+   {:analytics.metric/key :analytics.metric/agent-utilization,
+    :analytics.metric/unit :unit/percent,
+    :analytics.metric/value
+    "{:total-runtime-ms 170, :window-ms 170, :utilization-percent 100.0, :runs ({:mission/id \"M-20251121-823-BASE\", :duration-ms 170, :status :scheduler.status/failure})}",
+    :analytics.metric/context
+    "{:spec/sections [\"3.3\" \"3.4\" \"3.5\" \"3.6\" \"5.1\" \"5.3\" \"9\"], :analytics/new-step :analytics.step/post-dry-run, :metric/name :agent-utilization}"}
+   {:analytics.metric/key :analytics.metric/spec-plan-mission-merge,
+    :analytics.metric/unit :unit/vector,
+    :analytics.metric/value "()",
+    :analytics.metric/context
+    "{:spec/sections [\"3.3\" \"3.4\" \"3.5\" \"3.6\" \"5.1\" \"5.3\" \"9\"], :analytics/new-step :analytics.step/post-dry-run, :metric/name :spec-plan-mission-merge}"}
+   {:analytics.metric/key :analytics.metric/codetype-generations,
+    :analytics.metric/unit :unit/count,
+    :analytics.metric/value "{:total 0, :executed 0, :details ()}",
+    :analytics.metric/context
+    "{:spec/sections [\"3.3\" \"3.4\" \"3.5\" \"3.6\" \"5.1\" \"5.3\" \"9\"], :analytics/new-step :analytics.step/post-dry-run, :metric/name :codetype-generations}"}],
+  :analytics.report/source :analytics.source/scheduler},
+ :spec/sections ["3.3" "3.4" "3.5" "3.6" "5.1" "5.3" "9"],
+ :analytics/new-step :analytics.step/post-dry-run,
+ :analytics/summary
+ {:codetype-summary {:total 0, :executed 0, :details ()},
+  :utilization-summary
+  {:total-runtime-ms 170,
+   :window-ms 170,
+   :utilization-percent 100.0,
+   :runs
+   ({:mission/id "M-20251121-823-BASE",
+     :duration-ms 170,
+     :status :scheduler.status/failure})},
+  :ci-summary {:total-runs 0, :total-reruns 0, :details ()},
+  :mission-count 2,
+  :lock-summary
+  {:total-events 0, :total-locks 0, :total-wait-ms 0, :details ()},
+  :coverage-summary (),
+  :timestamp "20251121-173644",
+  :validator-summary {:total-failures 0, :details ()},
+  :timelines ()}}

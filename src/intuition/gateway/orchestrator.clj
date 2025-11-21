@@ -13,6 +13,7 @@
    [intuition.analytics.runtime :as analytics]
    [intuition.datomic :as datomic]
    [intuition.gateway.context-bundle :as context-bundle]
+   [intuition.llm.codex :as llm-codex]
    [intuition.llm.harness :as llm]
    [intuition.sfs.actions.runtime :as actions]
    [intuition.sfs.missions.runtime :as missions]
@@ -42,6 +43,21 @@
     (try
       (some-> llm-plan-resource io/resource slurp edn/read-string)
       (catch Exception _ {}))))
+
+(defn- llm-call-spec
+  [bundle payload call-key]
+  (or (get payload call-key)
+      (get bundle call-key)
+      (get payload :llm/call)
+      (get bundle :llm/call)
+      (llm-codex/call-spec-from-env)))
+
+(defn- resolve-llm-call
+  [spec]
+  (let [resolved (llm-codex/resolve-call-spec spec)]
+    (when resolved
+      {:call-fn (:call/fn resolved)
+       :call-strategy (:call/strategy resolved)})))
 
 (defn- vectorize
   [value]
@@ -241,7 +257,9 @@
         mode (llm-mode {:mode-key mode-key
                         :bundle bundle
                         :payload payload
-                        :surface surface})]
+                        :surface surface})
+        call-spec (llm-call-spec bundle payload call-key)
+        call (resolve-llm-call call-spec)]
     {:surface surface
      :surface/config surface-config
      :mode mode
@@ -249,8 +267,9 @@
      :environment (llm-environment bundle payload)
      :fake-response-fn (or (get payload fake-key)
                            (get bundle fake-key))
-     :call-fn (or (get payload call-key)
-                  (get bundle call-key))}))
+     :call-spec call-spec
+     :call-fn (:call-fn call)
+     :call-strategy (:call-strategy call)}))
 
 (declare llm-test-doc-stage!)
 
@@ -392,8 +411,10 @@
               :version.snapshot/path (get-in snapshot [:result :version.snapshot/path])}}))
 
 (defn- plan-stage!
-  [{:keys [conn granted mission-id agent-id bundle log-path limit spec-result]}]
-  (let [heuristics (or (get-in bundle [:planner/heuristics-path])
+  [{:keys [conn granted mission-id agent-id bundle payload log-path limit spec-result]}]
+  (let [payload (or payload {})
+        heuristics (or (get-in bundle [:planner/heuristics-path])
+                       (get-in bundle [:planner :heuristics-path])
                        "missions/logs/M-20251121-701/planner-heuristics.edn")
         plan-output (or (get-in bundle [:plan/snapshot :plan/path])
                         (str "missions/logs/" mission-id "/generated-plan.edn"))
@@ -401,6 +422,24 @@
                            (str "missions/logs/" mission-id "/plan-generation.edn"))
         spec-id (:spec/id spec-result)
         spec-path (:spec/path spec-result)
+        llm-plan-settings (llm-settings {:surface :llm.surface/plan-draft
+                                         :mode-key :llm.plan-draft/mode
+                                         :fake-key :llm.plan-draft/fake-response-fn
+                                         :call-key :llm.plan-draft/call
+                                         :bundle bundle
+                                         :payload payload})
+        llm-plan-config (cond-> {:mode (:mode llm-plan-settings)
+                                 :feature-flag (:feature-flag llm-plan-settings)}
+                          (:fake-response-fn llm-plan-settings)
+                          (assoc :fake-response-fn (:fake-response-fn llm-plan-settings))
+                          (:call-fn llm-plan-settings)
+                          (assoc :llm/call-fn (:call-fn llm-plan-settings))
+                          (:call-strategy llm-plan-settings)
+                          (assoc :llm/call-strategy (:call-strategy llm-plan-settings))
+                          (:call-spec llm-plan-settings)
+                          (assoc :llm/call (:call-spec llm-plan-settings))
+                          (:environment llm-plan-settings)
+                          (assoc :llm/environment (:environment llm-plan-settings)))
         plan (run-action conn granted
                          {:ident :action/spec.plan.generate
                           :config {:mission/id mission-id
@@ -410,7 +449,8 @@
                                    :spec/resource-path spec-path
                                    :planner/heuristics-path heuristics
                                    :plan/output-path plan-output
-                                   :planner/generation-log-path generation-log}})
+                                   :planner/generation-log-path generation-log
+                                   :llm.plan-draft llm-plan-config}})
         plan-path (get-in plan [:result :work-plan/resource-path])
         validation (get-in plan [:result :work-plan/validation-path])
         snapshot (get-in plan [:result :version.snapshot/path])
@@ -483,7 +523,7 @@
               :sandbox/root (get-in run [:step-results :step/mission-sandbox :sandbox/root])}}))
 
 (defn- mission-standard-stage!
-  [{:keys [conn granted mission-id agent-id bundle log-path limit mission-result]}]
+  [{:keys [conn granted mission-id agent-id bundle payload log-path limit mission-result]}]
   (let [sandbox (or (:sandbox/root mission-result)
                     (get-in bundle [:sandbox :root])
                     "tmp/missions/sandbox")
@@ -505,6 +545,7 @@
                              (when (.exists fallback)
                                [(.getCanonicalPath fallback)])))
         bundle-code-idents (not-empty (vec (or (:code.definition/idents bundle) [])))
+        system-map-skip? (true? (get-in bundle [:system-map/skip?]))
         context (cond-> {:mission/id mission-id
                          :agent/id agent-id
                          :workspace/root sandbox
@@ -517,16 +558,18 @@
                          :lint/command (or (get-in bundle [:lint/command])
                                            ["clojure" "-M:lint"])
                          :docs/paths ["SYSTEM_SPEC.md"]
-                         :system-map/entities [:action/mission.validate]
+                         :system-map/entities (or (get-in bundle [:system-map/entities])
+                                                   [:action/mission.validate])
+                         :system-map/skip? system-map-skip?
                          :codetype/paths (or codetype-paths
                                              ["resources/dictionary/code_types.edn"])}
-                  bundle-code-idents (assoc :code.definition/idents bundle-code-idents))
+                 bundle-code-idents (assoc :code.definition/idents bundle-code-idents))
         llm-test-settings (llm-settings {:surface :llm.surface/test-doc-suggestions
                                          :mode-key :llm.test-doc-suggestions/mode
                                          :fake-key :llm.test-doc-suggestions/fake-response-fn
                                          :call-key :llm.test-doc-suggestions/call-fn
                                          :bundle bundle
-                                         :payload {}})
+                                         :payload (or payload {})})
         llm-stage (llm-test-doc-stage! {:conn conn
                                         :mission-id mission-id
                                         :agent-id agent-id
@@ -702,6 +745,7 @@
                                                     :mission-id mission-id
                                                     :agent-id agent-id
                                                     :bundle bundle
+                                                    :payload payload
                                                     :log-path run-log-path
                                                     :limit truncate
                                                     :spec-result (:result spec-stage)}))
@@ -721,6 +765,7 @@
                                                                    :mission-id mission-id
                                                                    :agent-id agent-id
                                                                    :bundle bundle
+                                                                   :payload payload
                                                                    :log-path run-log-path
                                                                    :limit truncate
                                                                    :mission-result (:result instantiate-stage)}))
@@ -936,7 +981,7 @@
 
 (defn- llm-proposals-stage!
   [{:keys [conn mission-id agent-id bundle proposals log-path limit settings]}]
-  (let [{:keys [mode surface feature-flag fake-response-fn call-fn environment]} settings
+  (let [{:keys [mode surface feature-flag fake-response-fn call-fn call-strategy environment]} settings
         log-root (or (:code.proposal/log-root bundle)
                      "missions/logs")
         llm-log (llm-log-path {:mission-id mission-id
@@ -1015,6 +1060,7 @@
                          :llm.status llm-status
                          :llm.feature-flag feature-flag
                          :llm.environment environment
+                         :llm.call/strategy call-strategy
                          :llm.context-hash context-hash
                          :llm.status/reason (or (:reason payload)
                                                 (when abort? "abort status")
@@ -1053,6 +1099,7 @@
                       :llm.code-proposal/status llm-status
                       :llm.code-proposal/mode mode
                       :llm.code-proposal/feature-flag feature-flag
+                      :llm.code-proposal/call-strategy call-strategy
                       :llm.code-proposal/context-hash context-hash
                       :llm.code-proposal/request-id (:llm.request/id request)
                       :llm.code-proposal/response-id (:llm.response/id response)
@@ -1067,6 +1114,7 @@
                            :llm.status :llm.status/error
                            :llm.feature-flag feature-flag
                            :llm.environment environment
+                           :llm.call/strategy call-strategy
                            :llm.context-hash context-hash
                            :llm.status/reason message
                            :code.proposal/deterministic-count (count proposals)
@@ -1088,6 +1136,7 @@
                         :llm.code-proposal/status :llm.status/error
                         :llm.code-proposal/mode mode
                         :llm.code-proposal/feature-flag feature-flag
+                        :llm.code-proposal/call-strategy call-strategy
                         :llm.code-proposal/context-hash context-hash
                         :llm.code-proposal/log-path log-path*
                         :llm.code-proposal/error message}})))))))
@@ -1140,7 +1189,7 @@
 
 (defn- llm-test-doc-stage!
   [{:keys [conn mission-id agent-id bundle code-idents log-path limit settings]}]
-  (let [{:keys [mode surface feature-flag fake-response-fn call-fn environment]} settings
+  (let [{:keys [mode surface feature-flag fake-response-fn call-fn call-strategy environment]} settings
         log-root (or (:llm/log-root bundle)
                      (:code.proposal/log-root bundle)
                      "missions/logs")
@@ -1214,6 +1263,7 @@
                          :llm.status llm-status
                          :llm.feature-flag feature-flag
                          :llm.environment environment
+                         :llm.call/strategy call-strategy
                          :llm.context-hash context-hash
                          :llm.status/reason (or (:reason payload)
                                                 (when abort? "abort status")
@@ -1250,6 +1300,7 @@
              :result {:llm.test-doc/status llm-status
                       :llm.test-doc/mode mode
                       :llm.test-doc/feature-flag feature-flag
+                      :llm.test-doc/call-strategy call-strategy
                       :llm.test-doc/context-hash context-hash
                       :llm.test-doc/request-id (:llm.request/id request)
                       :llm.test-doc/response-id (:llm.response/id response)
@@ -1265,6 +1316,7 @@
                            :llm.status :llm.status/error
                            :llm.feature-flag feature-flag
                            :llm.environment environment
+                           :llm.call/strategy call-strategy
                            :llm.context-hash context-hash
                            :llm.status/reason message
                            :llm.context/truncated? (not= context llm-input)
@@ -1284,15 +1336,18 @@
                :result {:llm.test-doc/status :llm.status/error
                         :llm.test-doc/mode mode
                         :llm.test-doc/feature-flag feature-flag
+                        :llm.test-doc/call-strategy call-strategy
                         :llm.test-doc/context-hash context-hash
                         :llm.test-doc/log-path log-path*
                         :llm.test-doc/error message}})))))))
 
 (defn- mission-standard-edit-stage!
-  [{:keys [conn granted mission-id agent-id bundle log-path limit code-idents]}]
+  [{:keys [conn granted mission-id agent-id bundle payload log-path limit code-idents]}]
   (let [validation (or (:validation bundle) {})
         sandbox (or (get-in bundle [:sandbox :root])
                     (str "tmp/missions/" mission-id "/edit-sandbox"))
+        system-map-skip? (or (true? (get-in bundle [:system-map/skip?]))
+                             (true? (:system-map/skip? validation)))
         tests-enabled? (if (contains? validation :tests/enabled?)
                          (boolean (:tests/enabled? validation))
                          true)
@@ -1307,9 +1362,12 @@
                          :lint/paths (or (:lint/paths validation) ["src" "test"])
                          :lint/command (or (:lint/command validation) ["clojure" "-M:lint"])
                          :docs/paths (or (:docs/paths validation) ["SYSTEM_SPEC.md"])
-                         :system-map/entities (or (:system-map/entities validation) [:action/mission.validate])
+                         :system-map/entities (or (:system-map/entities validation)
+                                                  (get-in bundle [:system-map/entities])
+                                                  [:action/mission.validate])
+                         :system-map/skip? system-map-skip?
                          :codetype/paths (or (:codetype/paths validation)
-                                             ["resources/dictionary/code_types.edn"])}
+                                              ["resources/dictionary/code_types.edn"])}
                   (seq (or code-idents (:code.definition/idents bundle)))
                   (assoc :code.definition/idents (vec (or code-idents
                                                           (:code.definition/idents bundle)))))
@@ -1318,7 +1376,7 @@
                                          :fake-key :llm.test-doc-suggestions/fake-response-fn
                                          :call-key :llm.test-doc-suggestions/call-fn
                                          :bundle bundle
-                                         :payload {}})
+                                         :payload (or payload {})})
         llm-stage (llm-test-doc-stage! {:conn conn
                                         :mission-id mission-id
                                         :agent-id agent-id
@@ -1444,6 +1502,7 @@
                                                                          :mission-id mission-id
                                                                          :agent-id agent-id
                                                                          :bundle bundle
+                                                                         :payload payload
                                                                          :code-idents code-idents
                                                                          :log-path run-log-path
                                                                          :limit truncate}))
@@ -1461,6 +1520,7 @@
                                                       [:llm.code-proposal/status
                                                        :llm.code-proposal/mode
                                                        :llm.code-proposal/feature-flag
+                                                       :llm.code-proposal/call-strategy
                                                        :llm.code-proposal/log-path
                                                        :llm.code-proposal/request-id
                                                        :llm.code-proposal/response-id
@@ -1471,6 +1531,7 @@
                                                 [:llm.test-doc/status
                                                  :llm.test-doc/mode
                                                  :llm.test-doc/feature-flag
+                                                 :llm.test-doc/call-strategy
                                                  :llm.test-doc/log-path
                                                  :llm.test-doc/request-id
                                                  :llm.test-doc/response-id

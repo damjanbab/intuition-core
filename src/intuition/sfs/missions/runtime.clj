@@ -885,14 +885,19 @@
            vec))))
 
 (defn- run-system-map!
-  [conn mission-id {:keys [entities]} permissions]
-  (let [{:keys [result]} (actions/execute!
-                          {:conn conn
-                           :action/ident :action/system-map.refresh
-                           :config {:mission/id mission-id
-                                    :system-map/entities (vec (or entities []))}
-                           :permissions permissions})]
-    result))
+  [conn mission-id {:keys [entities skip?]} permissions]
+  (if skip?
+    {:action/status :status/ok
+     :system-map/entities (vec (or entities []))
+     :system-map/skipped? true}
+    (let [{:keys [result]} (actions/execute!
+                            {:conn conn
+                             :action/ident :action/system-map.refresh
+                             :config {:mission/id mission-id
+                                      :system-map/entities (vec (or entities []))
+                                      :system-map/skip? (boolean skip?)}
+                             :permissions permissions})]
+      result)))
 
 (defn- run-codetype-validation!
   [conn mission-id agent-id paths permissions]

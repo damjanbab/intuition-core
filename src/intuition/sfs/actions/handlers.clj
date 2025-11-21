@@ -3167,10 +3167,11 @@
                              :plan.generation/id generation-id}}))
 
 (defn- llm-plan-log-entry
-  [{:keys [mode status feature-flag request response context-hash applied? summary reason]}]
+  [{:keys [mode status feature-flag request response context-hash applied? summary reason call-strategy]}]
   (cond-> {:llm.plan-draft/mode mode
            :llm.plan-draft/status status}
     feature-flag (assoc :llm.plan-draft/feature-flag feature-flag)
+    call-strategy (assoc :llm.plan-draft/call-strategy call-strategy)
     context-hash (assoc :llm.plan-draft/context-hash context-hash)
     request (assoc :llm.plan-draft/request-id (:llm.request/id request))
     response (assoc :llm.plan-draft/response-id (:llm.response/id response)
@@ -3180,13 +3181,14 @@
     reason (assoc :llm.plan-draft/reason reason)))
 
 (defn- llm-plan-decision
-  [{:keys [mode status feature-flag request response context-hash applied? summary reason]}]
+  [{:keys [mode status feature-flag request response context-hash applied? summary reason call-strategy]}]
   (cond-> {:decision/kind :planner/llm.plan-draft
            :decision/source :planner+llm.plan-draft
            :decision/mode mode
            :decision/status status
            :decision/surface llm-plan-draft-surface}
     feature-flag (assoc :decision/feature-flag feature-flag)
+    call-strategy (assoc :decision/call-strategy call-strategy)
     context-hash (assoc :decision/context-hash context-hash)
     request (assoc :decision/request-id (:llm.request/id request))
     response (assoc :decision/response-id (:llm.response/id response)
@@ -3200,12 +3202,14 @@
   (let [settings (llm-plan-settings heuristics config)
         feature-flag (:feature-flag settings)
         mode (:mode settings)
+        call-strategy (:llm/call-strategy settings)
         base {:nodes nodes
               :edges edges
               :coverage coverage}
         disabled-log (llm-plan-log-entry {:mode mode
                                           :status :llm.status/disabled
-                                          :feature-flag feature-flag})]
+                                          :feature-flag feature-flag
+                                          :call-strategy call-strategy})]
     (if-not (llm-plan-enabled? settings)
       (assoc base
              :warnings []
@@ -3291,6 +3295,7 @@
                 log-entry (llm-plan-log-entry {:mode mode
                                                :status llm-status
                                                :feature-flag feature-flag
+                                               :call-strategy call-strategy
                                                :request request
                                                :response response
                                                :context-hash context-hash
@@ -3300,6 +3305,7 @@
                 decision-entry (llm-plan-decision {:mode mode
                                                    :status llm-status
                                                    :feature-flag feature-flag
+                                                   :call-strategy call-strategy
                                                    :request request
                                                    :response response
                                                    :context-hash context-hash
@@ -3311,17 +3317,19 @@
                    :log log-entry
                    :decision decision-entry))
           (catch Exception e
-            (let [message (or (ex-message e) (.getMessage e) "LLM plan-draft error")
-                  warning (str "LLM plan-draft error: " message)
-                  log-entry (llm-plan-log-entry {:mode mode
-                                                 :status :llm.status/error
-                                                 :feature-flag feature-flag
-                                                 :context-hash context-hash
-                                                 :applied? false
-                                                 :reason message})
-                  decision-entry (llm-plan-decision {:mode mode
-                                                     :status :llm.status/error
-                                                     :feature-flag feature-flag
+                  (let [message (or (ex-message e) (.getMessage e) "LLM plan-draft error")
+                        warning (str "LLM plan-draft error: " message)
+                        log-entry (llm-plan-log-entry {:mode mode
+                                                       :status :llm.status/error
+                                                       :feature-flag feature-flag
+                                                       :call-strategy call-strategy
+                                                       :context-hash context-hash
+                                                       :applied? false
+                                                       :reason message})
+                        decision-entry (llm-plan-decision {:mode mode
+                                                           :status :llm.status/error
+                                                           :feature-flag feature-flag
+                                                           :call-strategy call-strategy
                                                      :context-hash context-hash
                                                      :applied? false
                                                      :reason message})]
