@@ -151,8 +151,36 @@
   :entity/updated-by :mission/M-11
   :entity/description "Required by SYSTEM_SPEC.md §§2.2 & §6 for staging, canary, promotion, and rollback."
   :permission/ident :permission/deploy.manage
-  :permission/name "Deployment management"
+ :permission/name "Deployment management"
   :permission/description "Gives access to :action/deploy.* handlers and ensures traffic shifts capture §6 evidence."}
+
+ {:entity/type :permission/definition
+  :entity/path "/security/permissions/code.propose"
+  :entity/name "Propose code changes"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-812
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-812
+  :entity/description "Governs Datomic-first code/spec/template proposals (SYSTEM_SPEC §§3.3–3.6, §4.7, §5.1, §6, §9)."
+  :permission/ident :permission/code.propose
+  :permission/name "Submit code proposals"
+  :permission/description "Allows :action/code.proposal.validate to accept governed payloads into the code edit channel."}
+
+ {:entity/type :permission/definition
+  :entity/path "/security/permissions/code.proposal.apply"
+  :entity/name "Apply code proposals"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-812
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-812
+  :entity/description "Restricts Datomic application and version snapshot of code proposals (SYSTEM_SPEC §§3.3–3.6, §4.7, §5.1, §6, §9)."
+  :permission/ident :permission/code.proposal.apply
+  :permission/name "Apply code proposals"
+  :permission/description "Allows :action/code.proposal.apply to transact proposals + artifacts with rollback evidence."}
 
  ;; Role definitions ---------------------------------------------------------
  {:entity/type :role/definition
@@ -176,6 +204,8 @@
                      :permission/missions.manage
                      :permission/missions.report
                      :permission/missions.log
+                     :permission/code.propose
+                     :permission/code.proposal.apply
                      :permission/security.approve
                      :permission/deploy.manage]
   :role/description "Full lifecycle control including approvals, deployment flips, and evidence reviews."}
@@ -200,7 +230,8 @@
                      :permission/system-map.write
                      :permission/missions.manage
                      :permission/missions.report
-                     :permission/missions.log]
+                     :permission/missions.log
+                     :permission/code.propose]
   :role/description "Executes dictionary/mission work but does not manage production traffic directly."}
 
  {:entity/type :role/definition

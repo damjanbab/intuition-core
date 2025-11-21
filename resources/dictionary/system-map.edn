@@ -50,10 +50,14 @@
   :attribute/cardinality :db.cardinality/one
   :attribute/required? true
   :attribute/options {:enum #{:system-map.entity/action
-                               :system-map.entity/protocol
-                               :system-map.entity/app
-                               :system-map.entity/workflow
-                               :system-map.entity/mission}}
+                              :system-map.entity/protocol
+                              :system-map.entity/app
+                              :system-map.entity/workflow
+                              :system-map.entity/mission
+                              :system-map.entity/code
+                              :system-map.entity/test
+                              :system-map.entity/doc
+                              :system-map.entity/code-type}}
   :attribute/description "Controls iconography + layout per UI model."}
 
  {:entity/type :meta/attribute
@@ -158,8 +162,11 @@
   :attribute/cardinality :db.cardinality/one
   :attribute/required? true
   :attribute/options {:enum #{:system-map.relation/orchestrates
-                               :system-map.relation/feeds
-                               :system-map.relation/depends-on}}
+                              :system-map.relation/feeds
+                              :system-map.relation/depends-on
+                              :system-map.relation/implements
+                              :system-map.relation/validated-by
+                              :system-map.relation/documented-by}}
   :attribute/description "Describes how the source influences the target."}
 
  {:entity/type :meta/attribute
@@ -567,12 +574,76 @@
   :entity/created-by :mission/M-09
   :entity/updated-at #inst "2025-11-19T00:00:00.000-00:00"
   :entity/updated-by :mission/M-09
-  :entity/description "JS approval workflow per SYSTEM_SPEC.md §§4.8, 10.2."
+ :entity/description "JS approval workflow per SYSTEM_SPEC.md §§4.8, 10.2."
   :system-map.node/ident :protocol/js-approve
   :system-map.node/entity :protocol/js-approve
   :system-map.node/entity-kind :system-map.entity/protocol
   :system-map.node/spec-sections ["4.8" "6" "10.2"]
  :system-map.node/tags [:system-map.tag/protocol :system-map.tag/security]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/code-graph/code-definition"
+  :entity/name "System-map node – CodeDefinition"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-811
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-811
+  :entity/description "Represents :code.definition/* entries mirrored from the code graph (§§4.1, 4.7, 7, 9)."
+  :system-map.node/ident :system-map/node.code
+  :system-map.node/entity :system-map/node.code
+  :system-map.node/entity-kind :system-map.entity/code
+  :system-map.node/spec-sections ["4.1" "4.7" "7" "9"]
+  :system-map.node/tags [:system-map.tag/code :system-map.tag/system-map]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/code-graph/test-definition"
+  :entity/name "System-map node – TestDefinition"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-811
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-811
+  :entity/description "Covers :code.definition/tests harvested from the code graph (§§3.5, 4.7, 7, 9)."
+  :system-map.node/ident :system-map/node.test
+  :system-map.node/entity :system-map/node.test
+  :system-map.node/entity-kind :system-map.entity/test
+  :system-map.node/spec-sections ["3.5" "4.7" "7" "9"]
+  :system-map.node/tags [:system-map.tag/tests :system-map.tag/system-map]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/code-graph/doc-coverage"
+  :entity/name "System-map node – Doc Coverage"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-811
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-811
+  :entity/description "Docs/templates linked from the code graph and rendered into the map (§§4.10, 7, 9)."
+  :system-map.node/ident :system-map/node.doc
+  :system-map.node/entity :system-map/node.doc
+  :system-map.node/entity-kind :system-map.entity/doc
+  :system-map.node/spec-sections ["4.10" "7" "9"]
+  :system-map.node/tags [:system-map.tag/docs :system-map.tag/system-map]}
+
+ {:entity/type :system-map/node
+  :entity/path "/system/map/nodes/code-graph/mission"
+  :entity/name "System-map node – Mission implementation"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-811
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-811
+  :entity/description "Mission nodes projected from the code graph so implements/coverage edges can attach (§§4.1, 9)."
+  :system-map.node/ident :system-map/node.mission
+  :system-map.node/entity :system-map/node.mission
+  :system-map.node/entity-kind :system-map.entity/mission
+  :system-map.node/spec-sections ["4.1" "9"]
+  :system-map.node/tags [:system-map.tag/mission :system-map.tag/system-map]}
 
  {:entity/type :system-map/node
   :entity/path "/system/map/nodes/code/intuition-sfs-actions-handlers"
@@ -655,6 +726,54 @@
   :system-map.node/tags [:system-map.tag/protocol :system-map.tag/security]}
 
  ;; Sample edges wiring the topology
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/mission-implements-code"
+  :entity/name "Missions implement code"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-811
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-811
+  :entity/description "Links mission execution nodes back to the code they deploy (§§4.1, 4.7, 9)."
+  :system-map.edge/ident :system-map.edge/mission->code
+  :system-map.edge/from :system-map/node.mission
+  :system-map.edge/to :system-map/node.code
+  :system-map.edge/relation :system-map.relation/implements
+  :system-map.edge/spec-sections ["4.1" "4.7" "9"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/code-validated-by-test"
+  :entity/name "Code validated by tests"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-811
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-811
+  :entity/description "TestDefinition coverage derived from the code graph (§§3.5, 4.7, 7, 9)."
+  :system-map.edge/ident :system-map.edge/code->test
+  :system-map.edge/from :system-map/node.code
+  :system-map.edge/to :system-map/node.test
+  :system-map.edge/relation :system-map.relation/validated-by
+  :system-map.edge/spec-sections ["3.5" "4.7" "7" "9"]}
+
+ {:entity/type :system-map/edge
+  :entity/path "/system/map/edges/code-documented-by-doc"
+  :entity/name "Code documented by docs"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-811
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-811
+  :entity/description "Docs/Templates linked to code coverage in the system-map (§§4.10, 7, 9)."
+  :system-map.edge/ident :system-map.edge/code->doc
+  :system-map.edge/from :system-map/node.code
+  :system-map.edge/to :system-map/node.doc
+  :system-map.edge/relation :system-map.relation/documented-by
+  :system-map.edge/spec-sections ["4.10" "7" "9"]}
+
  {:entity/type :system-map/edge
   :entity/path "/system/map/edges/protocol-mission-standard->protocol-mission-sync"
   :entity/name "Mission standard orchestrates mission-sync"

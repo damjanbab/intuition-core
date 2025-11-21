@@ -36,6 +36,7 @@
        (is (= :status/succeeded (:status result)))
       (is (= [:step/mission-sync
               :step/acquire-locks
+              :step/code-materialize
               :step/lint
               :step/run-tests
               :step/codetype
@@ -43,7 +44,7 @@
                :step/system-map
                :step/release-locks]
               (map :id (:steps result))))
-       (is (= #{:work-track/tests :work-track/docs :work-track/system-map}
+       (is (= #{:work-track/tests :work-track/docs :work-track/system-map :work-track/code}
               (:work-tracks result)))
        (let [status (-> (d/q '[:find ?status
                                :where [?e :protocol.run/ident :protocol/mission-standard]

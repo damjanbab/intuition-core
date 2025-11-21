@@ -1,0 +1,520 @@
+{:analytics/report
+ {:analytics.report/id "analytics-20251120-161817",
+  :analytics.report/recorded-at "2025-11-20T16:18:17.350134915Z",
+  :analytics.report/missions
+  ["M-20251121-301"
+   "M-20251121-401"
+   "M-20251121-402"
+   "M-20251121-403"
+   "M-20251121-404"
+   "M-20251121-405"
+   "M-20251121-406"
+   "M-20251121-407"
+   "M-20251121-408"
+   "M-20251121-409"
+   "M-20251121-410"
+   "M-20251121-601"
+   "M-20251121-602"
+   "M-20251121-603"
+   "M-20251121-604"
+   "M-20251121-605"
+   "M-20251121-606"
+   "M-20251121-607"
+   "M-20251121-608"
+   "M-20251121-701"
+   "M-20251121-702"
+   "M-20251121-703"
+   "M-20251121-801"
+   "M-20251121-802"
+   "M-20251121-DEV-LINT"
+   "M-MERGE-DEBUG"
+   "M-RUN-1763655496984"
+   "M-RUN-REPRO-1763653728939"
+   "M-RUN-REPRO-1763654022397"
+   "M-RUN-REPRO-1763654607163"
+   "M-RUN-REPRO-1763654819288"
+   "M-RUN-REPRO-1763654922038"
+   "M-RUN-REPRO-1763655258634"
+   "M-RUN-REPRO-1763655359873"
+   "m-04-1763475981743"
+   "m-10"
+   "m-20251120-101"
+   "m-20251120-102"
+   "m-20251121-606"
+   "m-20251121-608"
+   "m-cli-1763475658100"
+   "m-cli-1763475730877"
+   "m-deploy"
+   "m-lint-debug"
+   "m-log-1763477470716"
+   "m-log-1763477483348"
+   "m-log-1763477502277"
+   "m-log-1763477629778"
+   "m-log-1763479022068"
+   "m-log-1763479111882"
+   "m-log-1763479267948"
+   "m-log-1763479319004"
+   "m-log-1763479360317"
+   "m-log-1763479396235"
+   "m-log-1763479611420"
+   "m-log-1763479661205"
+   "m-log-1763479685255"
+   "m-log-1763479908140"
+   "m-log-1763479951839"
+   "m-log-1763483790952"
+   "m-log-1763484455017"
+   "m-log-1763484567140"
+   "m-log-1763484619870"
+   "m-log-1763484737348"
+   "m-log-1763486372692"
+   "m-log-1763486436666"
+   "m-log-1763486580491"
+   "m-log-1763486602541"
+   "m-log-1763486977791"
+   "m-log-1763487446174"
+   "m-run-1763655496984"
+   "m-run-repro-1763653728939"
+   "m-run-repro-1763654022397"
+   "m-run-repro-1763654607163"
+   "m-run-repro-1763654819288"
+   "m-run-repro-1763654922038"
+   "m-run-repro-1763655258634"
+   "m-run-repro-1763655359873"
+   "mission-m-20251121-402"],
+  :analytics.report/metrics
+  [{:analytics.metric/key :analytics.metric/lock-waits,
+    :analytics.metric/unit :unit/summary,
+    :analytics.metric/value
+    "{:total-events 9, :total-locks 10, :total-wait-ms 0, :details ({:mission/id \"M-20251121-403\", :event-count 1, :lock-count 2, :wait-ms 0} {:mission/id \"M-20251121-703\", :event-count 1, :lock-count 1, :wait-ms 0} {:mission/id \"M-RUN-1763655496984\", :event-count 1, :lock-count 1, :wait-ms 0} {:mission/id \"M-RUN-REPRO-1763654022397\", :event-count 1, :lock-count 1, :wait-ms 0} {:mission/id \"M-RUN-REPRO-1763654607163\", :event-count 1, :lock-count 1, :wait-ms 0} {:mission/id \"M-RUN-REPRO-1763654819288\", :event-count 1, :lock-count 1, :wait-ms 0} {:mission/id \"M-RUN-REPRO-1763654922038\", :event-count 1, :lock-count 1, :wait-ms 0} {:mission/id \"M-RUN-REPRO-1763655258634\", :event-count 1, :lock-count 1, :wait-ms 0} {:mission/id \"M-RUN-REPRO-1763655359873\", :event-count 1, :lock-count 1, :wait-ms 0})}",
+    :analytics.metric/context
+    "{:spec/sections [\"3.3\" \"3.4\" \"3.5\" \"3.6\" \"5.1\" \"5.3\" \"9\"], :analytics/new-step :analytics.step/post-dry-run, :metric/name :lock-waits}"}
+   {:analytics.metric/key :analytics.metric/ci-reruns,
+    :analytics.metric/unit :unit/summary,
+    :analytics.metric/value
+    "{:total-runs 2, :total-reruns 1, :details ({:mission/id \"M-20251121-406\", :run-count 2, :rerun-count 1})}",
+    :analytics.metric/context
+    "{:spec/sections [\"3.3\" \"3.4\" \"3.5\" \"3.6\" \"5.1\" \"5.3\" \"9\"], :analytics/new-step :analytics.step/post-dry-run, :metric/name :ci-reruns}"}
+   {:analytics.metric/key :analytics.metric/validator-failures,
+    :analytics.metric/unit :unit/summary,
+    :analytics.metric/value "{:total-failures 0, :details ()}",
+    :analytics.metric/context
+    "{:spec/sections [\"3.3\" \"3.4\" \"3.5\" \"3.6\" \"5.1\" \"5.3\" \"9\"], :analytics/new-step :analytics.step/post-dry-run, :metric/name :validator-failures}"}
+   {:analytics.metric/key :analytics.metric/requirement-coverage,
+    :analytics.metric/unit :unit/vector,
+    :analytics.metric/value
+    "({:mission/id \"M-20251121-402\", :validated-at \"2025-11-19T14:32:58.292508628Z\", :requirements 2, :coverage-count 2, :validation-status (#:validation{:kind :work-plan/coverage, :status :status/passed} #:validation{:kind :work-plan/dag, :status :status/passed} #:validation{:kind :work-plan/resources, :status :status/passed})} {:mission/id \"M-20251121-602\", :validated-at \"2025-11-20T07:55:29.850435734Z\", :requirements 3, :coverage-count 3, :validation-status (#:validation{:kind :work-plan/coverage, :status :status/passed} #:validation{:kind :work-plan/dag, :status :status/passed} #:validation{:kind :work-plan/resources, :status :status/passed})} {:mission/id \"M-20251121-608\", :validated-at \"2025-11-20T09:49:44.483089433Z\", :requirements 2, :coverage-count 2, :validation-status (#:validation{:kind :work-plan/coverage, :status :status/passed} #:validation{:kind :work-plan/dag, :status :status/passed} #:validation{:kind :work-plan/resources, :status :status/passed})} {:mission/id \"M-20251121-702\", :validated-at \"2025-11-20T11:06:06.513935668Z\", :requirements 3, :coverage-count 3, :validation-status (#:validation{:kind :work-plan/coverage, :status :status/passed} #:validation{:kind :work-plan/dag, :status :status/passed} #:validation{:kind :work-plan/resources, :status :status/passed})} {:mission/id \"M-20251121-703\", :validated-at \"2025-11-20T11:37:02.925390030Z\", :requirements 3, :coverage-count 3, :validation-status (#:validation{:kind :work-plan/coverage, :status :status/passed} #:validation{:kind :work-plan/dag, :status :status/passed} #:validation{:kind :work-plan/resources, :status :status/passed})} {:mission/id \"M-RUN-1763655496984\", :validated-at \"2025-11-20T16:18:17.105849107Z\", :requirements 2, :coverage-count 2, :validation-status (#:validation{:kind :work-plan/coverage, :status :status/passed} #:validation{:kind :work-plan/dag, :status :status/passed} #:validation{:kind :work-plan/resources, :status :status/passed})} {:mission/id \"M-RUN-REPRO-1763653728939\", :validated-at \"2025-11-20T15:48:49.480353490Z\", :requirements 2, :coverage-count 2, :validation-status (#:validation{:kind :work-plan/coverage, :status :status/passed} #:validation{:kind :work-plan/dag, :status :status/passed} #:validation{:kind :work-plan/resources, :status :status/passed})} {:mission/id \"M-RUN-REPRO-1763654022397\", :validated-at \"2025-11-20T15:53:42.913105130Z\", :requirements 2, :coverage-count 2, :validation-status (#:validation{:kind :work-plan/coverage, :status :status/passed} #:validation{:kind :work-plan/dag, :status :status/passed} #:validation{:kind :work-plan/resources, :status :status/passed})} {:mission/id \"M-RUN-REPRO-1763654607163\", :validated-at \"2025-11-20T16:03:27.675581983Z\", :requirements 2, :coverage-count 2, :validation-status (#:validation{:kind :work-plan/coverage, :status :status/passed} #:validation{:kind :work-plan/dag, :status :status/passed} #:validation{:kind :work-plan/resources, :status :status/passed})} {:mission/id \"M-RUN-REPRO-1763654819288\", :validated-at \"2025-11-20T16:06:59.818405173Z\", :requirements 2, :coverage-count 2, :validation-status (#:validation{:kind :work-plan/coverage, :status :status/passed} #:validation{:kind :work-plan/dag, :status :status/passed} #:validation{:kind :work-plan/resources, :status :status/passed})} {:mission/id \"M-RUN-REPRO-1763654922038\", :validated-at \"2025-11-20T16:08:42.574913404Z\", :requirements 2, :coverage-count 2, :validation-status (#:validation{:kind :work-plan/coverage, :status :status/passed} #:validation{:kind :work-plan/dag, :status :status/passed} #:validation{:kind :work-plan/resources, :status :status/passed})} {:mission/id \"M-RUN-REPRO-1763655258634\", :validated-at \"2025-11-20T16:14:19.177270963Z\", :requirements 2, :coverage-count 2, :validation-status (#:validation{:kind :work-plan/coverage, :status :status/passed} #:validation{:kind :work-plan/dag, :status :status/passed} #:validation{:kind :work-plan/resources, :status :status/passed})} {:mission/id \"M-RUN-REPRO-1763655359873\", :validated-at \"2025-11-20T16:16:00.452514162Z\", :requirements 2, :coverage-count 2, :validation-status (#:validation{:kind :work-plan/coverage, :status :status/passed} #:validation{:kind :work-plan/dag, :status :status/passed} #:validation{:kind :work-plan/resources, :status :status/passed})} {:mission/id \"mission-m-20251121-402\", :validated-at \"2025-11-19T14:05:51.201420538Z\", :requirements 2, :coverage-count 2, :validation-status (#:validation{:kind :work-plan/coverage, :status :status/passed} #:validation{:kind :work-plan/dag, :status :status/passed} #:validation{:kind :work-plan/resources, :status :status/passed})})",
+    :analytics.metric/context
+    "{:spec/sections [\"3.3\" \"3.4\" \"3.5\" \"3.6\" \"5.1\" \"5.3\" \"9\"], :analytics/new-step :analytics.step/post-dry-run, :metric/name :requirement-coverage}"}
+   {:analytics.metric/key :analytics.metric/agent-utilization,
+    :analytics.metric/unit :unit/percent,
+    :analytics.metric/value
+    "{:total-runtime-ms 6, :window-ms 44158702, :utilization-percent 1.358735589646634E-5, :runs ({:mission/id \"M-20251121-408\", :duration-ms 3, :status :scheduler.status/success} {:mission/id \"M-20251121-608\", :duration-ms 3, :status :scheduler.status/success})}",
+    :analytics.metric/context
+    "{:spec/sections [\"3.3\" \"3.4\" \"3.5\" \"3.6\" \"5.1\" \"5.3\" \"9\"], :analytics/new-step :analytics.step/post-dry-run, :metric/name :agent-utilization}"}
+   {:analytics.metric/key :analytics.metric/spec-plan-mission-merge,
+    :analytics.metric/unit :unit/vector,
+    :analytics.metric/value
+    "({:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"M-20251121-402\", :plan->mission-ms nil, :plan/published-at \"2025-11-19T14:32:58.292508628Z\", :mission/started-at nil} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"M-20251121-403\", :plan->mission-ms 6, :plan/published-at \"2025-11-19T15:12:36.193518005Z\", :mission/started-at \"2025-11-19T15:12:36.199546321Z\"} {:spec/captured-at nil, :mission/merged-at \"2025-11-19T20:02:49.689420777Z\", :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"M-20251121-406\", :plan->mission-ms nil, :plan/published-at nil, :mission/started-at nil} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"M-20251121-602\", :plan->mission-ms nil, :plan/published-at \"2025-11-20T07:55:29.850435734Z\", :mission/started-at nil} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"M-20251121-608\", :plan->mission-ms nil, :plan/published-at \"2025-11-20T09:49:44.483089433Z\", :mission/started-at nil} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"M-20251121-702\", :plan->mission-ms nil, :plan/published-at \"2025-11-20T11:06:06.513935668Z\", :mission/started-at nil} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"M-20251121-703\", :plan->mission-ms 1, :plan/published-at \"2025-11-20T11:37:02.981745350Z\", :mission/started-at \"2025-11-20T11:37:02.983551584Z\"} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"M-RUN-1763655496984\", :plan->mission-ms 55, :plan/published-at \"2025-11-20T16:18:17.135888892Z\", :mission/started-at \"2025-11-20T16:18:17.190978927Z\"} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"M-RUN-REPRO-1763653728939\", :plan->mission-ms nil, :plan/published-at \"2025-11-20T15:48:49.480353490Z\", :mission/started-at nil} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"M-RUN-REPRO-1763654022397\", :plan->mission-ms 67, :plan/published-at \"2025-11-20T15:53:42.952469952Z\", :mission/started-at \"2025-11-20T15:53:43.020152625Z\"} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"M-RUN-REPRO-1763654607163\", :plan->mission-ms 90, :plan/published-at \"2025-11-20T16:03:27.721526364Z\", :mission/started-at \"2025-11-20T16:03:27.812066069Z\"} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"M-RUN-REPRO-1763654819288\", :plan->mission-ms 66, :plan/published-at \"2025-11-20T16:06:59.874796788Z\", :mission/started-at \"2025-11-20T16:06:59.941300341Z\"} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"M-RUN-REPRO-1763654922038\", :plan->mission-ms 102, :plan/published-at \"2025-11-20T16:08:42.622460003Z\", :mission/started-at \"2025-11-20T16:08:42.724572624Z\"} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"M-RUN-REPRO-1763655258634\", :plan->mission-ms 76, :plan/published-at \"2025-11-20T16:14:19.238973778Z\", :mission/started-at \"2025-11-20T16:14:19.315550294Z\"} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"M-RUN-REPRO-1763655359873\", :plan->mission-ms 80, :plan/published-at \"2025-11-20T16:16:00.499363018Z\", :mission/started-at \"2025-11-20T16:16:00.579515392Z\"} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"m-20251120-101\", :plan->mission-ms nil, :plan/published-at nil, :mission/started-at \"2025-11-19T09:12:49.224483373Z\"} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"m-deploy\", :plan->mission-ms nil, :plan/published-at nil, :mission/started-at \"2025-11-20T16:18:14.397079907Z\"} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"m-lint-debug\", :plan->mission-ms nil, :plan/published-at nil, :mission/started-at \"2025-11-20T16:01:27.791338151Z\"} {:spec/captured-at nil, :mission/merged-at nil, :mission->merge-ms nil, :spec->plan-ms nil, :spec->merge-ms nil, :mission/id \"mission-m-20251121-402\", :plan->mission-ms nil, :plan/published-at \"2025-11-19T14:05:51.201420538Z\", :mission/started-at nil})",
+    :analytics.metric/context
+    "{:spec/sections [\"3.3\" \"3.4\" \"3.5\" \"3.6\" \"5.1\" \"5.3\" \"9\"], :analytics/new-step :analytics.step/post-dry-run, :metric/name :spec-plan-mission-merge}"}
+   {:analytics.metric/key :analytics.metric/codetype-generations,
+    :analytics.metric/unit :unit/count,
+    :analytics.metric/value
+    "{:total 2, :executed 1, :details ({:mission/id \"M-20251121-404\", :total 2, :executed 1})}",
+    :analytics.metric/context
+    "{:spec/sections [\"3.3\" \"3.4\" \"3.5\" \"3.6\" \"5.1\" \"5.3\" \"9\"], :analytics/new-step :analytics.step/post-dry-run, :metric/name :codetype-generations}"}],
+  :analytics.report/source :analytics.source/gateway},
+ :spec/sections ["3.3" "3.4" "3.5" "3.6" "5.1" "5.3" "9"],
+ :analytics/new-step :analytics.step/post-dry-run,
+ :analytics/summary
+ {:codetype-summary
+  {:total 2,
+   :executed 1,
+   :details ({:mission/id "M-20251121-404", :total 2, :executed 1})},
+  :utilization-summary
+  {:total-runtime-ms 6,
+   :window-ms 44158702,
+   :utilization-percent 1.358735589646634E-5,
+   :runs
+   ({:mission/id "M-20251121-408",
+     :duration-ms 3,
+     :status :scheduler.status/success}
+    {:mission/id "M-20251121-608",
+     :duration-ms 3,
+     :status :scheduler.status/success})},
+  :ci-summary
+  {:total-runs 2,
+   :total-reruns 1,
+   :details
+   ({:mission/id "M-20251121-406", :run-count 2, :rerun-count 1})},
+  :mission-count 79,
+  :lock-summary
+  {:total-events 9,
+   :total-locks 10,
+   :total-wait-ms 0,
+   :details
+   ({:mission/id "M-20251121-403",
+     :event-count 1,
+     :lock-count 2,
+     :wait-ms 0}
+    {:mission/id "M-20251121-703",
+     :event-count 1,
+     :lock-count 1,
+     :wait-ms 0}
+    {:mission/id "M-RUN-1763655496984",
+     :event-count 1,
+     :lock-count 1,
+     :wait-ms 0}
+    {:mission/id "M-RUN-REPRO-1763654022397",
+     :event-count 1,
+     :lock-count 1,
+     :wait-ms 0}
+    {:mission/id "M-RUN-REPRO-1763654607163",
+     :event-count 1,
+     :lock-count 1,
+     :wait-ms 0}
+    {:mission/id "M-RUN-REPRO-1763654819288",
+     :event-count 1,
+     :lock-count 1,
+     :wait-ms 0}
+    {:mission/id "M-RUN-REPRO-1763654922038",
+     :event-count 1,
+     :lock-count 1,
+     :wait-ms 0}
+    {:mission/id "M-RUN-REPRO-1763655258634",
+     :event-count 1,
+     :lock-count 1,
+     :wait-ms 0}
+    {:mission/id "M-RUN-REPRO-1763655359873",
+     :event-count 1,
+     :lock-count 1,
+     :wait-ms 0})},
+  :coverage-summary
+  ({:mission/id "M-20251121-402",
+    :validated-at "2025-11-19T14:32:58.292508628Z",
+    :requirements 2,
+    :coverage-count 2,
+    :validation-status
+    ({:validation/kind :work-plan/coverage,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/dag,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/resources,
+      :validation/status :status/passed})}
+   {:mission/id "M-20251121-602",
+    :validated-at "2025-11-20T07:55:29.850435734Z",
+    :requirements 3,
+    :coverage-count 3,
+    :validation-status
+    ({:validation/kind :work-plan/coverage,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/dag,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/resources,
+      :validation/status :status/passed})}
+   {:mission/id "M-20251121-608",
+    :validated-at "2025-11-20T09:49:44.483089433Z",
+    :requirements 2,
+    :coverage-count 2,
+    :validation-status
+    ({:validation/kind :work-plan/coverage,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/dag,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/resources,
+      :validation/status :status/passed})}
+   {:mission/id "M-20251121-702",
+    :validated-at "2025-11-20T11:06:06.513935668Z",
+    :requirements 3,
+    :coverage-count 3,
+    :validation-status
+    ({:validation/kind :work-plan/coverage,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/dag,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/resources,
+      :validation/status :status/passed})}
+   {:mission/id "M-20251121-703",
+    :validated-at "2025-11-20T11:37:02.925390030Z",
+    :requirements 3,
+    :coverage-count 3,
+    :validation-status
+    ({:validation/kind :work-plan/coverage,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/dag,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/resources,
+      :validation/status :status/passed})}
+   {:mission/id "M-RUN-1763655496984",
+    :validated-at "2025-11-20T16:18:17.105849107Z",
+    :requirements 2,
+    :coverage-count 2,
+    :validation-status
+    ({:validation/kind :work-plan/coverage,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/dag,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/resources,
+      :validation/status :status/passed})}
+   {:mission/id "M-RUN-REPRO-1763653728939",
+    :validated-at "2025-11-20T15:48:49.480353490Z",
+    :requirements 2,
+    :coverage-count 2,
+    :validation-status
+    ({:validation/kind :work-plan/coverage,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/dag,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/resources,
+      :validation/status :status/passed})}
+   {:mission/id "M-RUN-REPRO-1763654022397",
+    :validated-at "2025-11-20T15:53:42.913105130Z",
+    :requirements 2,
+    :coverage-count 2,
+    :validation-status
+    ({:validation/kind :work-plan/coverage,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/dag,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/resources,
+      :validation/status :status/passed})}
+   {:mission/id "M-RUN-REPRO-1763654607163",
+    :validated-at "2025-11-20T16:03:27.675581983Z",
+    :requirements 2,
+    :coverage-count 2,
+    :validation-status
+    ({:validation/kind :work-plan/coverage,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/dag,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/resources,
+      :validation/status :status/passed})}
+   {:mission/id "M-RUN-REPRO-1763654819288",
+    :validated-at "2025-11-20T16:06:59.818405173Z",
+    :requirements 2,
+    :coverage-count 2,
+    :validation-status
+    ({:validation/kind :work-plan/coverage,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/dag,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/resources,
+      :validation/status :status/passed})}
+   {:mission/id "M-RUN-REPRO-1763654922038",
+    :validated-at "2025-11-20T16:08:42.574913404Z",
+    :requirements 2,
+    :coverage-count 2,
+    :validation-status
+    ({:validation/kind :work-plan/coverage,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/dag,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/resources,
+      :validation/status :status/passed})}
+   {:mission/id "M-RUN-REPRO-1763655258634",
+    :validated-at "2025-11-20T16:14:19.177270963Z",
+    :requirements 2,
+    :coverage-count 2,
+    :validation-status
+    ({:validation/kind :work-plan/coverage,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/dag,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/resources,
+      :validation/status :status/passed})}
+   {:mission/id "M-RUN-REPRO-1763655359873",
+    :validated-at "2025-11-20T16:16:00.452514162Z",
+    :requirements 2,
+    :coverage-count 2,
+    :validation-status
+    ({:validation/kind :work-plan/coverage,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/dag,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/resources,
+      :validation/status :status/passed})}
+   {:mission/id "mission-m-20251121-402",
+    :validated-at "2025-11-19T14:05:51.201420538Z",
+    :requirements 2,
+    :coverage-count 2,
+    :validation-status
+    ({:validation/kind :work-plan/coverage,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/dag,
+      :validation/status :status/passed}
+     {:validation/kind :work-plan/resources,
+      :validation/status :status/passed})}),
+  :timestamp "20251120-161817",
+  :validator-summary {:total-failures 0, :details ()},
+  :timelines
+  ({:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "M-20251121-402",
+    :plan->mission-ms nil,
+    :plan/published-at "2025-11-19T14:32:58.292508628Z",
+    :mission/started-at nil}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "M-20251121-403",
+    :plan->mission-ms 6,
+    :plan/published-at "2025-11-19T15:12:36.193518005Z",
+    :mission/started-at "2025-11-19T15:12:36.199546321Z"}
+   {:spec/captured-at nil,
+    :mission/merged-at "2025-11-19T20:02:49.689420777Z",
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "M-20251121-406",
+    :plan->mission-ms nil,
+    :plan/published-at nil,
+    :mission/started-at nil}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "M-20251121-602",
+    :plan->mission-ms nil,
+    :plan/published-at "2025-11-20T07:55:29.850435734Z",
+    :mission/started-at nil}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "M-20251121-608",
+    :plan->mission-ms nil,
+    :plan/published-at "2025-11-20T09:49:44.483089433Z",
+    :mission/started-at nil}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "M-20251121-702",
+    :plan->mission-ms nil,
+    :plan/published-at "2025-11-20T11:06:06.513935668Z",
+    :mission/started-at nil}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "M-20251121-703",
+    :plan->mission-ms 1,
+    :plan/published-at "2025-11-20T11:37:02.981745350Z",
+    :mission/started-at "2025-11-20T11:37:02.983551584Z"}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "M-RUN-1763655496984",
+    :plan->mission-ms 55,
+    :plan/published-at "2025-11-20T16:18:17.135888892Z",
+    :mission/started-at "2025-11-20T16:18:17.190978927Z"}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "M-RUN-REPRO-1763653728939",
+    :plan->mission-ms nil,
+    :plan/published-at "2025-11-20T15:48:49.480353490Z",
+    :mission/started-at nil}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "M-RUN-REPRO-1763654022397",
+    :plan->mission-ms 67,
+    :plan/published-at "2025-11-20T15:53:42.952469952Z",
+    :mission/started-at "2025-11-20T15:53:43.020152625Z"}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "M-RUN-REPRO-1763654607163",
+    :plan->mission-ms 90,
+    :plan/published-at "2025-11-20T16:03:27.721526364Z",
+    :mission/started-at "2025-11-20T16:03:27.812066069Z"}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "M-RUN-REPRO-1763654819288",
+    :plan->mission-ms 66,
+    :plan/published-at "2025-11-20T16:06:59.874796788Z",
+    :mission/started-at "2025-11-20T16:06:59.941300341Z"}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "M-RUN-REPRO-1763654922038",
+    :plan->mission-ms 102,
+    :plan/published-at "2025-11-20T16:08:42.622460003Z",
+    :mission/started-at "2025-11-20T16:08:42.724572624Z"}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "M-RUN-REPRO-1763655258634",
+    :plan->mission-ms 76,
+    :plan/published-at "2025-11-20T16:14:19.238973778Z",
+    :mission/started-at "2025-11-20T16:14:19.315550294Z"}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "M-RUN-REPRO-1763655359873",
+    :plan->mission-ms 80,
+    :plan/published-at "2025-11-20T16:16:00.499363018Z",
+    :mission/started-at "2025-11-20T16:16:00.579515392Z"}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "m-20251120-101",
+    :plan->mission-ms nil,
+    :plan/published-at nil,
+    :mission/started-at "2025-11-19T09:12:49.224483373Z"}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "m-deploy",
+    :plan->mission-ms nil,
+    :plan/published-at nil,
+    :mission/started-at "2025-11-20T16:18:14.397079907Z"}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "m-lint-debug",
+    :plan->mission-ms nil,
+    :plan/published-at nil,
+    :mission/started-at "2025-11-20T16:01:27.791338151Z"}
+   {:spec/captured-at nil,
+    :mission/merged-at nil,
+    :mission->merge-ms nil,
+    :spec->plan-ms nil,
+    :spec->merge-ms nil,
+    :mission/id "mission-m-20251121-402",
+    :plan->mission-ms nil,
+    :plan/published-at "2025-11-19T14:05:51.201420538Z",
+    :mission/started-at nil})}}

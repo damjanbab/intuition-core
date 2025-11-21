@@ -28,8 +28,19 @@
 
 (defn- read-snapshot-file
   [^File file]
-  (with-open [reader (PushbackReader. (io/reader file))]
-    (when-let [data (edn/read {:eof nil} reader)]
+  (let [parse-edn (fn []
+                    (with-open [reader (PushbackReader. (io/reader file))]
+                      (binding [*read-eval* false]
+                        (edn/read {:eof nil} reader))))
+        parse-clj (fn []
+                    (with-open [reader (PushbackReader. (io/reader file))]
+                      (binding [*read-eval* false]
+                        (read {:eof nil} reader))))
+        data (or (try (parse-edn)
+                      (catch Exception _ nil))
+                 (try (parse-clj)
+                      (catch Exception _ nil)))]
+    (when data
       (assoc data :version.snapshot/file (.getCanonicalPath file)))))
 
 (defn- snapshot-instant

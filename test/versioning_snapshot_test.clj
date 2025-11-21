@@ -152,6 +152,15 @@
           (testing "mission snapshot links to plan snapshot"
             (is (= (:version.snapshot/id plan-snapshot)
                    (:version.link/source-snapshot-id (first (:version.snapshot/links mission-snapshot))))))
+          (testing "graph nodes recorded for lineage hops"
+            (is (some #{:spec/versioning.graph}
+                      (:version.snapshot/code-graph-nodes spec-snapshot)))
+            (is (some #{(keyword (str "mission/" (bootstrap/sanitize-fragment spec-mission)))}
+                      (:version.snapshot/code-graph-nodes spec-snapshot)))
+            (is (some #{(keyword (str "plan/" (bootstrap/sanitize-fragment plan-id)))} 
+                      (:version.snapshot/code-graph-nodes plan-snapshot)))
+            (is (some #{(keyword (str "mission/" (bootstrap/sanitize-fragment merge-mission)))}
+                      (:version.snapshot/code-graph-nodes mission-snapshot))))
           (testing "history lookups return recorded snapshots"
             (is (= [(:version.snapshot/id spec-snapshot)]
                    (map :version.snapshot/id spec-history)))

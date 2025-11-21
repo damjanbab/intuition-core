@@ -177,7 +177,10 @@
         granted (set (granted-permissions opts))
         required (set (:action/permissions definition))
         started-at (now)
-        context (or context {})]
+        context (or context {})
+        config (cond
+                 (map? config) (into {} (remove (comp nil? val)) config)
+                 :else config)]
     (log! :action/start {:action ident :context context})
     (try
       (ensure-permissions! granted required ident)

@@ -133,4 +133,5 @@
            (is (re-find #"Spec validation failed" (.getMessage ex)))
            (let [errors (:errors (ex-data ex))]
              (is (some #(re-find #"requirements" %) errors))
-             (is (some #(re-find #"test-contracts" %) errors)))))))))
+             (is (some #(re-find #"acceptance-criteria" %) errors))
+             (is (some #(re-find #"spec-sections" %) errors)))))))))

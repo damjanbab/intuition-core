@@ -88,7 +88,6 @@
                                     :spec/summary "Exercise the planner end-to-end."
                                     :spec/requirements ["REQ-plan-a" "REQ-plan-b"]
                                     :spec/acceptance-criteria ["Accept-A" "Accept-B"]
-                                    :spec/test-contracts [:code/sample.validator]
                                     :spec/constraints []
                                     :spec/status :spec.status/draft
                                     :spec/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "9"]
@@ -145,6 +144,12 @@
                  (count (:work.plan/edges plan-data))))
           (is (every? #(str/starts-with? % "src/")
                       (mapcat :plan.node/resources (:work.plan/nodes plan-data)))))
+        (testing "code types inferred from heuristics without spec hints"
+          (is (every? (comp seq :plan.node/code-types) (:work.plan/nodes plan-data)))
+          (is (= #{:code.type/runtime}
+                 (set (mapcat :plan.node/code-types (:work.plan/nodes plan-data)))))
+          (is (= #{:code/sample.validator}
+                 (set (mapcat :coverage.row/test-contracts (:work.plan/coverage plan-data))))))
         (testing "plan validation + snapshot link to spec snapshot"
           (is (= (:version.snapshot/id (:version/snapshot spec-snapshot))
                  (:version.link/source-snapshot-id (first (:version.snapshot/links plan-snapshot)))))

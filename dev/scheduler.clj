@@ -20,8 +20,10 @@
     "  --mission <mission-id>          Force a specific mission id."
     "  --agent-id <agent-id>           Override the agent id recorded in artifacts."
     "  --log-root <path>               Mission log root (default missions/logs)."
-    "  --command <edn-vector>          EDN vector of command tokens (supports {{mission-id}},"
-    "                                  {{agent-id}}, and {{mission-edn}} placeholders)."
+    "  --bundle-path <path>            Override the context bundle path (defaults to <log-root>/<mission>/context-bundle.edn)."
+    "  --command <edn-vector>          EDN vector of command tokens. Placeholders: {{mission-id}},"
+    "                                  {{agent-id}}, {{mission-edn}}, {{bundle-path}},"
+    "                                  {{mission-queue}}, {{auth-token}}, and {{payload-edn}}."
     "  --simulate                      Use a stubbed ready mission for dry runs."
     "  --simulate-failure              Same as --simulate plus a forced failure outcome."
     "  --help                          Print this help text."]))
@@ -75,6 +77,12 @@
           (when-not root
             (throw (ex-info "--log-root requires a directory" {})))
           (recur (assoc opts :scheduler/log-root root) more))
+
+        "--bundle-path"
+        (let [[bundle & more] (rest remaining)]
+          (when-not bundle
+            (throw (ex-info "--bundle-path requires a context bundle path" {})))
+          (recur (assoc opts :context/bundle-path bundle) more))
 
         "--simulate"
         (recur (assoc opts :simulate? true) (rest remaining))
@@ -138,7 +146,8 @@
           (:mission/id parsed) (assoc :mission/id (:mission/id parsed))
           (:agent/id parsed) (assoc :agent/id (:agent/id parsed))
           (:command-template parsed) (assoc :scheduler/command-template (:command-template parsed))
-          (:scheduler/log-root parsed) (assoc :scheduler/log-root (:scheduler/log-root parsed)))
+          (:scheduler/log-root parsed) (assoc :scheduler/log-root (:scheduler/log-root parsed))
+          (:context/bundle-path parsed) (assoc :context/bundle-path (:context/bundle-path parsed)))
       (apply-simulate parsed)))
 
 (defn- run-analytics-hook!

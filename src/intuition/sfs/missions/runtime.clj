@@ -300,17 +300,23 @@
 
 (defn- mission-code-type-idents
   [mission]
-  (->> (mission-scope-code-types mission)
-       (map keyword-entry)
-       (remove nil?)
-       (mapcat (fn [entry]
-                 (if (= "code.type" (namespace entry))
-                   [entry]
-                   (when-let [definition (code/by-ident entry)]
-                     (when-let [type-ident (:code.definition/type definition)]
-                       [type-ident])))))
-       distinct
-       vec))
+  (let [idents (->> (mission-scope-code-types mission)
+                    (map keyword-entry)
+                    (remove nil?)
+                    (mapcat (fn [entry]
+                              (if (= "code.type" (namespace entry))
+                                [entry]
+                                (when-let [definition (code/by-ident entry)]
+                                  (when-let [type-ident (:code.definition/type definition)]
+                                    [type-ident])))))
+                    distinct
+                    vec)
+        unknown (seq (remove code/type-ident? idents))]
+    (when unknown
+      (throw (ex-info "Mission references CodeTypes outside catalog"
+                      {:mission/id (:mission/id mission)
+                       :codetype/unknown (vec unknown)})))
+    idents))
 
 (defn- mission-generator-codetypes
   [mission]

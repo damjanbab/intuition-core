@@ -24,6 +24,7 @@
 (s/def :version.snapshot/mission-id non-blank-string?)
 (s/def :version.snapshot/git-commit (s/nilable non-blank-string?))
 (s/def :version.snapshot/requirements (s/coll-of non-blank-string? :kind vector?))
+(s/def :version.snapshot/code-graph-nodes (s/coll-of keyword? :kind vector?))
 (s/def :version.snapshot/path non-blank-string?)
 (s/def :version.artifact/id keyword?)
 (s/def :version.artifact/snapshot-id uuid?)
@@ -62,7 +63,8 @@
                 :version.snapshot/links]
           :opt [:version.snapshot/spec-id
                 :version.snapshot/plan-id
-                :version.snapshot/git-commit]))
+                :version.snapshot/git-commit
+                :version.snapshot/code-graph-nodes]))
 
 ;; Mission instantiation data -----------------------------------------------
 
@@ -354,7 +356,7 @@
 ;; CodeType validation -------------------------------------------------------
 
 (s/def :codetype/path non-blank-string?)
-(s/def :codetype/paths (s/coll-of :codetype/path :kind vector? :min-count 1))
+(s/def :codetype/paths (s/coll-of :codetype/path :kind vector?))
 (s/def :codetype/spec-sections (s/coll-of string? :kind vector?))
 (s/def :validator/ident keyword?)
 (s/def :validator/status #{:status/ok :status/failed})
@@ -375,7 +377,17 @@
 (s/def :codetype/validated-at non-blank-string?)
 
 (s/def :action.codetype/validate-config
-  (s/keys :req [:mission/id :agent/id :codetype/paths]))
+  (s/and
+   (s/keys :req [:mission/id :agent/id]
+           :opt [:codetype/paths
+                 :code.materialize/paths
+                 :code.definition/idents
+                 :sandbox/root
+                 :workspace/root])
+   (fn [config]
+     (let [codetype-paths (:codetype/paths config)
+           materialized-paths (:code.materialize/paths config)]
+       (or (seq codetype-paths) (seq materialized-paths))))))
 
 (s/def :action.codetype/validate-output
   (s/keys :req [:action/status
@@ -396,6 +408,79 @@
 (s/def :codetype/stamp-path non-blank-string?)
 (s/def :codetype/skipped? boolean?)
 
+(s/def :code.definition/ident keyword?)
+(s/def :code.definition/idents (s/coll-of keyword? :kind vector? :min-count 1))
+(s/def :code.materialize/relative-path non-blank-string?)
+(s/def :code.materialize/file non-blank-string?)
+(s/def :code.materialize/checksum non-blank-string?)
+(s/def :code.materialize/file-entry
+  (s/keys :req [:code.materialize/relative-path
+                :code.materialize/file
+                :code.materialize/checksum]))
+(s/def :code.materialize/files (s/coll-of :code.materialize/file-entry :kind vector?))
+(s/def :code.materialize/paths (s/coll-of non-blank-string? :kind vector?))
+(s/def :code.materialize/spec-sections (s/coll-of string? :kind vector?))
+(s/def :code.materialize/skipped? boolean?)
+(s/def :code.materialize/definition
+  (s/keys :req [:code.definition/ident
+                :code.definition/type
+                :code.materialize/files
+                :code.materialize/generated-at]
+          :opt [:code.type/generator
+                :code.type/templates
+                :code.type/generated-artifacts
+                :code.definition/spec-sections]))
+(s/def :code.materialize/definitions (s/coll-of :code.materialize/definition :kind vector?))
+
+(s/def :code.proposal/id uuid?)
+(s/def :code.proposal/type #{:proposal.type/code-definition
+                             :proposal.type/template-instance
+                             :proposal.type/spec-fragment})
+(s/def :code.proposal/op #{:proposal.op/add :proposal.op/update})
+(s/def :code.proposal/ident non-blank-string?)
+(s/def :code.proposal/payload map?)
+(s/def :code.proposal/spec-sections (s/coll-of string? :kind vector?))
+(s/def :code.proposal/log-path non-blank-string?)
+(s/def :code.proposal/artifacts (s/coll-of non-blank-string? :kind vector?))
+(s/def :code/proposal
+  (s/keys :req [:code.proposal/type
+                :code.proposal/payload]
+          :opt [:code.proposal/op
+                :code.proposal/ident
+                :code.proposal/id
+                :code.proposal/spec-sections
+                :code.proposal/status
+                :code.proposal/notes]))
+(s/def :code.proposal/proposals (s/coll-of :code/proposal :kind vector? :min-count 1))
+
+(s/def :action.code.proposal/validate-config
+  (s/keys :req [:mission/id :agent/id :code.proposal/proposals]))
+
+(s/def :action.code.proposal/validate-output
+  (s/keys :req [:action/status :code.proposal/proposals :code.proposal/log-path]
+          :opt [:code.proposal/spec-sections]))
+
+(s/def :code.proposal/log-root non-blank-string?)
+(s/def :code.proposal/validation-log non-blank-string?)
+(s/def :code.proposal/domain-transact? boolean?)
+(s/def :code.definition/transacted (s/coll-of keyword? :kind vector?))
+
+(s/def :action.code.proposal/apply-config
+  (s/keys :req [:mission/id :agent/id :code.proposal/proposals]
+          :opt [:code.proposal/log-root
+                :code.proposal/validation-log
+                :code.proposal/domain-transact?]))
+
+(s/def :action.code.proposal/apply-output
+  (s/keys :req [:action/status
+                :code.proposal/proposals
+                :code.proposal/log-path
+                :version.snapshot/path
+                :version.snapshot/id
+                :version/snapshot]
+          :opt [:code.proposal/artifacts
+                :code.definition/transacted]))
+
 (s/def :action.codetype/generate-config
   (s/keys :req [:mission/id :agent/id :sandbox/root :codetype/ident]
           :opt [:codetype/options :codetype/force?]))
@@ -408,6 +493,19 @@
                 :codetype/stamp-path
                 :codetype/generated-at]
           :opt [:codetype/skipped?]))
+
+(s/def :action.code.materialize/from-graph-config
+  (s/keys :req [:mission/id :agent/id :sandbox/root]
+          :opt [:code.definition/idents]))
+
+(s/def :action.code.materialize/from-graph-output
+  (s/keys :req [:action/status
+                :code.materialize/log-path
+                :code.materialize/definitions
+                :code.materialize/files
+                :code.materialize/paths
+                :code.materialize/spec-sections]
+          :opt [:mission/id :agent/id :sandbox/root :code.materialize/skipped?]))
 
 ;; Docs ---------------------------------------------------------------------
 
@@ -660,10 +758,16 @@
 ;; System map ----------------------------------------------------------------
 
 (s/def :system-map/entities (s/coll-of keyword? :kind vector?))
+(s/def :code-graph/path non-blank-string?)
+(s/def :code-graph/graph map?)
+(s/def :code-graph/enabled? boolean?)
 
 (s/def :action.system-map/refresh-config
   (s/keys :req [:mission/id]
-          :opt [:system-map/entities]))
+          :opt [:system-map/entities
+                :code-graph/enabled?
+                :code-graph/path
+                :code-graph/graph]))
 
 (s/def :action.system-map/refresh-output
   (s/keys :req [:action/status]

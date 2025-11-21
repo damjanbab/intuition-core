@@ -1,0 +1,62 @@
+{:channel/ident :channel/code-proposal
+ :channel/name "Code proposal channel (Datomic-first)"
+ :channel/description "Agents propose code edits through governed Datomic transactions instead of touching files. System codegen/materialization happens later."
+ :channel/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "6" "9"]
+ :channel/artifacts {:validation "missions/logs/<mission>/code-proposals/<ts>/code-proposal-validation.edn"
+                     :application "missions/logs/<mission>/code-proposals/<ts>/proposal-apply.edn"}
+ :channel/entities
+ [{:proposal/type :proposal.type/code-definition
+   :proposal/kind :code/definition
+   :proposal/description "Adds/updates CodeDefinition graph nodes for generator/test mapping (§4.7)."
+   :proposal/required [:code.definition/ident
+                       :code.definition/name
+                       :code.definition/type
+                       :code.definition/spec-sections
+                       :code.definition/paths]
+   :proposal/optional [:code.definition/dependencies
+                       :code.definition/tests
+                       :code.definition/validators
+                       :code.definition/missions
+                       :entity/description]
+   :proposal/immutable [:code.definition/ident]
+   :proposal/normalized-ident "code.definition/<ident>"
+   :proposal/invariants ["Paths must be repo-relative strings (do not create files in validation/apply)."
+                         "CodeType ident must resolve to the catalog."
+                         "Dependencies must reference CodeDefinitions or dictionary idents."
+                         "Spec sections required per SYSTEM_SPEC §4.7."]}
+  {:proposal/type :proposal.type/template-instance
+   :proposal/kind :template/instance
+   :proposal/description "Binds TemplateDefinitions to data-only config so downstream doc/system-map renders are deterministic (§§3.3–3.6, §4.9)."
+   :proposal/required [:template.instance/ident
+                       :template.instance/definition
+                       :template.instance/status
+                       :template.instance/config]
+   :proposal/optional [:template.instance/meta
+                       :entity/description]
+   :proposal/immutable [:template.instance/ident]
+   :proposal/normalized-ident "template.instance/<ident>"
+   :proposal/invariants ["TemplateDefinition must exist in dictionary/doc_templates.edn."
+                         "Config payload stays data-only (no file writes)."
+                         "Status limited to :template.instance.status/draft|:active|:deprecated."]}
+  {:proposal/type :proposal.type/spec-fragment
+   :proposal/kind :spec/fragment
+   :proposal/description "Adds/updates normalized spec fragments before plan/mission generation (§§3.3–3.6, §4.1–§4.2)."
+   :proposal/required [:spec/id
+                       :spec/requirements]
+   :proposal/optional [:spec/status
+                       :spec/owner
+                       :spec/title
+                       :spec/summary
+                       :spec/acceptance-criteria
+                       :spec/test-contracts
+                       :spec/spec-sections]
+   :proposal/immutable [:spec/id]
+   :proposal/normalized-ident "spec/<id>"
+   :proposal/invariants ["Requirements must be non-blank strings."
+                         "Spec sections cite SYSTEM_SPEC for traceability."
+                         "No mission/file writes during proposal capture."]}]
+ :channel/permissions {:proposal :permission/code.propose
+                       :apply :permission/code.proposal.apply}
+ :channel/notes ["Datomic-first edit path keeps agents from touching code directly; automation renders files later."
+                 "Artifacts live under missions/logs/<mission>/code-proposals/ with before/after/diff payloads."
+                 "Applications emit version.snapshot/code-proposal entries with diff artifacts for rollback evidence."]}

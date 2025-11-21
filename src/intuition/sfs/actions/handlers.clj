@@ -3,11 +3,14 @@
   invariants we care about in tests by checking for repo-relative paths and by
   returning deterministic data structures."
   (:require
+   [clojure.data :as data]
    [clojure.edn :as edn]
    [clojure.set :as set]
    [clojure.java.io :as io]
    [clojure.string :as str]
+   [datomic.client.api :as d]
    [intuition.ci.profiles :as ci.profiles]
+   [intuition.code.generate :as codegen]
    [intuition.code.runtime :as code]
    [intuition.docs.runtime :as docs]
    [intuition.sfs.env.bootstrap :as bootstrap]
@@ -19,7 +22,7 @@
    (java.security MessageDigest)
    (java.time Instant ZoneOffset)
    (java.time.format DateTimeFormatter)
-   (java.util UUID)))
+   (java.util Date UUID)))
 
 (def ^:private repo-root
   (.getCanonicalPath (io/file ".")))
@@ -37,7 +40,7 @@
 (def ^:private codetype-generation-spec-sections
   ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3"])
 
-(declare require-mission-string require-agent-string sha256-file write-edn! normalize-strings read-edn-file)
+(declare require-mission-string require-agent-string sha256-file write-edn! normalize-strings read-edn-file normalized-code-type keywordish)
 
 (defn- ensure-repo-relative
   [path]
@@ -424,7 +427,7 @@
                  :merge/status :merge.status/prepared
                  :sandbox/root canonical-sandbox
                  :ci/profile (:ci/profile ci-result)
-                 :ci/run (:ci/run-path ci-result)
+                 :ci/run ci-result
                  :ci/spec (:ci/spec ci-result)}]
         {:action/status :status/ok
          :merge/run run
@@ -625,18 +628,28 @@
         (str/replace #"//+" "/"))))
 
 (defn- normalize-touched-path
-  [path]
-  (let [canonical (ensure-repo-relative path)
-        file (io/file canonical)]
-    (when-not (.exists file)
-      (throw (ex-info "Touched path does not exist."
-                      {:type :codetype/path-missing
-                       :path path
-                       :canonical canonical})))
-    {:input path
-     :canonical canonical
-     :relative (canonical->relative canonical)
-     :directory? (.isDirectory file)}))
+  ([path] (normalize-touched-path path nil))
+  ([path sandbox-root]
+   (let [canonical (ensure-repo-relative path)
+         file (io/file canonical)
+         sandbox-prefix (when sandbox-root
+                          (let [root (ensure-repo-relative sandbox-root)
+                                base (str root File/separator)]
+                            (when (.startsWith canonical base) base)))]
+     (when-not (.exists file)
+       (throw (ex-info "Touched path does not exist."
+                       {:type :codetype/path-missing
+                        :path path
+                        :canonical canonical})))
+     {:input path
+      :canonical canonical
+      :relative (if sandbox-prefix
+                  (-> (subs canonical (count sandbox-prefix))
+                      (str/replace #"^\./" "")
+                      (str/replace #"^/" "")
+                      (str/replace #"//+" "/"))
+                  (canonical->relative canonical))
+      :directory? (.isDirectory file)})))
 
 (defn- normalize-definition-paths
   [definition]
@@ -658,9 +671,39 @@
                          (str/starts-with? entry prefix)))))
           paths)))
 
+(defn- datomic-definitions
+  [conn idents]
+  (let [targets (not-empty (set (remove nil? idents)))]
+    (when (and conn targets)
+      (map first
+           (d/q '[:find (pull ?e [:code.definition/ident
+                                  :code.definition/name
+                                  :code.definition/type
+                                  :code.definition/paths
+                                  :code.definition/spec-sections
+                                  :code.definition/dependencies
+                                  :code.definition/validators
+                                  :code.definition/tests
+                                  :code.definition/missions])
+                  :in $ [?ident ...]
+                  :where [?e :code.definition/ident ?ident]]
+                (d/db conn)
+                targets)))))
+
+(defn- validation-definitions
+  [conn idents]
+  (let [catalog (into {} (map (juxt :code.definition/ident identity) (code/definitions)))
+        from-db (into {} (map (juxt :code.definition/ident identity)
+                              (or (datomic-definitions conn idents) [])))
+        merged (merge catalog from-db)]
+    (if (seq idents)
+      (->> idents (keep merged) vec)
+      (-> merged vals vec))))
+
 (defn- matching-definitions
-  [touched]
-  (let [definitions (code/definitions)
+  [touched definitions]
+  (let [definitions (or (not-empty definitions)
+                        (code/definitions))
         matches (reduce
                  (fn [acc path-info]
                    (let [covered (filter #(definition-covers-path? % path-info)
@@ -747,6 +790,16 @@
     (when (str/blank? value)
       (throw (ex-info "Generated artifact path required." {:path path})))
     value))
+
+(defn- expand-artifact-paths
+  [ident artifacts]
+  (let [slug (bootstrap/sanitize-fragment (name ident))]
+    (->> artifacts
+         (map (fn [artifact]
+                (-> (or artifact "")
+                    str
+                    (str/replace "{{IDENT}}" slug))))
+         vec)))
 
 (defn- sandbox-relative-file
   [sandbox-root relative]
@@ -980,7 +1033,6 @@
         now (Instant/now)]
     (doseq [[field values] {:spec/requirements requirements
                             :spec/acceptance-criteria acceptance
-                            :spec/test-contracts contracts
                             :spec/spec-sections spec-sections}]
       (when-not (seq values)
         (throw (ex-info "Spec field must have at least one entry"
@@ -1009,22 +1061,31 @@
       #{})))
 
 (defn codetype-validate
-  [{:keys [config]}]
+  [{:keys [config conn]}]
   (let [mission-id (:mission/id config)
         agent-id (:agent/id config)
-        codetype-paths (:codetype/paths config)
+        materialized-paths (vec (or (:code.materialize/paths config) []))
+        codetype-paths (vec (or (:codetype/paths config) []))
+        definition-idents (vec (or (:code.definition/idents config) []))
+        sandbox-root (or (:sandbox/root config)
+                         (:workspace/root config))
+        combined-paths (->> (concat materialized-paths codetype-paths)
+                            (remove str/blank?)
+                            vec)
         _ (when (str/blank? (str mission-id))
             (throw (ex-info "mission/id required for codetype validation" {:field :mission/id})))
         _ (when (str/blank? (str agent-id))
             (throw (ex-info "agent/id required for codetype validation" {:field :agent/id})))
-        _ (when-not (seq codetype-paths)
-            (throw (ex-info "codetype/paths required"
-                            {:field :codetype/paths
+        _ (when-not (seq combined-paths)
+            (throw (ex-info "codetype/paths or code.materialize/paths required"
+                            {:fields [:code.materialize/paths :codetype/paths]
                              :mission/id mission-id})))
-        touched (map normalize-touched-path codetype-paths)
-        definitions (matching-definitions touched)
-        results (map definition->result definitions)
-        sections (spec-sections definitions)
+        _ (code/assert-no-near-duplicates!)
+        touched (map #(normalize-touched-path % sandbox-root) combined-paths)
+        definitions (validation-definitions conn definition-idents)
+        matched (matching-definitions touched definitions)
+        results (map definition->result matched)
+        sections (spec-sections matched)
         validated-at (str (Instant/now))
         file (codetype-log-file mission-id)
         payload {:mission/id mission-id
@@ -1060,6 +1121,7 @@
                 (throw (ex-info "codetype/ident must be a keyword"
                                 {:field :codetype/ident
                                  :value codetype-ident})))
+        _ (code/assert-no-near-duplicates!)
         sandbox (ensure-repo-relative sandbox-root)
         code-type (or (code/type-by-ident ident)
                       (throw (ex-info "Unknown CodeType ident"
@@ -1068,7 +1130,8 @@
         _ (when (str/blank? (str generator-ref))
             (throw (ex-info "CodeType missing generator metadata"
                             {:codetype/ident ident})))
-        artifacts (->> (:code.type/generated-artifacts code-type)
+        raw-artifacts (vec (or (:code.type/generated-artifacts code-type) []))
+        artifacts (->> (expand-artifact-paths ident raw-artifacts)
                        (map normalize-generated-path)
                        vec)
         _ (when-not (seq artifacts)
@@ -1134,6 +1197,27 @@
      :codetype/generated-at generated-at
      :codetype/skipped? (not run-generation?)}))
 
+(defn materialize-code-from-graph
+  [{:keys [config conn]}]
+  (let [{mission-id :mission/id
+         agent-id :agent/id
+         sandbox-root :sandbox/root
+         idents :code.definition/idents} config
+        _ (when (str/blank? (str mission-id))
+            (throw (ex-info "mission/id required for code materialization"
+                            {:field :mission/id})))
+        _ (when (str/blank? (str agent-id))
+            (throw (ex-info "agent/id required for code materialization"
+                            {:field :agent/id})))
+        _ (when (str/blank? (str sandbox-root))
+            (throw (ex-info "sandbox/root required for code materialization"
+                            {:field :sandbox/root})))]
+    (codegen/materialize! {:conn conn
+                           :mission-id mission-id
+                           :agent-id agent-id
+                           :sandbox-root sandbox-root
+                           :definition-idents idents})))
+
 (defn- spec-mission-copy-file
   [mission-id spec-id]
   (mission-log-file mission-id (str (safe-spec-fragment spec-id) "-spec.edn")))
@@ -1155,7 +1239,7 @@
             :let [val (some-> (get spec-data field) str str/trim)]
             :when (str/blank? val)]
       (vswap! errors conj (format "%s missing" (name field))))
-    (doseq [field [:spec/requirements :spec/acceptance-criteria :spec/test-contracts :spec/spec-sections]
+    (doseq [field [:spec/requirements :spec/acceptance-criteria :spec/spec-sections]
             :let [val (get spec-data field)]
             :when (not (seq val))]
       (vswap! errors conj (format "%s empty" (name field))))
@@ -1399,6 +1483,8 @@
                                                  {:plan.node/id node-id
                                                   :value template})))
         test-scope (:plan.node/test-scope node)
+        node-tests (normalize-keywords (:plan.node/test-contracts node))
+        code-types (normalize-keywords (:plan.node/code-types node))
         normalized-test (cond
                           (map? test-scope) test-scope
                           (nil? test-scope) nil
@@ -1414,6 +1500,8 @@
       (seq description) (assoc :plan.node/description description)
       mission-template (assoc :plan.node/mission-template mission-template)
       normalized-test (assoc :plan.node/test-scope normalized-test)
+      (seq node-tests) (assoc :plan.node/test-contracts node-tests)
+      (seq code-types) (assoc :plan.node/code-types code-types)
       (seq effort) (assoc :plan.node/estimated-effort effort))))
 
 (defn- normalize-plan-edge
@@ -1459,11 +1547,13 @@
             (throw (ex-info "CoverageRow requires at least one test contract"
                             {:field :coverage.row/test-contracts
                              :coverage.row/requirement-id requirement})))
+        code-types (normalize-keywords (:coverage.row/code-types row))
         acceptance (some-> (:coverage.row/acceptance-id row) str str/trim)]
     (cond-> {:coverage.row/requirement-id requirement
              :coverage.row/nodes nodes
              :coverage.row/code-targets code-targets
              :coverage.row/test-contracts contracts}
+      (seq code-types) (assoc :coverage.row/code-types code-types)
       (seq acceptance) (assoc :coverage.row/acceptance-id acceptance))))
 
 (defn- normalize-plan-obligation
@@ -1495,6 +1585,7 @@
         spec-id (coerce-spec-id (or (:work.plan/spec-id plan-data)
                                     (:spec/id plan-data)))
         spec-version (positive-long (:work.plan/spec-version plan-data) :work.plan/spec-version)
+        spec-tests (normalize-keywords (:spec/test-contracts plan-data))
         status (or (:work.plan/status plan-data) :work.plan.status/draft)
         _ (when-not (work-plan-statuses status)
             (throw (ex-info "Unknown work.plan/status"
@@ -1560,6 +1651,7 @@
              :work.plan/proof-obligations normalized-obligations
              :work.plan/validation-results validation-results
              :work.plan/source-path source-path}
+      (seq spec-tests) (assoc :spec/test-contracts spec-tests)
       generation-id (assoc :plan.generation/id generation-id)
       generation-status (assoc :plan.generation/status generation-status)
       heuristics-id (assoc :plan.generation/heuristics-id heuristics-id)
@@ -1594,11 +1686,15 @@
                             (remove nil?)
                             vec)
         coverage-test-set (set coverage-tests)
-        missing-tests (->> tests (remove #(contains? coverage-test-set %)) vec)
-        extra-tests (->> coverage-tests
-                         (remove #(contains? test-set %))
-                         distinct
-                         vec)
+        missing-tests (if (seq tests)
+                        (->> tests (remove #(contains? coverage-test-set %)) vec)
+                        [])
+        extra-tests (if (seq tests)
+                      (->> coverage-tests
+                           (remove #(contains? test-set %))
+                           distinct
+                           vec)
+                      [])
         errors (cond-> []
                  (seq missing)
                  (conj (format "Missing coverage for requirements: %s"
@@ -1817,7 +1913,11 @@
         spec-file (or override-spec-path
                       (spec-resource-file (:work.plan/spec-id plan-data)))
         spec-path (ensure-repo-relative spec-file)
-        spec-data (read-edn-file spec-path)
+        raw-spec (read-edn-file spec-path)
+        spec-tests (vec (or (:spec/test-contracts raw-spec)
+                            (:spec/test-contracts plan-data)
+                            []))
+        spec-data (assoc raw-spec :spec/test-contracts spec-tests)
         _ (when-not (map? spec-data)
             (throw (ex-info "Spec file missing map"
                             {:work.plan/id plan-id
@@ -1905,6 +2005,33 @@
 
 ;; Version snapshots --------------------------------------------------------
 
+(defn- spec-node-ident
+  [spec-id]
+  (when spec-id
+    (if (keyword? spec-id)
+      spec-id
+      (keyword (str "spec/" (bootstrap/sanitize-fragment spec-id))))))
+
+(defn- plan-node-ident
+  [plan-id]
+  (when plan-id
+    (keyword (str "plan/" (bootstrap/sanitize-fragment plan-id)))))
+
+(defn- mission-node-ident
+  [mission-id]
+  (when mission-id
+    (keyword (str "mission/" (bootstrap/sanitize-fragment mission-id)))))
+
+(defn- snapshot-graph-nodes
+  [{:keys [spec-id plan-id mission-id extra-nodes]}]
+  (->> (concat extra-nodes
+               [(spec-node-ident spec-id)
+                (plan-node-ident plan-id)
+                (mission-node-ident mission-id)])
+       (remove nil?)
+       distinct
+       vec))
+
 (defn version-snapshot-spec
   [{:keys [config]}]
   (let [{mission-id :mission/id
@@ -1928,6 +2055,9 @@
         snapshot-id (UUID/randomUUID)
         now (Instant/now)
         timestamp (str now)
+        graph-nodes (snapshot-graph-nodes {:spec-id spec-id
+                                           :mission-id mission
+                                           :extra-nodes (:code.graph/nodes config)})
         base {:version.snapshot/id snapshot-id
               :version.snapshot/type :version.snapshot/spec
               :version.snapshot/timestamp timestamp
@@ -1936,7 +2066,8 @@
               :version.snapshot/spec-id spec-id
               :version.snapshot/requirements requirements
               :version.snapshot/artifacts []
-              :version.snapshot/links []}
+              :version.snapshot/links []
+              :version.snapshot/code-graph-nodes graph-nodes}
         snapshot (cond-> base
                    commit-hash (assoc :version.snapshot/git-commit commit-hash))
         artifacts [(version-artifact snapshot-id :artifact/spec-validation validation-file "application/edn" timestamp)
@@ -1971,6 +2102,10 @@
         snapshot-id (UUID/randomUUID)
         now (Instant/now)
         timestamp (str now)
+        graph-nodes (snapshot-graph-nodes {:spec-id normalized-spec
+                                           :plan-id parsed-plan-id
+                                           :mission-id mission
+                                           :extra-nodes (:code.graph/nodes config)})
         base {:version.snapshot/id snapshot-id
               :version.snapshot/type :version.snapshot/plan
               :version.snapshot/timestamp timestamp
@@ -1980,7 +2115,8 @@
               :version.snapshot/plan-id parsed-plan-id
               :version.snapshot/requirements requirements
               :version.snapshot/artifacts []
-              :version.snapshot/links []}
+              :version.snapshot/links []
+              :version.snapshot/code-graph-nodes graph-nodes}
         snapshot (cond-> base
                    commit-hash (assoc :version.snapshot/git-commit commit-hash))
         artifacts [(version-artifact snapshot-id :artifact/work-plan-validation validation-file "application/edn" timestamp)
@@ -1996,6 +2132,521 @@
                      (assoc :version.snapshot/links [link]))
         persisted (persist-version-snapshot! mission-id snapshot)]
     (version-snapshot-output mission-id snapshot persisted)))
+
+;; Code proposal channel -----------------------------------------------------
+
+(def ^:private code-edit-channel-resource
+  "dictionary/code_edit_channel.edn")
+
+(def ^:private doc-templates-resource
+  "dictionary/doc_templates.edn")
+
+(def ^:private template-statuses
+  #{:template.instance.status/draft
+    :template.instance.status/active
+    :template.instance.status/deprecated})
+
+(def ^:private proposal-ops
+  #{:proposal.op/add :proposal.op/update})
+
+(defn- load-edn-resource!
+  [path label]
+  (if-let [res (io/resource path)]
+    (-> res slurp edn/read-string)
+    (let [file (io/file "resources" path)]
+      (if (.exists file)
+        (-> file slurp edn/read-string)
+        (throw (ex-info (str "Missing " label)
+                        {:resource path}))))))
+
+(def ^:private code-edit-channel*
+  (delay (load-edn-resource! code-edit-channel-resource
+                             "code edit channel dictionary")))
+
+(def ^:private doc-templates*
+  (delay (load-edn-resource! doc-templates-resource
+                             "doc templates dictionary")))
+
+(defn- proposal-rules
+  []
+  (let [channel @code-edit-channel*]
+    (->> (:channel/entities channel)
+         (map (juxt :proposal/type identity))
+         (into {}))))
+
+(defn- channel-spec-sections
+  []
+  (vec (or (:channel/spec-sections @code-edit-channel*) [])))
+
+(defn- keyword->ident-string
+  [kw]
+  (if-let [ns (namespace kw)]
+    (str ns "/" (name kw))
+    (name kw)))
+
+(defn- template-definition-idents
+  []
+  (->> @doc-templates*
+       (filter #(= :template/definition (:entity/type %)))
+       (map :template/ident)
+       set))
+
+(defn- ensure-payload-map
+  [payload]
+  (when-not (map? payload)
+    (throw (ex-info "Proposal payload must be a map" {:payload payload})))
+  payload)
+
+(defn- require-proposal-op
+  [op]
+  (let [resolved (or op :proposal.op/add)]
+    (when-not (proposal-ops resolved)
+      (throw (ex-info "Unsupported proposal operation"
+                      {:code.proposal/op op})))
+    resolved))
+
+(defn- normalized-proposal-ident
+  [value field]
+  (let [text (some-> value str str/trim)]
+    (when (str/blank? text)
+      (throw (ex-info "Proposal ident required"
+                      {:field field
+                       :value value})))
+    text))
+
+(defn- proposal-ident->keyword
+  [value field]
+  (let [kw (keywordish value)]
+    (when-not kw
+      (throw (ex-info "Proposal ident must be keywordable"
+                      {:field field
+                       :value value})))
+    kw))
+
+(defn- relative-proposal-path
+  [path]
+  (let [value (-> path str str/trim)]
+    (when (or (str/blank? value)
+              (str/starts-with? value "/")
+              (str/starts-with? value "\\")
+              (re-find #"^[A-Za-z]:[\\/]" value)
+              (str/includes? value ".."))
+      (throw (ex-info "Proposal paths must be repo-relative and sandbox-safe"
+                      {:path path})))
+    value))
+
+(defn- normalize-dependencies
+  [deps]
+  (->> (vectorize deps)
+       (map (fn [dep]
+              (or (keywordish dep)
+                  (throw (ex-info "Dependencies must be keywords"
+                                  {:dependency dep})))))
+       vec))
+
+(defn- ensure-allowed-keys!
+  [payload rule]
+  (let [required (set (:proposal/required rule))
+        optional (set (:proposal/optional rule))
+        immutable (set (:proposal/immutable rule))
+        allowed (set/union required optional immutable)
+        missing (seq (remove #(contains? payload %) required))
+        unknown (seq (remove allowed (keys payload)))]
+    (when missing
+      (throw (ex-info "Proposal payload missing required fields"
+                      {:proposal/type (:proposal/type rule)
+                       :missing (vec missing)})))
+    (when unknown
+      (throw (ex-info "Proposal payload includes unsupported fields"
+                      {:proposal/type (:proposal/type rule)
+                       :unknown (vec unknown)})))
+    payload))
+
+(defn- assert-ident-match!
+  [proposal ident kw-field]
+  (when-let [explicit (:code.proposal/ident proposal)]
+    (let [normalized (normalized-proposal-ident explicit kw-field)
+          kw (proposal-ident->keyword normalized kw-field)]
+      (when-not (= (keyword->ident-string kw)
+                   (keyword->ident-string ident))
+        (throw (ex-info "Proposal ident mismatch"
+                        {:provided explicit
+                         :payload ident})))))) 
+
+(defn- validate-code-definition
+  [proposal rule allowed-code-idents]
+  (let [payload (ensure-payload-map (:code.proposal/payload proposal))
+        _ (ensure-allowed-keys! payload rule)
+        ident (proposal-ident->keyword (or (:code.definition/ident payload)
+                                           (:code.proposal/ident proposal))
+                                       :code.definition/ident)
+        _ (assert-ident-match! proposal ident :code.definition/ident)
+        type-ident (:code.definition/type payload)
+        _ (when-not (code/type-ident? type-ident)
+            (throw (ex-info "Unknown CodeType for proposal"
+                            {:code.definition/type type-ident})))
+        spec-sections (normalize-strings (:code.definition/spec-sections payload))
+        _ (when-not (seq spec-sections)
+            (throw (ex-info "Spec sections required for CodeDefinition proposal"
+                            {:code.definition/ident ident})))
+        paths (->> (:code.definition/paths payload)
+                   vectorize
+                   (map relative-proposal-path)
+                   vec)
+        dependencies (normalize-dependencies (:code.definition/dependencies payload))
+        allowed-deps (set/union (code/definition-idents) allowed-code-idents)
+        _ (when-let [unknown (seq (remove #(or (allowed-deps %)
+                                               (code/known-dependency? %))
+                                          dependencies))]
+            (throw (ex-info "Unknown dependency in CodeDefinition proposal"
+                            {:code.definition/ident ident
+                             :code.definition/dependencies dependencies
+                             :code.definition/unknown (vec unknown)})))]
+    {:payload (assoc payload
+                     :code.definition/ident ident
+                     :code.definition/spec-sections spec-sections
+                     :code.definition/paths paths
+                     :code.definition/dependencies dependencies)
+     :ident-string (keyword->ident-string ident)
+     :spec-sections spec-sections}))
+
+(defn- validate-template-instance
+  [proposal rule]
+  (let [payload (ensure-payload-map (:code.proposal/payload proposal))
+        _ (ensure-allowed-keys! payload rule)
+        ident (proposal-ident->keyword (or (:template.instance/ident payload)
+                                           (:code.proposal/ident proposal))
+                                       :template.instance/ident)
+        _ (assert-ident-match! proposal ident :template.instance/ident)
+        definition (proposal-ident->keyword (:template.instance/definition payload)
+                                            :template.instance/definition)
+        _ (when-not ((template-definition-idents) definition)
+            (throw (ex-info "TemplateDefinition not found for proposal"
+                            {:template.instance/definition definition})))
+        status (:template.instance/status payload)
+        _ (when-not (template-statuses status)
+            (throw (ex-info "Template instance status invalid"
+                            {:template.instance/status status
+                             :allowed template-statuses})))
+        config (:template.instance/config payload)
+        _ (when-not (map? config)
+            (throw (ex-info "Template instance config must be a map"
+                            {:template.instance/config config})))]
+    {:payload (assoc payload
+                     :template.instance/ident ident
+                     :template.instance/definition definition
+                     :template.instance/status status
+                     :template.instance/config config)
+     :ident-string (keyword->ident-string ident)
+     :spec-sections (channel-spec-sections)}))
+
+(defn- validate-spec-fragment
+  [proposal rule]
+  (let [payload (ensure-payload-map (:code.proposal/payload proposal))
+        _ (ensure-allowed-keys! payload rule)
+        spec-id (proposal-ident->keyword (or (:spec/id payload)
+                                             (:code.proposal/ident proposal))
+                                         :spec/id)
+        _ (assert-ident-match! proposal spec-id :spec/id)
+        requirements (normalize-strings (:spec/requirements payload))
+        _ (when-not (seq requirements)
+            (throw (ex-info "Spec fragment requires at least one requirement"
+                            {:spec/id spec-id})))
+        spec-sections (let [sections (normalize-strings (:spec/spec-sections payload))]
+                        (if (seq sections) sections (channel-spec-sections)))]
+    {:payload (assoc payload
+                     :spec/id spec-id
+                     :spec/requirements requirements
+                     :spec/spec-sections spec-sections)
+     :ident-string (keyword->ident-string spec-id)
+     :spec-sections spec-sections}))
+
+(defn- validate-proposal*
+  [proposal rules allowed-code-idents]
+  (let [rule (or (get rules (:code.proposal/type proposal))
+                 (throw (ex-info "Unknown proposal type"
+                                 {:code.proposal/type (:code.proposal/type proposal)})))
+        op (require-proposal-op (:code.proposal/op proposal))
+        result (case (:code.proposal/type proposal)
+                 :proposal.type/code-definition (validate-code-definition proposal rule allowed-code-idents)
+                 :proposal.type/template-instance (validate-template-instance proposal rule)
+                 :proposal.type/spec-fragment (validate-spec-fragment proposal rule)
+                 (throw (ex-info "Unsupported proposal type"
+                                 {:code.proposal/type (:code.proposal/type proposal)})))]
+    {:code.proposal/id (or (:code.proposal/id proposal) (UUID/randomUUID))
+     :code.proposal/type (:code.proposal/type proposal)
+     :code.proposal/op op
+     :code.proposal/ident (:ident-string result)
+     :code.proposal/payload (:payload result)
+     :code.proposal/spec-sections (vec (or (:spec-sections result)
+                                           (channel-spec-sections)))
+     :code.proposal/status :code.proposal.status/validated
+     :code.proposal/notes (:code.proposal/notes proposal)}))
+
+(defn- proposal-code-ident-set
+  [proposals]
+  (->> proposals
+       (filter #(= :proposal.type/code-definition (:code.proposal/type %)))
+       (map (fn [proposal]
+              (or (keywordish (:code.proposal/ident proposal))
+                  (keywordish (get-in proposal [:code.proposal/payload :code.definition/ident])))))
+       (remove nil?)
+       set))
+
+(defn- validate-proposals
+  [proposals]
+  (when-not (seq proposals)
+    (throw (ex-info "At least one proposal is required"
+                    {:field :code.proposal/proposals})))
+  (let [rules (proposal-rules)
+        code-ident-set (proposal-code-ident-set proposals)]
+    (mapv #(validate-proposal* % rules code-ident-set) proposals)))
+
+(defn- mission-ident
+  [mission-id]
+  (keyword (bootstrap/sanitize-fragment (require-mission-string mission-id))))
+
+(defn- proposal-log-file
+  [mission-id timestamp filename log-root]
+  (mission-log-file mission-id (format "code-proposals/%s/%s" timestamp filename) log-root))
+
+(defn- write-proposal-validation!
+  [mission-id agent proposals log-root]
+  (let [now (Instant/now)
+        timestamp (.format timestamp-formatter now)
+        file (proposal-log-file mission-id timestamp "code-proposal-validation.edn" log-root)
+        payload {:mission/id mission-id
+                 :agent/id agent
+                 :code.proposal/proposals proposals
+                 :code.proposal/spec-sections (channel-spec-sections)
+                 :code.proposal/channel (:channel/ident @code-edit-channel*)
+                 :code.proposal/validated-at (str now)}
+        path (write-edn! file payload)]
+    {:file file
+     :path path
+     :timestamp timestamp}))
+
+(defn validate-code-proposals
+  [{:keys [config]}]
+  (let [{mission-id :mission/id
+         agent-id :agent/id
+         proposals :code.proposal/proposals
+         log-root :code.proposal/log-root} config
+        mission (require-mission-string mission-id)
+        agent (require-agent-string agent-id)
+        validated (validate-proposals proposals)
+        {:keys [path]} (write-proposal-validation! mission agent validated log-root)]
+    {:action/status :status/ok
+     :code.proposal/proposals validated
+     :code.proposal/log-path path
+     :code.proposal/spec-sections (channel-spec-sections)}))
+
+(def ^:private proposal-schema
+  [{:db/ident :code.proposal/id
+    :db/valueType :db.type/uuid
+    :db/cardinality :db.cardinality/one
+    :db/unique :db.unique/identity}
+   {:db/ident :code.proposal/ident
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one}
+   {:db/ident :code.proposal/type
+    :db/valueType :db.type/keyword
+    :db/cardinality :db.cardinality/one}
+   {:db/ident :code.proposal/op
+    :db/valueType :db.type/keyword
+    :db/cardinality :db.cardinality/one}
+   {:db/ident :code.proposal/payload
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one}
+   {:db/ident :code.proposal/before
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one}
+   {:db/ident :code.proposal/diff
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one}
+   {:db/ident :code.proposal/status
+    :db/valueType :db.type/keyword
+    :db/cardinality :db.cardinality/one}
+   {:db/ident :code.proposal/spec-sections
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/many}
+   {:db/ident :code.proposal/mission
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one}
+   {:db/ident :code.proposal/agent
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one}
+   {:db/ident :code.proposal/recorded-at
+    :db/valueType :db.type/instant
+    :db/cardinality :db.cardinality/one}])
+
+(defn- ensure-proposal-schema!
+  [conn]
+  (let [db (d/db conn)
+        installed? (seq (d/q '[:find ?e :where [?e :db/ident :code.proposal/id]] db))]
+    (when-not installed?
+      (d/transact conn {:tx-data proposal-schema})))
+  conn)
+
+(defn- latest-proposal
+  [conn ident type]
+  (let [rows (d/q '[:find ?payload ?recorded
+                    :in $ ?ident ?type
+                    :where [?e :code.proposal/ident ?ident]
+                           [?e :code.proposal/type ?type]
+                           [?e :code.proposal/payload ?payload]
+                           [?e :code.proposal/recorded-at ?recorded]]
+                  (d/db conn) ident type)]
+    (when-let [[payload recorded] (when (seq rows)
+                                    (apply max-key second rows))]
+      {:code.proposal/payload (try
+                                (edn/read-string payload)
+                                (catch Exception _
+                                  payload))
+       :code.proposal/recorded-at recorded})))
+
+(defn- proposal-diff
+  [before after]
+  (let [[only-before only-after shared] (data/diff before after)]
+    {:diff/before only-before
+     :diff/after only-after
+     :diff/shared shared}))
+
+(defn- apply-proposal!
+  [conn mission-id agent-id proposal]
+  (let [ident (:code.proposal/ident proposal)
+        type (:code.proposal/type proposal)
+        payload (:code.proposal/payload proposal)
+        prior (latest-proposal conn ident type)
+        diff (proposal-diff (:code.proposal/payload prior) payload)
+        now (Instant/now)
+        tx-data (cond-> {:code.proposal/id (or (:code.proposal/id proposal) (UUID/randomUUID))
+                         :code.proposal/ident ident
+                         :code.proposal/type type
+                         :code.proposal/op (:code.proposal/op proposal)
+                         :code.proposal/payload (pr-str payload)
+                         :code.proposal/status :code.proposal.status/applied
+                         :code.proposal/spec-sections (vec (or (:code.proposal/spec-sections proposal)
+                                                               (channel-spec-sections)))
+                         :code.proposal/mission (str mission-id)
+                         :code.proposal/agent (str agent-id)
+                         :code.proposal/recorded-at (Date/from now)}
+                  (:code.proposal/payload prior) (assoc :code.proposal/before (pr-str (:code.proposal/payload prior)))
+                  (some (fn [[_ v]] (seq v)) diff) (assoc :code.proposal/diff (pr-str diff)))]
+    (d/transact conn {:tx-data [tx-data]})
+    (assoc proposal
+           :code.proposal/status :code.proposal.status/applied
+           :code.proposal/before (:code.proposal/payload prior)
+           :code.proposal/diff diff)))
+
+(defn- proposal->domain-tx
+  [mission-id proposal]
+  (when (= :proposal.type/code-definition (:code.proposal/type proposal))
+    (let [payload (:code.proposal/payload proposal)
+          ident (:code.definition/ident payload)
+          resolved-paths (->> (or (:code.definition/paths payload) [])
+                              (expand-artifact-paths ident)
+                              (map normalize-generated-path)
+                              vec)]
+      {:code.definition/ident (:code.definition/ident payload)
+       :code.definition/name (:code.definition/name payload)
+       :code.definition/type (:code.definition/type payload)
+       :code.definition/paths resolved-paths
+       :code.definition/dependencies (vec (or (:code.definition/dependencies payload) []))
+       :code.definition/validators (vec (or (:code.definition/validators payload) []))
+       :code.definition/tests (vec (or (:code.definition/tests payload) []))
+       :code.definition/spec-sections (vec (or (:code.definition/spec-sections payload) []))
+       :code.definition/missions [(mission-ident mission-id)]})))
+
+(defn- proposal-apply-log!
+  [mission-id agent proposals timestamp log-root validation-log]
+  (let [now (Instant/now)
+        file (proposal-log-file mission-id timestamp "proposal-apply.edn" log-root)
+        payload {:mission/id mission-id
+                 :agent/id agent
+                 :code.proposal/proposals proposals
+                 :code.proposal/spec-sections (channel-spec-sections)
+                 :code.proposal/validation-log validation-log
+                 :code.proposal/applied-at (str now)}
+        path (write-edn! file payload)]
+    {:file file
+     :path path}))
+
+(defn- code-proposal-artifacts
+  [paths]
+  (->> paths
+       (remove str/blank?)
+       (map io/file)
+       (filter #(.exists ^File %))
+       (map #(.getCanonicalPath ^File %))
+       vec))
+
+(defn- proposal-snapshot
+  [mission-id agent proposals artifacts]
+  (let [now (Instant/now)
+        snapshot-id (UUID/randomUUID)
+        nodes (->> proposals
+                   (map (fn [proposal]
+                          (keyword (bootstrap/sanitize-fragment
+                                    (str (name (:code.proposal/type proposal))
+                                         "-"
+                                         (:code.proposal/ident proposal))))))
+                   vec)
+        base {:version.snapshot/id snapshot-id
+              :version.snapshot/type :version.snapshot/code-proposal
+              :version.snapshot/timestamp (str now)
+              :version.snapshot/actor (version-agent-ident agent)
+              :version.snapshot/mission-id (require-mission-string mission-id)
+              :version.snapshot/requirements (mapv :code.proposal/ident proposals)
+              :version.snapshot/artifacts []
+              :version.snapshot/links []
+              :version.snapshot/code-graph-nodes nodes}
+        artifacts* (map-indexed (fn [idx path]
+                                  (version-artifact snapshot-id
+                                                    (keyword (format "artifact/code-proposal-%02d" (inc idx)))
+                                                    path
+                                                    "application/edn"
+                                                    (str now)))
+                                artifacts)]
+    (assoc base :version.snapshot/artifacts (vec artifacts*))))
+
+(defn apply-code-proposals
+  [{:keys [config conn]}]
+  (let [{mission-id :mission/id
+         agent-id :agent/id
+         proposals :code.proposal/proposals
+         log-root :code.proposal/log-root
+         validation-log :code.proposal/validation-log} config
+        mission (require-mission-string mission-id)
+        agent (require-agent-string agent-id)
+        domain? (boolean (:code.proposal/domain-transact? config))
+        _ (when-not conn
+            (throw (ex-info "Datomic connection required for proposal application"
+                            {:field :conn})))
+        validated (validate-proposals proposals)
+        _ (ensure-proposal-schema! conn)
+        timestamp (.format timestamp-formatter (Instant/now))
+        applied (mapv #(apply-proposal! conn mission agent %) validated)
+        domain-tx (when domain?
+                    (->> applied
+                         (keep #(proposal->domain-tx mission %))
+                         vec))
+        _ (when (seq domain-tx)
+            (codegen/ensure-schema! conn)
+            (d/transact conn {:tx-data domain-tx}))
+        {:keys [path]} (proposal-apply-log! mission agent applied timestamp log-root validation-log)
+        artifacts (code-proposal-artifacts (cons path [validation-log]))
+        transacted-definitions (vec (keep :code.definition/ident domain-tx))
+        snapshot (proposal-snapshot mission agent applied artifacts)
+        persisted (persist-version-snapshot! mission snapshot)]
+    {:action/status :status/ok
+     :code.proposal/proposals applied
+     :code.proposal/log-path path
+     :code.proposal/artifacts artifacts
+     :code.definition/transacted transacted-definitions
+     :version.snapshot/id (:version.snapshot/id snapshot)
+     :version.snapshot/path (:path persisted)
+     :version/snapshot snapshot}))
 
 (defn version-snapshot-mission
   [{:keys [config]}]
@@ -2018,6 +2669,10 @@
         snapshot-id (UUID/randomUUID)
         now (Instant/now)
         timestamp (str now)
+        graph-nodes (snapshot-graph-nodes {:spec-id spec-id
+                                           :plan-id parsed-plan-id
+                                           :mission-id mission
+                                           :extra-nodes (:code.graph/nodes config)})
         base {:version.snapshot/id snapshot-id
               :version.snapshot/type :version.snapshot/mission
               :version.snapshot/timestamp timestamp
@@ -2027,7 +2682,8 @@
               :version.snapshot/plan-id parsed-plan-id
               :version.snapshot/requirements requirements
               :version.snapshot/artifacts []
-              :version.snapshot/links []}
+              :version.snapshot/links []
+              :version.snapshot/code-graph-nodes graph-nodes}
         snapshot (cond-> base
                    commit-hash (assoc :version.snapshot/git-commit commit-hash))
         artifacts [(version-artifact snapshot-id :artifact/mission-report report-file "application/edn" timestamp)
@@ -2076,6 +2732,148 @@
     (ensure-repo-relative canonical)
     (io/file canonical)))
 
+(defn- append-remediation!
+  "Writes/extends missions/logs/<id>/codetype-remediation.edn with an entry so the
+  steward can schedule a CodeType proposal mission."
+  [mission-id entry]
+  (when (str/blank? (str mission-id))
+    (throw (ex-info "mission/id is required to record remediation"
+                    {:field :mission/id})))
+  (let [file (mission-log-file mission-id "codetype-remediation.edn")
+        existing (when (.exists file)
+                   (edn/read-string (slurp file)))
+        payload (conj (vec (or existing [])) entry)]
+    (spit file (pr-str payload))
+    (.getCanonicalPath file)))
+
+(defn- keywordish
+  [value]
+  (cond
+    (keyword? value) value
+    (string? value)
+    (let [trimmed (str/trim value)]
+      (when-not (str/blank? trimmed)
+        (try
+          (if (str/starts-with? trimmed ":")
+            (edn/read-string trimmed)
+            (keyword trimmed))
+          (catch Exception _ nil))))
+    :else nil))
+
+(defn- spec-constraint-tags
+  [spec-data]
+  (->> (:spec/constraints spec-data)
+       vectorize
+       (map keywordish)
+       (remove nil?)
+       vec))
+
+(defn- risk-tags
+  [spec-data]
+  (->> (spec-constraint-tags spec-data)
+       (filter #(= "risk" (namespace %)))
+       vec))
+
+(defn- change-tags
+  [spec-data]
+  (->> (spec-constraint-tags spec-data)
+       (filter #(= "change.kind" (namespace %)))
+       vec))
+
+(defn- normalized-inference-path
+  [path]
+  (-> (or path "")
+      str
+      str/trim
+      (str/replace #"\\+" "/")
+      (str/replace #"//+" "/")
+      (str/replace #"^/" "")))
+
+(defn- rule->types
+  [entries]
+  (->> (vectorize entries)
+       (map normalized-code-type)
+       (remove nil?)
+       vec))
+
+(defn- path-rule-match?
+  [path {:keys [prefixes regex extensions]}]
+  (let [normalized (normalized-inference-path path)
+        pattern (cond
+                  (instance? java.util.regex.Pattern regex) regex
+                  (string? regex) (re-pattern regex)
+                  :else nil)]
+    (or (some #(str/starts-with? normalized (normalized-inference-path %))
+              (or prefixes []))
+        (some #(str/ends-with? normalized %) (or extensions []))
+        (when pattern (re-find pattern normalized)))))
+
+(defn- apply-path-rules
+  [paths rules]
+  (->> (for [path (vectorize paths)
+             rule (or rules [])]
+         (when (path-rule-match? path rule)
+           (:code-types rule)))
+       (mapcat rule->types)
+       (remove nil?)
+       vec))
+
+(defn- apply-tag-rules
+  [tags rule-map]
+  (->> tags
+       (mapcat #(get rule-map %))
+       rule->types))
+
+(defn- infer-code-types!
+  [{:keys [mission-id requirement resources spec-data heuristics mission-category]}]
+  (let [config (:codetype-inference heuristics)
+        catalog (code/type-ident-set)
+        defaults (rule->types (:default config))
+        category-default (rule->types (get-in config [:category-default mission-category]))
+        path-derived (apply-path-rules resources (:path-rules config))
+        artifact-derived (apply-path-rules (:spec/artifacts spec-data)
+                                           (:artifact-rules config))
+        risk-derived (apply-tag-rules (risk-tags spec-data)
+                                      (or (:risk-rules config) {}))
+        change-derived (apply-tag-rules (change-tags spec-data)
+                                        (or (:change-rules config) {}))
+        fallback (rule->types (:fallback config))
+        combined (->> (concat defaults
+                              category-default
+                              path-derived
+                              artifact-derived
+                              risk-derived
+                              change-derived)
+                      (remove nil?)
+                      distinct
+                      vec)
+        known (->> combined (filter #(contains? catalog %)) vec)
+        target (if (seq known) known fallback)
+        unknown (set/difference (set combined) (set known))]
+    (when (seq unknown)
+      (append-remediation! mission-id {:mission/id mission-id
+                                       :requirement/id requirement
+                                       :reason :codetype/unknown
+                                       :codetype/unknown (vec unknown)
+                                       :resources (vec resources)
+                                       :artifacts (vec (:spec/artifacts spec-data))})
+      (throw (ex-info "Planner inferred CodeTypes absent from catalog"
+                      {:mission/id mission-id
+                       :requirement/id requirement
+                       :codetype/unknown (vec unknown)})))
+    (when-not (seq target)
+      (append-remediation! mission-id {:mission/id mission-id
+                                       :requirement/id requirement
+                                       :reason :codetype/missing-inference
+                                       :resources (vec resources)
+                                       :artifacts (vec (:spec/artifacts spec-data))})
+      (throw (ex-info "Planner could not infer CodeTypes for requirement"
+                      {:mission/id mission-id
+                       :requirement/id requirement
+                       :resources resources
+                       :artifacts (:spec/artifacts spec-data)})))
+    target))
+
 (defn- mission-template-from-heuristics
   [{:keys [templates]}]
   (let [category (or (get-in templates [:mission-category :default])
@@ -2091,19 +2889,18 @@
       (seq tracks) (assoc :mission/work-tracks tracks))))
 
 (defn- plan-node-from-requirement
-  [spec-id requirement idx spec-tests heuristics]
+  [spec-id requirement idx {:keys [mission-template test-contracts]}]
   (let [spec-fragment (bootstrap/sanitize-fragment (name spec-id))
         req-fragment (bootstrap/sanitize-fragment requirement)
         node-id (format "%s-N%02d" spec-fragment (inc idx))
         resource (format "src/%s/%s.clj" spec-fragment req-fragment)
-        template (mission-template-from-heuristics heuristics)
-        test-scope (when (seq spec-tests)
-                     {:plan.node/test-contracts spec-tests})]
+        test-scope (when (seq test-contracts)
+                     {:plan.node/test-contracts test-contracts})]
     {:plan.node/id node-id
      :plan.node/name requirement
      :plan.node/scope-requirements [requirement]
      :plan.node/resources [resource]
-     :plan.node/mission-template template
+     :plan.node/mission-template mission-template
      :plan.node/test-scope test-scope}))
 
 (defn- plan-edges
@@ -2117,25 +2914,33 @@
        vec))
 
 (defn- coverage-rows
-  [requirements acceptance node-map spec-tests]
+  [requirements acceptance node-map node-tests node-code-types]
   (let [base-rows (mapv (fn [req idx]
-                          (let [node-id (:plan.node/id (get node-map req))]
+                          (let [node (get node-map req)
+                                node-id (:plan.node/id node)
+                                tests (or (get node-tests req) [])
+                                code-types (or (get node-code-types req) [])]
                             {:coverage.row/requirement-id req
                              :coverage.row/nodes [node-id]
-                             :coverage.row/code-targets (:plan.node/resources (get node-map req))
-                             :coverage.row/test-contracts spec-tests
+                             :coverage.row/code-targets (:plan.node/resources node)
+                             :coverage.row/test-contracts tests
+                             :coverage.row/code-types code-types
                              :coverage.row/acceptance-id (get acceptance idx)}))
                         requirements
                         (range))
         extra-rows (map-indexed
                     (fn [idx acc]
                       (let [req (or (get requirements idx) (first requirements))
-                            node-id (:plan.node/id (get node-map req))]
+                            node (get node-map req)
+                            node-id (:plan.node/id node)
+                            tests (or (get node-tests req) [])
+                            code-types (or (get node-code-types req) [])]
                         {:coverage.row/requirement-id req
                          :coverage.row/acceptance-id acc
                          :coverage.row/nodes [node-id]
-                         :coverage.row/code-targets (:plan.node/resources (get node-map req))
-                         :coverage.row/test-contracts spec-tests}))
+                         :coverage.row/code-targets (:plan.node/resources node)
+                         :coverage.row/test-contracts tests
+                         :coverage.row/code-types code-types}))
                     (drop (count base-rows) acceptance))]
     (->> (concat base-rows extra-rows)
          (remove nil?)
@@ -2179,7 +2984,15 @@
             (throw (ex-info "Spec id mismatch between config and resource"
                             {:config spec-id
                              :resource (:spec/id spec-data)})))
-        heuristics (load-heuristics heuristics-path)
+        heuristics (-> (load-heuristics heuristics-path)
+                       (update :codetype-inference
+                               #(or % {:default [:code.type/runtime]
+                                       :fallback [:code.type/runtime]
+                                       :path-rules []
+                                       :artifact-rules []
+                                       :risk-rules {}
+                                       :change-rules {}})))
+        _ (code/assert-no-near-duplicates!)
         overrides (when overrides-path
                     (let [canonical (ensure-repo-relative overrides-path)
                           data (read-edn-file canonical)]
@@ -2193,23 +3006,49 @@
         log-path (.getCanonicalPath log-file)
         spec-digest (sha256-file (io/file canonical-spec))
         plan-id (parse-plan-id (or (:work.plan/id overrides) (UUID/randomUUID)))
-        spec-tests (vec (or (:spec/test-contracts spec-data) []))
+        provided-tests (vec (or (:spec/test-contracts spec-data) []))
+        default-tests (vec (or (get-in heuristics [:test-inference :default-suites]) []))
+        spec-tests (if (seq provided-tests) provided-tests default-tests)
         requirements (normalize-strings (:spec/requirements spec-data))
         acceptance (normalize-strings (:spec/acceptance-criteria spec-data))
+        _ (when-not (seq spec-tests)
+            (throw (ex-info "Planner requires at least one test contract (heuristics/test-inference)"
+                            {:spec/id parsed-spec-id
+                             :source [:spec/test-contracts :test-inference/default-suites]})))
         _ (when-not (seq requirements)
             (throw (ex-info "Spec requires requirements for planning"
                             {:spec/id parsed-spec-id})))
-        nodes (mapv #(plan-node-from-requirement parsed-spec-id %1 %2 spec-tests heuristics)
-                    requirements
-                    (range))
+        mission-template (mission-template-from-heuristics heuristics)
+        base-nodes (mapv #(plan-node-from-requirement parsed-spec-id %1 %2 {:mission-template mission-template
+                                                                            :test-contracts spec-tests})
+                         requirements
+                         (range))
+        node-code-types (into {}
+                              (map (fn [req node]
+                                     [req (infer-code-types! {:mission-id mission
+                                                              :requirement req
+                                                              :resources (:plan.node/resources node)
+                                                              :spec-data spec-data
+                                                              :heuristics heuristics
+                                                              :mission-category (:mission/category mission-template)})])
+                                   requirements
+                                   base-nodes))
+        nodes (mapv (fn [node req]
+                      (assoc node
+                             :plan.node/code-types (get node-code-types req)
+                             :plan.node/test-contracts spec-tests))
+                    base-nodes
+                    requirements)
+        node-tests (into {} (map (fn [req] [req spec-tests]) requirements))
         node-map (zipmap requirements nodes)
         edges (plan-edges nodes)
-        coverage (coverage-rows requirements acceptance node-map spec-tests)
+        coverage (coverage-rows requirements acceptance node-map node-tests node-code-types)
         obligations (default-proof-obligations)
         created-at (str (Instant/now))
         plan (merge {:work.plan/id plan-id
                      :work.plan/spec-id parsed-spec-id
                      :work.plan/spec-version parsed-spec-version
+                     :spec/test-contracts spec-tests
                      :work.plan/status :work.plan.status/draft
                      :work.plan/created-by agent
                      :work.plan/created-at created-at
@@ -2272,6 +3111,14 @@
                                                :decision/requirements (count requirements)
                                                :decision/acceptance (count acceptance)
                                                :decision/tests spec-tests}
+                                              {:decision/kind :planner/code-types
+                                               :decision/requirements (count requirements)
+                                               :decision/code-types (->> node-code-types
+                                                                         vals
+                                                                         (mapcat identity)
+                                                                         set
+                                                                         vec)
+                                               :decision/source :codetype-inference}
                                               {:decision/kind :planner/snapshot
                                                :decision/version-snapshot (:version.snapshot/id (:version/snapshot snapshot))}]
                   :plan.generation/actor agent
@@ -2425,9 +3272,15 @@
   [plan-data plan-node-id]
   (let [rows (filter #(some #{plan-node-id} (:coverage.row/nodes %))
                      (or (:work.plan/coverage plan-data) []))
+        node-entry (plan-node-by-id plan-data plan-node-id)
+        node-types (->> (:plan.node/code-types node-entry)
+                        (map normalized-code-type))
         code-types (->> rows
-                        (mapcat #(or (:coverage.row/test-contracts %) []))
+                        (mapcat #(or (:coverage.row/code-types %)
+                                     (:coverage.row/test-contracts %)
+                                     []))
                         (map normalized-code-type)
+                        (concat node-types)
                         (remove nil?)
                         distinct
                         vec)]
@@ -2437,9 +3290,21 @@
                        :plan.node/id plan-node-id})))
     code-types))
 
+(defn- tests-for-node
+  [plan-data plan-node-id]
+  (let [rows (filter #(some #{plan-node-id} (:coverage.row/nodes %))
+                     (or (:work.plan/coverage plan-data) []))
+        node-entry (plan-node-by-id plan-data plan-node-id)]
+    (->> (concat (:plan.node/test-contracts node-entry)
+                 (mapcat #(or (:coverage.row/test-contracts %) []) rows))
+         normalize-keywords
+         (remove nil?)
+         distinct
+         vec)))
+
 (defn- mission-tests-list
-  [code-types template-tests]
-  (->> (concat (map str code-types)
+  [tests template-tests]
+  (->> (concat (normalize-strings tests)
                (normalize-strings template-tests))
        (map #(str/trim (str %)))
        (remove str/blank?)
@@ -2467,15 +3332,17 @@
     plan-node :plan/node
     template :mission/template
     resource-refs :mission/resources
-    code-types :mission/code-types}]
+    code-types :mission/code-types
+    mission-tests :mission/tests}]
   (let [template-map (if (map? template) template {})
         plan-id-str (str plan-id)
-        tests (mission-tests-list code-types (:mission/tests template-map))
+        tests (mission-tests-list mission-tests (:mission/tests template-map))
         scope {:plan/id plan-id-str
                :plan/node-id plan-node-id
                :plan/path plan-path
                :resources resource-refs
-               :code-types code-types}
+               :code-types code-types
+               :paths resource-refs}
         work-tracks (mission-work-tracks template-map)
         queue-tags (mission-queue-tags template-map)
         deliverables (mission-string-list (:mission/deliverables template-map))
@@ -2530,16 +3397,28 @@
         _ (ensure-plan-generated! plan-data plan-id)
         _ (ensure-plan-validated! plan-data plan-id)
         _ (ensure-plan-approved! plan-data plan-id)
+        plan-id-str (str plan-id)
         node (plan-node-by-id plan-data plan-node)
         resource-refs (resource-refs-for-node node)
         code-types (code-types-for-node plan-data plan-node)
-        plan-id-str (str plan-id)
+        _ (when-let [unknown (seq (remove code/type-ident? code-types))]
+            (append-remediation! mission {:mission/id mission
+                                          :requirement/id plan-node
+                                          :reason :codetype/out-of-catalog
+                                          :codetype/unknown (vec unknown)
+                                          :plan/id plan-id-str})
+            (throw (ex-info "WorkPlan references CodeTypes outside the catalog"
+                            {:work.plan/id plan-id
+                             :plan.node/id plan-node
+                             :codetype/unknown (vec unknown)})))
+        plan-tests (tests-for-node plan-data plan-node)
         binding {:mission.plan-binding/mission-id mission
                  :mission.plan-binding/plan-id plan-id-str
                  :mission.plan-binding/plan-node-id plan-node
                  :mission.plan-binding/resource-refs resource-refs
                  :mission.plan-binding/test-scope (:plan.node/test-scope node)
-                 :mission.plan-binding/code-types code-types}
+                 :mission.plan-binding/code-types code-types
+                 :mission.plan-binding/tests plan-tests}
         mission-resources (mapv (fn [path]
                                   {:mission.resource/mission-id mission
                                    :mission.resource/plan-id plan-id-str
@@ -2553,7 +3432,8 @@
                                                :plan/node node
                                                :mission/template mission-template
                                                :mission/resources resource-refs
-                                               :mission/code-types code-types})
+                                               :mission/code-types code-types
+                                               :mission/tests plan-tests})
         binding-file (mission-log-file mission "mission-plan-binding.edn")
         payload {:mission/id mission
                  :agent/id agent

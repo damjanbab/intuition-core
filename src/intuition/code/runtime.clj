@@ -147,6 +147,41 @@
   [ident]
   (contains? (definition-idents) ident))
 
+(defn type-ident-set
+  []
+  (set (keys @code-types-by-ident*)))
+
+(defn type-ident?
+  [ident]
+  (contains? (type-ident-set) ident))
+
+(defn- code-type-signature
+  "Canonical shape used for dedupe detection; ignores ident/version metadata."
+  [entry]
+  {:category (:code.type/category entry)
+   :validators (set (or (:code.type/default-validators entry) []))
+   :generator (some-> (:code.type/generator entry) str)
+   :templates (set (or (:code.type/generator-templates entry) []))
+   :artifacts (set (or (:code.type/generated-artifacts entry) []))})
+
+(defn near-duplicate-types
+  "Returns entries that share the same signature but use different idents."
+  []
+  (->> (code-types)
+       (group-by code-type-signature)
+       (keep (fn [[signature entries]]
+               (when (> (count entries) 1)
+                 {:signature signature
+                  :idents (vec (distinct (map :code.type/ident entries)))})))
+       vec))
+
+(defn assert-no-near-duplicates!
+  []
+  (let [dupes (near-duplicate-types)]
+    (when (seq dupes)
+      (throw (ex-info "CodeType catalog contains near-duplicates"
+                      {:duplicates dupes})))))
+
 (defn known-dependency?
   "True when the keyword references a CodeDefinition or dictionary entity."
   [ident]

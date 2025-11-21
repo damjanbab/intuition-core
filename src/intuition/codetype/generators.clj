@@ -31,26 +31,51 @@
         "codex.generated.sample"
         (str "codex.generated." base)))))
 
-(defn sample-runtime
-  "Simple generator that renders the sample template into the declared artifact."
+(defn- ident-fragment
+  [ident]
+  (let [base (-> (or (some-> ident name) "codex.sample")
+                 str/lower-case
+                 (str/replace #"[^a-z0-9]+" "-")
+                 (str/replace #"--+" "-")
+                 (str/replace #"^-+" "")
+                 (str/replace #"-+$" ""))]
+    (if (str/blank? base) "codex-sample" base)))
+
+(defn- render-template
+  [template ident mission-id namespace]
+  (-> (template-content template)
+      (str/replace "{{MISSION_ID}}" mission-id)
+      (str/replace "{{CODETYPE_IDENT}}" (str ident))
+      (str/replace "{{NAMESPACE}}" namespace)
+      (str/replace "{{IDENT}}" (ident-fragment ident))))
+
+(defn templated-scaffold
+  "Generic generator that renders each template into the corresponding artifact,
+  defaulting to the first template when counts differ."
   [context]
   (let [mission-id (str (:mission/id context))
         codetype-ident (:codetype/ident context)
         artifacts (:codetype/generated-artifacts context)
         templates (:codetype/resolved-templates context)
-        template (first templates)
-        artifact (first artifacts)]
-    (when-not artifact
-      (throw (ex-info "No generated artifact declared for CodeType."
-                      {:codetype/ident codetype-ident})))
-    (when-not template
-      (throw (ex-info "No template resolved for CodeType generator."
-                      {:codetype/ident codetype-ident})))
-    (let [ns-name (codetype-namespace codetype-ident (:codetype/options context))
-          rendered (-> (template-content template)
-                       (str/replace "{{MISSION_ID}}" mission-id)
-                       (str/replace "{{CODETYPE_IDENT}}" (str codetype-ident))
-                       (str/replace "{{NAMESPACE}}" ns-name))]
-      {:generated/files
-       [{:relative-path artifact
-         :content rendered}]})))
+        namespace (codetype-namespace codetype-ident (:codetype/options context))
+        selected-templates (if (= (count templates) (count artifacts))
+                             templates
+                             (repeat (first templates)))]
+    (when (or (empty? artifacts) (empty? templates))
+      (throw (ex-info "Generator requires templates + artifacts"
+                      {:codetype/ident codetype-ident
+                       :codetype/templates templates
+                       :codetype/artifacts artifacts})))
+    {:generated/files
+     (vec
+      (map (fn [artifact template]
+             {:relative-path artifact
+              :codetype/ident codetype-ident
+              :content (render-template template codetype-ident mission-id namespace)})
+           artifacts
+           selected-templates))}))
+
+(defn sample-runtime
+  "Simple generator that renders the sample template into the declared artifact."
+  [context]
+  (templated-scaffold context))

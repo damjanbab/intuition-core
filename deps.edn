@@ -23,6 +23,8 @@
                      "-n" "deploy-canary-test"
                      "-n" "agent-gateway-test"
                      "-n" "dev-agent-gateway-smoke-test"
+                     "-n" "run-mission-contract-test"
+                     "-n" "run-mission-pipeline-test"
                      "-n" "code-types-catalog-test"
                      "-n" "dev-tools-smoke-test"
                      "-n" "scheduler-smoke-test"

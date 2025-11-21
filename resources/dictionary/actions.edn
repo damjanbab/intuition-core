@@ -68,7 +68,7 @@
   :action/invariants [:spec/p3.3 :spec/p4.7 :spec/p5.1 :spec/p9.1]
   :action/permissions [:permission/tests.run]
   :action/config-spec :action.codetype/validate-config
- :action/output-spec :action.codetype/validate-output
+  :action/output-spec :action.codetype/validate-output
   :action/handler "intuition.sfs.actions.handlers/codetype-validate"
   :action/tags [:action.tag/tests :action.tag/code]}
 
@@ -81,6 +81,36 @@
   :action/output-spec :action.codetype/generate-output
   :action/handler "intuition.sfs.actions.handlers/codetype-generate"
   :action/tags [:action.tag/code :action.tag/environment]}
+
+ {:action/ident :action/code.materialize.from-graph
+  :action/name "Materialize code from graph"
+  :action/description "Reads CodeDefinitions + CodeTypes from Datomic, writes sandboxed artifacts, and records checksums (§§3.3–3.6, §4.7, §5.1, §6.2, §7, §9)."
+  :action/invariants [:spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p3.6 :spec/p4.7 :spec/p5.1 :spec/p6.2 :spec/p7.1 :spec/p9.1]
+  :action/permissions [:permission/env.bootstrap]
+  :action/config-spec :action.code.materialize/from-graph-config
+  :action/output-spec :action.code.materialize/from-graph-output
+  :action/handler "intuition.sfs.actions.handlers/materialize-code-from-graph"
+  :action/tags [:action.tag/code :action.tag/environment]}
+
+ {:action/ident :action/code.proposal.validate
+  :action/name "Validate code proposals"
+  :action/description "Validates Datomic-first code/template/spec proposals and records a sandbox-safe log (§§3.3–3.6, §4.7, §5.1, §6, §9)."
+  :action/invariants [:spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p3.6 :spec/p4.7 :spec/p5.1 :spec/p6.2 :spec/p9.1]
+  :action/permissions [:permission/code.propose]
+  :action/config-spec :action.code.proposal/validate-config
+  :action/output-spec :action.code.proposal/validate-output
+  :action/handler "intuition.sfs.actions.handlers/validate-code-proposals"
+  :action/tags [:action.tag/code :action.tag/audit]}
+
+ {:action/ident :action/code.proposal.apply
+  :action/name "Apply code proposals"
+  :action/description "Transacts validated proposals into Datomic, logs before/after/diff artifacts, and emits a version snapshot (§§3.3–3.6, §4.7, §5.1, §6, §9)."
+  :action/invariants [:spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p3.6 :spec/p4.7 :spec/p5.1 :spec/p6.2 :spec/p9.1]
+  :action/permissions [:permission/code.proposal.apply]
+  :action/config-spec :action.code.proposal/apply-config
+  :action/output-spec :action.code.proposal/apply-output
+  :action/handler "intuition.sfs.actions.handlers/apply-code-proposals"
+  :action/tags [:action.tag/code :action.tag/audit]}
 
  {:action/ident :action/ci.run-profile
   :action/name "Run CI profile"

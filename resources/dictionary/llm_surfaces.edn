@@ -1,0 +1,70 @@
+{:llm.surfaces/id "llm-surfaces/v1"
+ :llm.surfaces/description "Governed one-shot LLM surfaces; all inputs/outputs are EDN and persist through Datomic for audit (§§2.1–2.2, §§3.3–3.6, §4.7, §5.1, §5.3, §8.1, §9, §11)."
+ :llm.surfaces/spec-sections ["2.1" "2.2" "3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "8.1" "9" "11"]
+ :llm.surfaces/global-invariants ["No shell commands or file writes; Datomic + EDN only."
+                                  "Surfaces act on context bundles/graph snapshots, never on repo state."
+                                  "Each response MUST emit :meta/self-report {:confidence ... :reason ... :assumptions [] :uncertainties []}."]
+ :llm.surfaces/entries
+ [{:llm.surface/ident :llm.surface/plan-draft
+   :llm.surface/name "Plan draft hinting"
+   :llm.surface/description "Suggests plan nodes/edges/coverage from spec + graph context; validators decide acceptance."
+   :llm.surface/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "9" "11"]
+   :llm.surface/inputs [:spec/requirements :spec/test-contracts :code-type/catalog :graph/neighbors :work-plan/obligations]
+   :llm.surface/outputs [:plan/nodes :plan/edges :plan/coverage]
+   :llm.surface/invariants ["Read-only hints; validators enforce coverage/DAG/resource rules."
+                            "Must cite planner inputs; cannot assign locks/branches."]
+   :llm.surface/metrics {:validation/pass-rate "WorkPlan validator acceptance rate."
+                         :coverage-rate "Improvement to coverage completeness vs. baseline."
+                         :retry-free-rate "Fraction of runs succeeding without retries."}}
+
+  {:llm.surface/ident :llm.surface/code-proposal
+   :llm.surface/name "Datomic code proposal"
+   :llm.surface/description "Produces Datomic-first code/spec/template proposals that downstream validators and generators apply."
+   :llm.surface/spec-sections ["2.1" "2.2" "3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "6" "8.1" "9" "11"]
+   :llm.surface/inputs [:mission/context-bundle :code.definition/graph :code.type/catalog :spec/requirements :plan/nodes]
+   :llm.surface/outputs [:code/proposals]
+   :llm.surface/invariants ["Never touches files or shell; proposals only."
+                            "Must reference known CodeTypes/definitions; no lock or branch mutations."
+                            "Responses should be usable by :action/code.proposal.validate/apply without edits."]
+   :llm.surface/metrics {:proposal-schema-pass "Schema adherence of proposals."
+                         :apply-success-rate "Apply success without manual fixes."
+                         :ci-pass-rate "Downstream CI pass rate after applying proposals."}}
+
+  {:llm.surface/ident :llm.surface/test-doc-suggestions
+   :llm.surface/name "Test/doc suggestion surface"
+   :llm.surface/description "Highlights missing tests/docs tied to plan nodes and CodeDefinitions."
+   :llm.surface/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "8.1" "9" "11"]
+   :llm.surface/inputs [:context/bundle :code.definition/coverage :doc/coverage :analytics/failures]
+   :llm.surface/outputs [:tests/suggestions :docs/suggestions]
+   :llm.surface/invariants ["Suggestions only; no CI execution."
+                            "Targets must be addressable plan nodes or CodeDefinitions."
+                            "Must keep outputs data-only (EDN vectors/maps)."]
+   :llm.surface/metrics {:acceptance-rate "Validator acceptance of suggested tests/docs."
+                         :redundancy-rate "Detected/avoided duplicate work."
+                         :ci-impact "Delta in CI failures when suggestions applied."}}
+
+  {:llm.surface/ident :llm.surface/analytics-digest
+   :llm.surface/name "Run analytics digest"
+   :llm.surface/description "Summarizes run manifests (ci/merge/plan) into Markdown/EDN digests with trace tokens."
+   :llm.surface/spec-sections ["5.1" "5.3" "8.1" "9" "11"]
+   :llm.surface/inputs [:ci/run-manifest :merge/logs :plan/analytics :version/snapshots]
+   :llm.surface/outputs [:summary/markdown :risks :follow-ups]
+   :llm.surface/invariants ["Read-only; must not mutate manifests."
+                            "Must include hashes/ids so digests are auditable."
+                            "Outputs must stay under Datomic size limits."]
+   :llm.surface/metrics {:hash-consistency "Digest/stats cross-check against manifest hashes."
+                         :steward-acceptance "Acceptance rate of summaries."
+                         :review-time "Time-to-review reduction vs. baseline."}}
+
+  {:llm.surface/ident :llm.surface/code-graph-gaps
+   :llm.surface/name "Code graph gap finder"
+   :llm.surface/description "Detects missing edges or orphan nodes across code↔test↔doc graph slices."
+   :llm.surface/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "8.1" "9" "11"]
+   :llm.surface/inputs [:graph/nodes :graph/edges :code.type/catalog :spec/coverage :plan/coverage]
+   :llm.surface/outputs [:missing-edges :orphan-nodes :rationale]
+   :llm.surface/invariants ["Read-only analysis of provided graph slice."
+                            "May not propose file edits or locks; suggestions only."]
+   :llm.surface/metrics {:true-positive-rate "Validator-confirmed missing edges."
+                         :false-positive-rate "Rate of rejected/incorrect flags."
+                         :stability "Repeatability of results across seeds."}}]}
+

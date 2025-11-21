@@ -1,0 +1,106 @@
+{:spec/sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "8.1" "9"]
+ :code.graph/schema
+ {:nodes {:code.graph.node/ident {:value-type :db.type/keyword
+                                  :cardinality :db.cardinality/one
+                                  :doc "Identity keyword for the graph node (spec/plan/mission/code/test/doc/system-map/code-type)."}
+          :code.graph.node/type {:value-type :db.type/keyword
+                                 :doc "Type discriminator: :code.graph.node.type/spec|plan|mission|code|test|doc|system-map|code-type."}
+          :code.graph.node/name {:value-type :db.type/string
+                                 :doc "Human label used in docs/system-map overlays."}
+          :code.graph.node/ref {:value-type :db.type/string
+                                :doc "Raw domain identifier (spec id, plan UUID, mission id, file path)."}
+          :code.graph.node/spec-id {:value-type :db.type/keyword
+                                    :doc "Spec ident when present."}
+          :code.graph.node/plan-id {:value-type :db.type/string
+                                    :doc "Plan identifier (stringified UUID)."}
+          :code.graph.node/mission-id {:value-type :db.type/string
+                                       :doc "Mission id so plan/code nodes can be filtered by mission scope (§§3.3–3.6)."}
+          :code.graph.node/spec-sections {:value-type :db.type/string
+                                          :cardinality :db.cardinality/many
+                                          :doc "SYSTEM_SPEC sections cited by the node."}
+          :code.graph.node/requirements {:value-type :db.type/string
+                                         :cardinality :db.cardinality/many
+                                         :doc "Requirement ids covered by this node (from specs/plans)."}
+          :code.graph.node/missions {:value-type :db.type/string
+                                     :cardinality :db.cardinality/many
+                                     :doc "Mission ids that own the node; used to assemble mission-scoped slices (§§3.3–3.6, §9)."}
+          :code.graph.node/version-snapshots {:value-type :db.type/uuid
+                                              :cardinality :db.cardinality/many
+                                              :doc "Version snapshot ids that reference this node (§8.1)."}}
+  :edges {:code.graph.edge/ident {:value-type :db.type/keyword
+                                  :doc "Identity keyword for the edge."}
+          :code.graph.edge/from {:value-type :db.type/keyword
+                                 :doc "Source node ident."}
+          :code.graph.edge/to {:value-type :db.type/keyword
+                               :doc "Destination node ident."}
+          :code.graph.edge/relation {:value-type :db.type/keyword
+                                     :doc "Relationship keyword describing the hop."}
+          :code.graph.edge/requirements {:value-type :db.type/string
+                                         :cardinality :db.cardinality/many
+                                         :doc "Requirement ids associated with the edge (e.g., coverage rows)."}
+          :code.graph.edge/spec-sections {:value-type :db.type/string
+                                          :cardinality :db.cardinality/many
+                                          :doc "SYSTEM_SPEC clauses enforced by the hop."}
+          :code.graph.edge/version-snapshots {:value-type :db.type/uuid
+                                              :cardinality :db.cardinality/many
+                                              :doc "Version snapshot ids that captured this relationship."}}}
+
+ :code.graph/relations
+ [{:relation :code.graph.relation/spec->plan
+   :from :code.graph.node.type/spec
+   :to :code.graph.node.type/plan
+   :spec/sections ["3.3" "3.4" "3.5" "3.6" "9"]
+   :doc "Normalized spec→plan linkage, populated from work-plan files and version snapshots."}
+  {:relation :code.graph.relation/plan->mission
+   :from :code.graph.node.type/plan
+   :to :code.graph.node.type/mission
+   :spec/sections ["3.3" "3.4" "3.5" "3.6" "9"]
+   :doc "Plan node routing into the executing mission."}
+  {:relation :code.graph.relation/mission->code
+   :from :code.graph.node.type/mission
+   :to :code.graph.node.type/code
+   :spec/sections ["3.3" "3.4" "3.5" "4.7" "5.1" "9"]
+   :doc "Mission-owned code definitions; derived from :code.definition/missions."}
+  {:relation :code.graph.relation/code->code-type
+   :from :code.graph.node.type/code
+   :to :code.graph.node.type/code-type
+   :spec/sections ["4.7" "5.1"]
+   :doc "CodeDefinition → CodeType mapping used by generators/validators."}
+  {:relation :code.graph.relation/code->test
+   :from :code.graph.node.type/code
+   :to :code.graph.node.type/test
+   :spec/sections ["3.5" "5.1" "7" "9"]
+   :doc "Tests that validate code definitions (either declared on the code node or inferred from plan coverage)."}
+  {:relation :code.graph.relation/code->doc
+   :from :code.graph.node.type/code
+   :to :code.graph.node.type/doc
+   :spec/sections ["4.7" "7" "9"]
+   :doc "Docs/templates that cover the code (docs/* paths or doc_template entries)."}
+  {:relation :code.graph.relation/code->system-map
+   :from :code.graph.node.type/code
+   :to :code.graph.node.type/system-map
+   :spec/sections ["4.1" "4.10" "7"]
+   :doc "Projection hooks into the system-map runtime; nodes mirrored by :action/system-map.refresh."}]
+
+ :code.graph/query-shapes
+ {:graph {:inputs [:mission/id :spec/id :plan/id :node/idents]
+          :output {:nodes :edges}
+          :doc "Filters to mission/spec/plan and returns reachable nodes + edges. Defaults to full graph when no filters are provided."}
+  :upstream {:inputs [:graph :start/node-ident]
+             :relations [:code.graph.relation/spec->plan
+                         :code.graph.relation/plan->mission
+                         :code.graph.relation/mission->code
+                         :code.graph.relation/code->code-type]
+             :doc "Walks toward specs/plans/missions/code-types for lineage questions (e.g., which plan/spec owns this code?)."}
+  :downstream {:inputs [:graph :start/node-ident]
+               :relations [:code.graph.relation/spec->plan
+                           :code.graph.relation/plan->mission
+                           :code.graph.relation/mission->code
+                           :code.graph.relation/code->code-type
+                           :code.graph.relation/code->test
+                           :code.graph.relation/code->doc
+                           :code.graph.relation/code->system-map]
+               :doc "Walks toward validation artifacts (tests/docs/system-map) for coverage queries (e.g., which tests/docs cover this code definition?)."}}
+
+ :versioning/links
+ {:version.snapshot/code-graph-nodes {:doc "Snapshots now carry the list of graph node idents touched by the spec/plan/mission so §8.1 lineage can jump directly into the code graph."}}}

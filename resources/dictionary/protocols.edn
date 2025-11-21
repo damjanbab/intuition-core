@@ -21,10 +21,20 @@
     :step/required? true}
    {:step/id :step/acquire-locks
     :step/action :action/lock.acquire
-    :step/description "Acquire dictionaries + scope locks"
+   :step/description "Acquire dictionaries + scope locks"
     :step/config {:mission/id [:context :mission/id]
                   :locks [:protocol :protocol/locks]}
     :step/acquires-locks? true}
+   {:step/id :step/code-materialize
+    :step/action :action/code.materialize.from-graph
+    :step/description "Materialize mission CodeDefinitions into the sandbox before validation."
+    :step/config {:mission/id [:context :mission/id]
+                  :agent/id [:context :agent/id]
+                  :sandbox/root [:state :step-results :step/mission-sync :protocol/run :step-results :step/env-bootstrap :sandbox/root]
+                  :code.definition/idents [:context :code.definition/idents]}
+    :step/work-track :work-track/code
+    :step/required? true
+    :step/requires-locks? true}
    {:step/id :step/lint
     :step/action :action/lint.run
     :step/description "Run governed lint before executing acceptance suites"
@@ -45,12 +55,15 @@
     :step/when [:context :tests/enabled?]
     :step/work-track :work-track/tests
     :step/required? true
-    :step/requires-locks? true}
-   {:step/id :step/codetype
+   :step/requires-locks? true}
+  {:step/id :step/codetype
     :step/action :action/codetype.validate
-    :step/description "Validate touched CodeDefinitions before steward review (§§4.7, 5.1)."
+    :step/description "Validate inferred CodeTypes from mission scope/catalog before steward review (§§4.7, 5.1)."
     :step/config {:mission/id [:context :mission/id]
                   :agent/id [:context :agent/id]
+                  :code.definition/idents [:context :code.definition/idents]
+                  :sandbox/root [:state :step-results :step/mission-sync :protocol/run :step-results :step/env-bootstrap :sandbox/root]
+                  :code.materialize/paths [:state :step-results :step/code-materialize :code.materialize/paths]
                   :codetype/paths [:context :codetype/paths]}
     :step/work-track :work-track/code
     :step/required? true

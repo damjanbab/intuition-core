@@ -25,6 +25,7 @@
   (support/with-test-conn
    (fn [conn]
      (system-map/refresh! {:conn conn
+                           :code-graph/enabled? false
                            :entities [:action/env.bootstrap
                                       :action/system-map.refresh]})
      (d/transact conn {:tx-data [{:system-map.edge/ident :system-map.edge/env->system
@@ -33,6 +34,7 @@
                                   :system-map.edge/relation :system-map.relation/depends-on
                                   :system-map.edge/status :system-map.edge.status/active}]})
      (let [result (system-map/refresh! {:conn conn
+                                        :code-graph/enabled? false
                                         :entities [:action/env.bootstrap
                                                    :action/system-map.refresh]})]
        (is (= :status/ok (:action/status result)))
@@ -49,6 +51,7 @@
      (fn [conn]
        (try
          (system-map/refresh! {:conn conn
+                               :code-graph/enabled? false
                                :entities [:action/not-real]})
          (is false "refresh! should throw for unknown entities")
          (catch clojure.lang.ExceptionInfo ex
@@ -59,7 +62,9 @@
   (testing "dangling nodes are surfaced"
     (support/with-test-conn
      (fn [conn]
-       (system-map/refresh! {:conn conn :entities [:action/env.bootstrap]})
+       (system-map/refresh! {:conn conn
+                             :code-graph/enabled? false
+                             :entities [:action/env.bootstrap]})
        (d/transact conn {:tx-data [{:system-map.node/ident :action/ghost
                                     :system-map.node/entity :action/ghost
                                     :system-map.node/entity-kind :system-map.entity/action
@@ -67,7 +72,8 @@
                                     :system-map.node/description "Inserted to test invariant"
                                     :system-map.node/status :system-map.node.status/active}]})
        (try
-         (system-map/refresh! {:conn conn})
+         (system-map/refresh! {:conn conn
+                               :code-graph/enabled? false})
          (is false "refresh! should throw")
          (catch clojure.lang.ExceptionInfo ex
            (is (= :system-map/dangling-nodes (:type (ex-data ex))))
@@ -76,14 +82,18 @@
   (testing "dangling edges are surfaced"
     (support/with-test-conn
      (fn [conn]
-       (system-map/refresh! {:conn conn :entities [:action/env.bootstrap]})
+       (system-map/refresh! {:conn conn
+                             :code-graph/enabled? false
+                             :entities [:action/env.bootstrap]})
        (d/transact conn {:tx-data [{:system-map.edge/ident :system-map.edge/bad
                                     :system-map.edge/from :action/env.bootstrap
                                     :system-map.edge/to :action/missing
                                     :system-map.edge/relation :system-map.relation/depends-on
                                     :system-map.edge/status :system-map.edge.status/active}]})
        (try
-         (system-map/refresh! {:conn conn :entities [:action/env.bootstrap]})
+         (system-map/refresh! {:conn conn
+                               :code-graph/enabled? false
+                               :entities [:action/env.bootstrap]})
          (is false "refresh! should throw")
          (catch clojure.lang.ExceptionInfo ex
            (is (= :system-map/dangling-edges (:type (ex-data ex))))

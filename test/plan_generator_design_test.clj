@@ -28,6 +28,7 @@
                     :risk-splitting
                     :track-inference
                     :test-inference
+                    :codetype-inference
                     :edges
                     :locks
                     :templates
@@ -39,6 +40,9 @@
         (is (seq (:source data)))
         (is (seq (:scope-grouping data)))
         (is (seq (:risk-splitting data)))
+        (is (seq (:codetype-inference data)))
+        (is (seq (get-in data [:codetype-inference :default])))
+        (is (seq (get-in data [:codetype-inference :fallback])))
         (is (seq (:templates data)))
         (is (seq (:generation-log data))))
       (testing "generation log section lists required keys"

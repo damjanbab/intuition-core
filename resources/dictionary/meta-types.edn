@@ -6314,9 +6314,421 @@
   :entity/updated-by :mission/M-09
   :entity/description "Structured approval artifacts for sensitive integrations (SYSTEM_SPEC.md §10.2)."
   :type/ident :approval/record
-  :type/category :category/security
+ :type/category :category/security
   :type/attributes [:approval.record/ident :approval.record/mission :approval.record/type :approval.record/risk-profile :approval.record/approved-by :approval.record/approved-at :approval.record/log-path]
   :type/meta {:spec/sections ["3.5" "4.8" "10.2"]
               :extends [:dictionary/entity]
               :doc "Persists steward sign-off + log references for JS/API protocols."}}
+
+ ;; Attribute definitions – LLM request/response telemetry
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/request/id"
+  :entity/name "LLM request id"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Unique idempotent request id for one-shot LLM calls (§§2.1–2.2, §§3.3–3.6, §4.7, §5.1, §5.3, §8.1, §9, §11)."
+  :attribute/ident :llm.request/id
+  :attribute/owner-type :llm/request
+  :attribute/value-type :db.type/uuid
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Identity key for requests."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/request/surface"
+  :entity/name "LLM surface"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Surface ident tied to llm_surfaces.edn definitions."
+  :attribute/ident :llm.request/surface
+  :attribute/owner-type :llm/request
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Which governed surface the request targets."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/request/idempotency-key"
+  :entity/name "LLM request idempotency key"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Deterministic key to dedupe identical LLM requests for audit (§§3.3–3.6, §5.1, §5.3)."
+  :attribute/ident :llm.request/idempotency-key
+  :attribute/owner-type :llm/request
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Hash key for request idempotency."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/request/input"
+  :entity/name "LLM request input"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Serialized EDN input bundle snapshot provided to the LLM surface (§§4.7, §9, §11)."
+  :attribute/ident :llm.request/input
+  :attribute/owner-type :llm/request
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "EDN string of the request payload."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/request/context-hash"
+  :entity/name "LLM request context hash"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Digest of the input bundle for lineage/snapshotting (§8.1)."
+  :attribute/ident :llm.request/context-hash
+  :attribute/owner-type :llm/request
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? false
+  :attribute/description "Hash of request input for versioning."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/request/requested-outputs"
+  :entity/name "LLM request outputs"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Requested output keys aligned to llm_surfaces.edn."
+  :attribute/ident :llm.request/requested-outputs
+  :attribute/owner-type :llm/request
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/many
+  :attribute/required? true
+  :attribute/description "Target output slots for the LLM call."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/request/spec-sections"
+  :entity/name "LLM request SYSTEM_SPEC sections"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Traceability back to SYSTEM_SPEC clauses for the request."
+  :attribute/ident :llm.request/spec-sections
+  :attribute/owner-type :llm/request
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/many
+  :attribute/required? false
+  :attribute/description "SYSTEM_SPEC section strings recorded per request."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/request/trace"
+  :entity/name "LLM request trace"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Execution trace metadata (mission/agent/run ids)."
+  :attribute/ident :llm.request/trace
+  :attribute/owner-type :llm/request
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? false
+  :attribute/description "Serialized trace metadata for audits (§§2.1–2.2, §9)."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/request/created-at"
+  :entity/name "LLM request created at"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Timestamp for when the request was recorded."
+  :attribute/ident :llm.request/created-at
+  :attribute/owner-type :llm/request
+  :attribute/value-type :db.type/instant
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Request capture time for replay/versioning (§8.1)."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/response/id"
+  :entity/name "LLM response id"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Unique response id linked to a request."
+  :attribute/ident :llm.response/id
+  :attribute/owner-type :llm/response
+  :attribute/value-type :db.type/uuid
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Identity key for responses."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/response/request-id"
+  :entity/name "LLM response request id"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Back-reference to the originating LLM request for idempotency."
+  :attribute/ident :llm.response/request-id
+  :attribute/owner-type :llm/response
+  :attribute/value-type :db.type/uuid
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Request id this response answers (§§3.3–3.6, §8.1)."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/response/surface"
+  :entity/name "LLM response surface"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Surface ident repeated for response level filtering."
+  :attribute/ident :llm.response/surface
+  :attribute/owner-type :llm/response
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Surface identifier associated with the response."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/response/requested-outputs"
+  :entity/name "LLM response outputs"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Echo of requested outputs for verification."
+  :attribute/ident :llm.response/requested-outputs
+  :attribute/owner-type :llm/response
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/many
+  :attribute/required? true
+  :attribute/description "Outputs supplied by the response."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/response/status"
+  :entity/name "LLM response status"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Response disposition (:ok|:error) to support analytics."
+  :attribute/ident :llm.response/status
+  :attribute/owner-type :llm/response
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Outcome of the LLM call."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/response/payload"
+  :entity/name "LLM response payload"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Serialized EDN payload returned by the LLM (§§4.7, §9, §11)."
+  :attribute/ident :llm.response/payload
+  :attribute/owner-type :llm/response
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "EDN string representing the response outputs."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/response/meta"
+  :entity/name "LLM response meta"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Serialized trace/latency/token metadata for telemetry."
+  :attribute/ident :llm.response/meta
+  :attribute/owner-type :llm/response
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? false
+  :attribute/description "Telemetry metadata captured with the response."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/response/self-report"
+  :entity/name "LLM response self-report"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Structured {:confidence :reason :assumptions [] :uncertainties []} telemetry block required for each response."
+  :attribute/ident :meta/self-report
+  :attribute/owner-type :llm/response
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Serialized self-report map to support analytics across calls."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/response/spec-sections"
+  :entity/name "LLM response SYSTEM_SPEC sections"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "SYSTEM_SPEC sections cited by the response for audit (§11)."
+  :attribute/ident :llm.response/spec-sections
+  :attribute/owner-type :llm/response
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/many
+  :attribute/required? false
+  :attribute/description "SYSTEM_SPEC clauses tied to this response."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/response/received-at"
+  :entity/name "LLM response received at"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Timestamp for receipt of the response."
+  :attribute/ident :llm.response/received-at
+  :attribute/owner-type :llm/response
+  :attribute/value-type :db.type/instant
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Response capture time for lineage."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/response/error"
+  :entity/name "LLM response error"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Error text when an LLM call fails but must be recorded."
+  :attribute/ident :llm.response/error
+  :attribute/owner-type :llm/response
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? false
+  :attribute/description "Optional error payload when status is not :ok."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/llm/response/created-at"
+  :entity/name "LLM response created at"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "Alias to emphasize response timestamp capture."
+  :attribute/ident :llm.response/created-at
+  :attribute/owner-type :llm/response
+  :attribute/value-type :db.type/instant
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? false
+  :attribute/description "Duplicate timestamp when consumers prefer created-at naming."}
+
+ ;; Type definitions – LLM request/response
+ {:entity/type :meta/type
+  :entity/path "/system/types/llm/request"
+  :entity/name "LLM request"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "One-shot LLM request envelope covering surface ident, input bundle snapshot, and requested outputs."
+  :type/ident :llm/request
+  :type/category :category/runtime
+  :type/attributes [:llm.request/id
+                    :llm.request/surface
+                    :llm.request/idempotency-key
+                    :llm.request/input
+                    :llm.request/context-hash
+                    :llm.request/requested-outputs
+                    :llm.request/spec-sections
+                    :llm.request/trace
+                    :llm.request/created-at]
+  :type/meta {:spec/sections ["2.1" "2.2" "3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "8.1" "9" "11"]
+              :extends [:dictionary/entity]
+              :doc "Captured LLM request snapshot for governed surfaces enumerated in llm_surfaces.edn."}}
+
+ {:entity/type :meta/type
+  :entity/path "/system/types/llm/response"
+  :entity/name "LLM response"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-817
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-817
+  :entity/description "One-shot LLM response payload with meta/self-report telemetry for analytics."
+  :type/ident :llm/response
+  :type/category :category/runtime
+  :type/attributes [:llm.response/id
+                    :llm.response/request-id
+                    :llm.response/surface
+                    :llm.response/requested-outputs
+                    :llm.response/status
+                    :llm.response/payload
+                    :llm.response/meta
+                    :meta/self-report
+                    :llm.response/spec-sections
+                    :llm.response/received-at
+                    :llm.response/error
+                    :llm.response/created-at]
+  :type/meta {:spec/sections ["2.1" "2.2" "3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "8.1" "9" "11"]
+              :extends [:dictionary/entity]
+              :doc "Captured LLM response with structured telemetry, trace metadata, and SYSTEM_SPEC citations."}}
 ]

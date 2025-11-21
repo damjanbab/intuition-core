@@ -104,6 +104,53 @@
 - Remove legacy/manual plan-authoring flows once the generator is validated; missions for plan capture become generation + validation checkpoints rather than hand-written WorkPlans.
 - Deliver this through dedicated missions that harden the generator (design, tests, validation) before refactoring existing workflows, to avoid getting lost during the transition.
 
+### Orchestration Layer (gateway-only, fully mediated)
+- Agents must never touch files/shell directly; everything flows through governed API/actions/protocols with audit trails. Add the orchestration layer via these missions:
+
+#### Mission ID: M-20251121-801 – Orchestrator Design & Contracts
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-801/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §5, §6, §9, §11.
+
+**Scope/Tasks**
+- Define the end-to-end “run mission” contract (spec → planner → plan validate/snapshot → mission instantiate → mission-standard → merge sim → analytics) and the canonical context bundle (spec/plan/mission records, scope/locks, expected artifacts, permissions, trace tokens).  
+- Design idempotency/retry/error-handling rules; log/manifest format; sandbox/branch lifecycle; permissions/approvals model.  
+- Produce API/CLI surface proposal (gateway entrypoint) and escalation rules for scheduler. Specify the exact gateway invocation (e.g., `clojure -M:dev -m dev.agent-gateway run-mission --mission-id <id> --context-bundle <path> --auth-token <token>`) and, if exposing MCP, the tool definition (`run-mission` tool JSON/EDN) so Codex CLI/MCP knows how to call it. Define where the context bundle lives (e.g., `missions/logs/<id>/context-bundle.edn`) and the schema keys. Include how to invoke it via `codex exec` (command template and sandbox/approval settings) so operators/agents have a concrete launch recipe.
+**Testing**  
+- `clojure -M:lint` → log dir; add a contract test that validates the context-bundle/generation schemas (EDN well-formed).  
+- Codex smoke: a non-interactive `codex exec` invocation (workspace-write, approval never) that writes a dummy artifact per the bundle manifest to prove the CLI entrypoint can be driven by Codex and exits cleanly.
+**Deliverables**  
+- Design notes, contracts EDN/schema (including context-bundle schema and gateway command/API template), lint/test logs, and a documented `codex exec` invocation template plus smoke evidence.
+
+#### Mission ID: M-20251121-802 – Orchestrator Implementation (Gateway Pipeline)
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-802/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §5, §6, §9, §11.
+
+**Scope/Tasks**
+- Implement the gateway-facing “run mission” entrypoint that calls the governed actions/protocols in sequence with trace tokens; enforce auth/watermarking and permissions.  
+- Wire artifact routing (mission log roots, manifests), sandbox/branch automation, approval enforcement, log truncation, and analytics hook.  
+- Add integration tests that execute the full pipeline on a sample spec (can reuse DR1) and assert artifacts/manifests are produced, logs are capped, approvals enforced. Commit the actual CLI/HTTP entrypoint implemented (e.g., `run-mission` subcommand in `dev/agent_gateway.clj`) and include a sample invocation + context-bundle file in the mission log. If MCP is used, add the tool registration JSON/EDN and a tooling note showing how `codex mcp-server` would expose it.
+**Testing**  
+- `clojure -M:lint` → log dir.  
+- `clojure -M:test` with new integration suites → log dir.  
+- Codex compliance: run the `run-mission` CLI via `codex exec` (non-interactive, workspace-write, approval never) on a tiny sample bundle and assert the expected artifacts manifest is satisfied and the session terminates.
+**Deliverables**  
+- Notes, pipeline code, manifests, lint/test logs, sample run artifacts (in mission log), sample gateway invocation (CLI/HTTP/MCP) and bundle example. Include a working `codex exec` command (with approval/sandbox settings) that drives the `run-mission` CLI, plus the resulting artifact evidence.
+
+#### Mission ID: M-20251121-803 – Scheduler Integration & Cutover
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-803/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §5, §6, §9, §11.
+
+**Scope/Tasks**
+- Make scheduler call the gateway entrypoint (no manual steps), propagate queue/priority/lock metadata, handle retries/backoff/escalation.  
+- Dual-run manual vs. orchestrated path on a sample mission; then flip a feature flag to orchestrated-only once green.  
+- Update docs/SYSTEM_SPEC to codify “gateway-only, no manual file/shell” rule and cutover plan. Include scheduler config with the exact gateway command/URL, auth token/role, and bundle path pattern so operators can reproduce. Document how to trigger via `codex exec` for ad-hoc runs and ensure the scheduler configuration mirrors that invocation template.
+**Testing**  
+- `clojure -M:lint` → log dir.  
+- `clojure -M:test` for scheduler/gateway integration + end-to-end dry exercise → log dir.  
+- Optional Codex smoke to verify the documented `codex exec` still drives the entrypoint post-integration.
+**Deliverables**  
+- Notes, scheduler integration artifacts (scheduler-run + pipeline logs), lint/test logs, updated docs, cutover flag/config, and the concrete scheduler command/template showing how the gateway is invoked with a context bundle (and the equivalent `codex exec` usage for manual runs, with a smoke artifact if executed).
+
 #### Mission ID: M-20251121-701 – Plan Generator Design & Scaffolding
 **Root Directory:** `/home/dami/intuition-core`  
 **WARNING:** Zero context. All evidence under `/home/dami/intuition-core/missions/logs/M-20251121-701/`. Cite `SYSTEM_SPEC` §§3.3–3.6, §4.7, §5, §9 and `plan.md` §3.a in notes/logs.
