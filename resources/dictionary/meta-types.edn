@@ -1961,7 +1961,7 @@
   :attribute/value-type :db.type/string
   :attribute/cardinality :db.cardinality/many
   :attribute/required? false
-  :attribute/description "EDN strings to keep runs diffable."}
+  :attribute/description "EDN strings to keep runs diffable (including :decision/source entries like :planner+llm.plan-draft for LLM-assisted merges)."}
 
  {:entity/type :meta/attribute
   :entity/path "/system/attributes/plan-generation/nodes"
@@ -2030,6 +2030,23 @@
   :attribute/cardinality :db.cardinality/many
   :attribute/required? false
   :attribute/description "Structured strings so automation can gate publish decisions."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/plan-generation/llm"
+  :entity/name "Plan generation LLM hook record"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-821
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-821
+  :entity/description "Serialized payload describing :llm.surface/plan-draft mode/status/request/response/self-report so §§3.3–3.6, §4.7, §5.1, §5.3, §8.1, §9 capture planner+LLM traces."
+  :attribute/ident :plan.generation/llm
+  :attribute/owner-type :plan/generation-log
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? false
+  :attribute/description "Map encoded as EDN (mode/status/context-hash/request/response/self-report/summary) for the plan-draft surface."}
 
  {:entity/type :meta/attribute
   :entity/path "/system/attributes/plan-generation/generated-at"

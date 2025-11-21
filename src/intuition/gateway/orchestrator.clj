@@ -9,9 +9,11 @@
    [clojure.pprint :as pprint]
    [clojure.string :as str]
    [datomic.client.api :as d]
+   [intuition.code.runtime :as code]
    [intuition.analytics.runtime :as analytics]
    [intuition.datomic :as datomic]
    [intuition.gateway.context-bundle :as context-bundle]
+   [intuition.llm.harness :as llm]
    [intuition.sfs.actions.runtime :as actions]
    [intuition.sfs.missions.runtime :as missions]
    [intuition.sfs.permissions :as perms]
@@ -27,6 +29,93 @@
 
 (def ^:private spec-sections-watermark
   ["2.1" "2.2" "3.3" "3.4" "3.5" "3.6" "5" "6" "9" "11"])
+
+(def ^:private llm-input-limit 3800)
+
+(declare canonicalize-llm)
+(def ^:private llm-plan-resource "dictionary/llm_integration_plan.edn")
+(def ^:private llm-modes #{:off :shadow :apply})
+(def ^:private llm-system-spec-sections
+  ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "6.2" "7" "9"])
+(def ^:private llm-plan*
+  (delay
+    (try
+      (some-> llm-plan-resource io/resource slurp edn/read-string)
+      (catch Exception _ {}))))
+
+(defn- vectorize
+  [value]
+  (cond
+    (nil? value) []
+    (vector? value) value
+    (sequential? value) (vec value)
+    :else [value]))
+
+(defn- sha256-str
+  [^String value]
+  (let [digest (MessageDigest/getInstance "SHA-256")
+        bytes (.getBytes (or value "") "UTF-8")]
+    (.update digest bytes)
+    (format "%064x" (BigInteger. 1 (.digest digest)))))
+
+(defn- summarize-catalog
+  [idents]
+  (when (seq idents)
+    {:count (count idents)
+     :sample (vec (take 32 idents))
+     :sha256 (sha256-str (pr-str idents))}))
+
+(defn- summarize-graph
+  [graph]
+  (when graph
+    {:keys (->> graph keys sort (take 32) vec)
+     :sha256 (sha256-str (pr-str graph))
+     :size (count (pr-str (canonicalize-llm graph)))}))
+
+(defn- bound-llm-input
+  "Formats the LLM input to stay under dev-local string limits by summarizing
+   known large fields. Returns the possibly-truncated context."
+  [context]
+  (letfn [(size [ctx] (count (pr-str (canonicalize-llm ctx))))
+          (truncate [ctx steps]
+            (if (or (empty? steps) (<= (size ctx) llm-input-limit))
+              ctx
+              (recur ((first steps) ctx) (rest steps))))]
+    (truncate context
+              [(fn [ctx]
+                 (if-let [catalog (:code.type/catalog ctx)]
+                   (-> ctx
+                       (assoc :code.type/catalog-summary (summarize-catalog catalog))
+                       (dissoc :code.type/catalog))
+                   ctx))
+               (fn [ctx]
+                 (if-let [graph (:code.definition/graph ctx)]
+                   (-> ctx
+                       (assoc :code.definition/graph-summary (summarize-graph graph))
+                       (dissoc :code.definition/graph))
+                   ctx))
+               (fn [ctx]
+                 (if-let [coverage (:plan/coverage ctx)]
+                   (-> ctx
+                       (assoc :plan/coverage-count (count coverage))
+                       (dissoc :plan/coverage))
+                   ctx))
+               (fn [ctx]
+                 (if-let [nodes (:plan/nodes ctx)]
+                   (-> ctx
+                       (assoc :plan/nodes-count (count nodes))
+                       (dissoc :plan/nodes))
+                   ctx))])))
+
+(defn- canonicalize-llm
+  [value]
+  (cond
+    (map? value) (into (sorted-map)
+                       (map (fn [[k v]] [k (canonicalize-llm v)]))
+                       value)
+    (set? value) (->> value (map canonicalize-llm) (sort-by pr-str) vec)
+    (sequential? value) (vec (map canonicalize-llm value))
+    :else value))
 
 (defn- now [] (Instant/now))
 
@@ -103,6 +192,67 @@
     (when-not (.exists file)
       (throw (ex-info "Context bundle does not exist" {:path bundle-path})))
     (read-edn file)))
+
+(defn- maybe-read-edn
+  [path]
+  (when-let [p path]
+    (let [file (io/file p)]
+      (when (.exists file)
+        (read-edn file)))))
+
+(defn- llm-environment
+  [bundle payload]
+  (or (:llm/environment payload)
+      (:llm/environment bundle)
+      (some-> (System/getenv "LLM_ENVIRONMENT") keyword)
+      (some-> (System/getenv "INTUITION_ENV") keyword)
+      :env/ci))
+
+(defn- llm-plan
+  []
+  @llm-plan*)
+
+(defn- llm-surface-config
+  [surface]
+  (some #(when (= surface (:llm.surface/ident %)) %)
+        (:llm.integration/surfaces (llm-plan))))
+
+(defn- coerce-llm-mode
+  [mode default]
+  (if (llm-modes mode) mode default))
+
+(defn- llm-mode
+  [{:keys [mode-key bundle payload]}]
+  (let [env (llm-environment bundle payload)
+        env-default (get-in (llm-plan) [:llm.integration/env-defaults env mode-key])
+        feature-default (or env-default :off)]
+    (coerce-llm-mode (or (get payload mode-key)
+                         (get bundle mode-key)
+                         feature-default)
+                     :off)))
+
+(defn- llm-enabled?
+  [settings]
+  (contains? #{:shadow :apply} (:mode settings)))
+
+(defn- llm-settings
+  [{:keys [surface mode-key fake-key call-key bundle payload]}]
+  (let [surface-config (llm-surface-config surface)
+        mode (llm-mode {:mode-key mode-key
+                        :bundle bundle
+                        :payload payload
+                        :surface surface})]
+    {:surface surface
+     :surface/config surface-config
+     :mode mode
+     :feature-flag (or mode-key (:llm.integration/feature-flag surface-config))
+     :environment (llm-environment bundle payload)
+     :fake-response-fn (or (get payload fake-key)
+                           (get bundle fake-key))
+     :call-fn (or (get payload call-key)
+                  (get bundle call-key))}))
+
+(declare llm-test-doc-stage!)
 
 (defn- auth-token
   [bundle payload]
@@ -354,21 +504,37 @@
                            (let [fallback (io/file "resources/dictionary/code_types.edn")]
                              (when (.exists fallback)
                                [(.getCanonicalPath fallback)])))
-        context {:mission/id mission-id
-                 :agent/id agent-id
-                 :workspace/root sandbox
-                 :branch/prefix (get-in bundle [:branch :prefix] "mission")
-                 :tests/enabled? true
-                 :tests/suite :test.suite/contract
-                 :tests/paths ["test/actions_contract_test.clj"]
-                 :tests/error-mode :fail-fast
-                 :lint/paths ["src" "test"]
-                 :lint/command (or (get-in bundle [:lint/command])
-                                   ["clojure" "-M:lint"])
-                 :docs/paths ["SYSTEM_SPEC.md"]
-                 :system-map/entities [:action/mission.validate]
-                 :codetype/paths (or codetype-paths
-                                     ["resources/dictionary/code_types.edn"])}
+        bundle-code-idents (not-empty (vec (or (:code.definition/idents bundle) [])))
+        context (cond-> {:mission/id mission-id
+                         :agent/id agent-id
+                         :workspace/root sandbox
+                         :branch/prefix (get-in bundle [:branch :prefix] "mission")
+                         :tests/enabled? true
+                         :tests/suite :test.suite/contract
+                         :tests/paths ["test/actions_contract_test.clj"]
+                         :tests/error-mode :fail-fast
+                         :lint/paths ["src" "test"]
+                         :lint/command (or (get-in bundle [:lint/command])
+                                           ["clojure" "-M:lint"])
+                         :docs/paths ["SYSTEM_SPEC.md"]
+                         :system-map/entities [:action/mission.validate]
+                         :codetype/paths (or codetype-paths
+                                             ["resources/dictionary/code_types.edn"])}
+                  bundle-code-idents (assoc :code.definition/idents bundle-code-idents))
+        llm-test-settings (llm-settings {:surface :llm.surface/test-doc-suggestions
+                                         :mode-key :llm.test-doc-suggestions/mode
+                                         :fake-key :llm.test-doc-suggestions/fake-response-fn
+                                         :call-key :llm.test-doc-suggestions/call-fn
+                                         :bundle bundle
+                                         :payload {}})
+        llm-stage (llm-test-doc-stage! {:conn conn
+                                        :mission-id mission-id
+                                        :agent-id agent-id
+                                        :bundle bundle
+                                        :code-idents (:code.definition/idents context)
+                                        :log-path log-path
+                                        :limit limit
+                                        :settings llm-test-settings})
         run (run-protocol conn granted {:ident :protocol/mission-standard
                                         :context context
                                         :instrumentation {:log-fn (fn [_ payload]
@@ -377,7 +543,7 @@
     (append-log! log-path limit "[mission/standard] protocol completed")
     {:stage/id :mission/standard
      :status (:status run)
-     :artifacts (cond-> []
+     :artifacts (cond-> (vec (:artifacts llm-stage))
                   (get-in run [:step-results :step/git-branch :branch/edn-path])
                   (conj {:path (canonical-path (get-in run [:step-results :step/git-branch :branch/edn-path]))
                          :label "Branch snapshot"
@@ -385,7 +551,8 @@
      :result {:sandbox/root sandbox
               :branch/name (get-in run [:step-results :step/git-branch :branch/name])
               :ci/run (get-in run [:step-results :step/run-tests])
-              :code.materialize (get-in run [:step-results :step/code-materialize])}}))
+              :code.materialize (get-in run [:step-results :step/code-materialize])
+              :llm.test-doc (:result llm-stage)}}))
 
 (defn- merge-stage!
   [{:keys [conn granted mission-id agent-id bundle log-path limit mission-result]}]
@@ -679,6 +846,252 @@
       (throw (ex-info "Proposals required for edit-graph"
                       {:field :proposals/path})))))
 
+(defn- load-proposals
+  [bundle payload {:keys [required?] :or {required? true}}]
+  (try
+    (load-proposals* bundle payload)
+    (catch Exception e
+      (if required?
+        (throw e)
+        {:code.proposal/proposals []
+         :code.proposal/path nil
+         :code.proposal/error e}))))
+
+(defn- proposal-key
+  [proposal]
+  [(:code.proposal/type proposal)
+   (or (:code.proposal/ident proposal)
+       (get-in proposal [:code.proposal/payload :code.definition/ident])
+       (:code.proposal/id proposal))])
+
+(defn- merge-proposals
+  [base additions]
+  (let [seen (volatile! #{})]
+    (reduce (fn [acc proposal]
+              (let [k (proposal-key proposal)]
+                (if (and k (contains? @seen k))
+                  acc
+                  (do
+                    (when k (vswap! seen conj k))
+                    (conj acc proposal)))))
+            []
+            (concat (or base []) (or additions [])))))
+
+(defn- existing-path
+  [path]
+  (when-let [p path]
+    (let [file (io/file p)]
+      (when (.exists file)
+        (.getCanonicalPath file)))))
+
+(defn- plan-info
+  [bundle]
+  (let [path (existing-path (or (get-in bundle [:plan/snapshot :plan/path])
+                                (get-in bundle [:plan/path])
+                                (get-in bundle [:graph/context :plan :path])))
+        data (maybe-read-edn path)]
+    (when (or path data)
+      {:path path
+       :data data
+       :id (or (:work.plan/id data) (:plan/id data) (:plan.generation/id data))
+       :nodes (vec (or (:work.plan/nodes data) (:plan/nodes data) []))
+       :coverage (vec (or (:work.plan/coverage data) (:plan/coverage data) []))
+       :validation (:plan/validation bundle)})))
+
+(defn- spec-info
+  [bundle]
+  (let [path (existing-path (or (get-in bundle [:spec/source :spec/input-path])
+                                (get-in bundle [:graph/context :spec :path])))
+        data (maybe-read-edn path)
+        source (:spec/source bundle)
+        sections (or (:spec/spec-sections data)
+                     (:spec/spec-sections source)
+                     llm-system-spec-sections)]
+    (when (or path data source)
+      {:path path
+       :data data
+       :id (or (:spec/id data)
+               (:spec/id source)
+               (keyword (str "spec/" (get bundle :mission/id "unknown"))))
+       :requirements (vec (or (:spec/requirements data)
+                              (:spec/requirements source)
+                              []))
+       :sections (vec sections)})))
+
+(defn- code-graph-info
+  [bundle]
+  (let [path (existing-path (or (get-in bundle [:graph/context :code-graph :path])
+                                (get-in bundle [:graph/context :code.graph/path])))]
+    (when path
+      {:path path
+       :data (maybe-read-edn path)})))
+
+(defn- llm-log-path
+  [{:keys [mission-id bundle filename default-root]}]
+  (let [root (or default-root
+                 (:llm/log-root bundle)
+                 "missions/logs")]
+    (canonical-path (str root "/" mission-id "/llm/" filename))))
+
+
+(defn- llm-proposals-stage!
+  [{:keys [conn mission-id agent-id bundle proposals log-path limit settings]}]
+  (let [{:keys [mode surface feature-flag fake-response-fn call-fn environment]} settings
+        log-root (or (:code.proposal/log-root bundle)
+                     "missions/logs")
+        llm-log (llm-log-path {:mission-id mission-id
+                               :bundle bundle
+                               :filename "code-proposals.edn"
+                               :default-root log-root})]
+    (if-not (llm-enabled? settings)
+      (do
+        (append-log! log-path limit "[proposals/llm] disabled; using deterministic proposals only")
+        {:stage/id :proposals/llm
+         :status :status/ok
+         :artifacts []
+         :result {:code.proposal/proposals proposals
+                  :llm.code-proposal/status :llm.status/disabled
+                  :llm.code-proposal/mode mode
+                  :llm.code-proposal/feature-flag feature-flag
+                  :llm.code-proposal/log-path nil}})
+      (let [plan (plan-info bundle)
+            spec (spec-info bundle)
+            code-graph (code-graph-info bundle)
+            context {:mission/id mission-id
+                     :agent/id agent-id
+                     :mission/context-bundle (select-keys bundle [:bundle/id :bundle/version :graph/context :plan :spec/source :sandbox])
+                     :plan/id (:id plan)
+                     :plan/path (:path plan)
+                     :plan/nodes (:nodes plan)
+                     :plan/coverage (:coverage plan)
+                     :spec/id (:id spec)
+                     :spec/requirements (:requirements spec)
+                     :spec/spec-sections (:sections spec)
+                     :code.definition/graph (:data code-graph)
+                     :code.graph/path (:path code-graph)
+                     :code.type/catalog (-> (code/type-ident-set) sort vec)
+                     :code.proposal/deterministic (vec (or proposals []))
+                     :sandbox/root (get-in bundle [:sandbox :root])}
+            llm-input (bound-llm-input context)
+            context-hash (sha256-str (pr-str (canonicalize-llm llm-input)))
+            context-size (count (pr-str (canonicalize-llm llm-input)))
+            context-original-size (count (pr-str (canonicalize-llm context)))
+            trace (merge {:mission/id mission-id
+                          :agent/id agent-id
+                          :llm/mode mode
+                          :llm/feature-flag feature-flag
+                          :llm/environment environment}
+                         (:trace bundle))
+            request-opts (cond-> {:surface surface
+                                  :input llm-input
+                                  :requested-outputs [:code/proposals]
+                                  :idempotency-key context-hash
+                                  :context-hash context-hash
+                                  :trace trace
+                                  :spec-sections (:sections spec)
+                                  :conn conn}
+                           fake-response-fn (assoc :fake-response-fn fake-response-fn)
+                           call-fn (assoc :llm/call-fn call-fn))]
+        (try
+          (let [call-result (llm/invoke! request-opts)
+                request (:llm/request call-result)
+                response (:llm/response call-result)
+                response-status (:llm.response/status response)
+                payload (:llm.response/payload response)
+                llm-proposals (-> (:code/proposals payload) vectorize vec)
+                abort? (= :abort (:status payload))
+                llm-status (cond
+                             (not= :response.status/ok response-status) :llm.status/error
+                             abort? :llm.status/abort
+                             (= mode :shadow) :llm.status/shadow
+                             :else :llm.status/applied)
+                applied? (and (= :llm.status/applied llm-status)
+                              (= :apply mode))
+                final-proposals (if applied?
+                                  (merge-proposals proposals llm-proposals)
+                                  (vec (or proposals [])))
+                summary {:llm.surface surface
+                         :llm.mode mode
+                         :llm.status llm-status
+                         :llm.feature-flag feature-flag
+                         :llm.environment environment
+                         :llm.context-hash context-hash
+                         :llm.status/reason (or (:reason payload)
+                                                (when abort? "abort status")
+                                                (when (not= :response.status/ok response-status)
+                                                  (str response-status)))
+                         :llm.status/applied? applied?
+                         :llm.request/id (:llm.request/id request)
+                         :llm.response/id (:llm.response/id response)
+                         :llm.response/status response-status
+                         :llm.response/self-report (:meta/self-report response)
+                         :llm.response/error (:llm.response/error response)
+                         :code.proposal/deterministic-count (count proposals)
+                         :code.proposal/llm-count (count llm-proposals)
+                         :code.proposal/final-count (count final-proposals)
+                         :llm.context/truncated? (not= context llm-input)
+                         :llm.context/original-size context-original-size
+                         :llm.context/persisted-size context-size
+                         :system-spec/sections llm-system-spec-sections
+                         :code.proposal/proposals llm-proposals}
+                log-path* (write-edn! llm-log summary)]
+            (append-log! log-path limit
+                         (format "[proposals/llm] mode=%s status=%s ctx=%s deterministic=%d llm=%d final=%d"
+                                 (name mode)
+                                 (name llm-status)
+                                 (subs context-hash 0 12)
+                                 (count proposals)
+                                 (count llm-proposals)
+                                 (count final-proposals)))
+            {:stage/id :proposals/llm
+             :status :status/ok
+             :artifacts (cond-> []
+                          log-path* (conj {:path log-path*
+                                           :label "LLM code proposals"
+                                           :channel :artifact.channel/log}))
+             :result {:code.proposal/proposals final-proposals
+                      :llm.code-proposal/status llm-status
+                      :llm.code-proposal/mode mode
+                      :llm.code-proposal/feature-flag feature-flag
+                      :llm.code-proposal/context-hash context-hash
+                      :llm.code-proposal/request-id (:llm.request/id request)
+                      :llm.code-proposal/response-id (:llm.response/id response)
+                      :llm.code-proposal/self-report (:meta/self-report response)
+                      :llm.code-proposal/log-path log-path*
+                      :llm.code-proposal/proposals llm-proposals
+                      :llm.code-proposal/applied? applied?}})
+          (catch Exception e
+            (let [message (or (ex-message e) (.getMessage e) "LLM code-proposal error")
+                  summary {:llm.surface surface
+                           :llm.mode mode
+                           :llm.status :llm.status/error
+                           :llm.feature-flag feature-flag
+                           :llm.environment environment
+                           :llm.context-hash context-hash
+                           :llm.status/reason message
+                           :code.proposal/deterministic-count (count proposals)
+                           :llm.context/truncated? (not= context llm-input)
+                           :llm.context/original-size context-original-size
+                           :llm.context/persisted-size context-size
+                           :system-spec/sections llm-system-spec-sections}
+                  log-path* (write-edn! llm-log summary)]
+              (append-log! log-path limit
+                           (format "[proposals/llm] error – falling back to deterministic proposals: %s"
+                                   message))
+              {:stage/id :proposals/llm
+               :status :status/ok
+               :artifacts (cond-> []
+                            log-path* (conj {:path log-path*
+                                             :label "LLM code proposals"
+                                             :channel :artifact.channel/log}))
+               :result {:code.proposal/proposals proposals
+                        :llm.code-proposal/status :llm.status/error
+                        :llm.code-proposal/mode mode
+                        :llm.code-proposal/feature-flag feature-flag
+                        :llm.code-proposal/context-hash context-hash
+                        :llm.code-proposal/log-path log-path*
+                        :llm.code-proposal/error message}})))))))
+
 (defn- validate-proposals-stage!
   [{:keys [conn granted mission-id agent-id bundle proposals log-path limit]}]
   (let [log-root (or (:code.proposal/log-root bundle)
@@ -720,6 +1133,161 @@
                                    :channel :artifact.channel/log}))
      :result (:result apply-result)}))
 
+(defn- sanitize-suggestions
+  [payload]
+  {:tests/suggestions (-> (:tests/suggestions payload) vectorize vec)
+   :docs/suggestions (-> (:docs/suggestions payload) vectorize vec)})
+
+(defn- llm-test-doc-stage!
+  [{:keys [conn mission-id agent-id bundle code-idents log-path limit settings]}]
+  (let [{:keys [mode surface feature-flag fake-response-fn call-fn environment]} settings
+        log-root (or (:llm/log-root bundle)
+                     (:code.proposal/log-root bundle)
+                     "missions/logs")
+        llm-log (llm-log-path {:mission-id mission-id
+                               :bundle bundle
+                               :filename "test-doc-suggestions.edn"
+                               :default-root log-root})]
+    (if-not (llm-enabled? settings)
+      (do
+        (append-log! log-path limit "[llm/test-doc] disabled; running deterministic mission-standard")
+        {:stage/id :llm/test-doc
+         :status :status/ok
+         :artifacts []
+         :result {:llm.test-doc/status :llm.status/disabled
+                  :llm.test-doc/mode mode
+                  :llm.test-doc/feature-flag feature-flag
+                  :llm.test-doc/log-path nil}})
+      (let [plan (plan-info bundle)
+            spec (spec-info bundle)
+            context {:mission/id mission-id
+                     :agent/id agent-id
+                     :context/bundle (select-keys bundle [:bundle/id :bundle/version :graph/context :plan :spec/source :sandbox])
+                     :plan/id (:id plan)
+                     :plan/path (:path plan)
+                     :plan/nodes (:nodes plan)
+                     :plan/coverage (:coverage plan)
+                     :spec/requirements (:requirements spec)
+                     :spec/spec-sections (:sections spec)
+                     :code.definition/idents (vec (or code-idents []))
+                     :code.definition/coverage (:coverage plan)
+                     :doc/coverage (:doc/coverage bundle)
+                     :analytics/failures (:analytics/failures bundle)
+                     :sandbox/root (get-in bundle [:sandbox :root])}
+            llm-input (bound-llm-input context)
+            context-hash (sha256-str (pr-str (canonicalize-llm llm-input)))
+            context-size (count (pr-str (canonicalize-llm llm-input)))
+            context-original-size (count (pr-str (canonicalize-llm context)))
+            trace (merge {:mission/id mission-id
+                          :agent/id agent-id
+                          :llm/mode mode
+                          :llm/feature-flag feature-flag
+                          :llm/environment environment}
+                         (:trace bundle))
+            request-opts (cond-> {:surface surface
+                                  :input llm-input
+                                  :requested-outputs [:tests/suggestions :docs/suggestions]
+                                  :idempotency-key context-hash
+                                  :context-hash context-hash
+                                  :trace trace
+                                  :spec-sections (:sections spec)
+                                     :conn conn}
+                              fake-response-fn (assoc :fake-response-fn fake-response-fn)
+                              call-fn (assoc :llm/call-fn call-fn))]
+        (try
+          (let [call-result (llm/invoke! request-opts)
+                request (:llm/request call-result)
+                response (:llm/response call-result)
+                response-status (:llm.response/status response)
+                payload (:llm.response/payload response)
+                suggestions (sanitize-suggestions payload)
+                abort? (= :abort (:status payload))
+                llm-status (cond
+                             (not= :response.status/ok response-status) :llm.status/error
+                             abort? :llm.status/abort
+                             (= mode :shadow) :llm.status/shadow
+                             :else :llm.status/applied)
+                applied? (and (= llm-status :llm.status/applied)
+                              (= mode :apply))
+                summary {:llm.surface surface
+                         :llm.mode mode
+                         :llm.status llm-status
+                         :llm.feature-flag feature-flag
+                         :llm.environment environment
+                         :llm.context-hash context-hash
+                         :llm.status/reason (or (:reason payload)
+                                                (when abort? "abort status")
+                                                (when (not= :response.status/ok response-status)
+                                                  (str response-status)))
+                         :llm.status/applied? applied?
+                         :llm.request/id (:llm.request/id request)
+                         :llm.response/id (:llm.response/id response)
+                         :llm.response/status response-status
+                         :llm.response/self-report (:meta/self-report response)
+                         :llm.response/error (:llm.response/error response)
+                         :llm.context/truncated? (not= context llm-input)
+                         :llm.context/original-size context-original-size
+                         :llm.context/persisted-size context-size
+                         :system-spec/sections llm-system-spec-sections
+                         :tests/suggestions-count (count (:tests/suggestions suggestions))
+                         :docs/suggestions-count (count (:docs/suggestions suggestions))
+                         :tests/suggestions (:tests/suggestions suggestions)
+                         :docs/suggestions (:docs/suggestions suggestions)}
+                log-path* (write-edn! llm-log summary)]
+            (append-log! log-path limit
+                         (format "[llm/test-doc] mode=%s status=%s ctx=%s tests=%d docs=%d"
+                                 (name mode)
+                                 (name llm-status)
+                                 (subs context-hash 0 12)
+                                 (count (:tests/suggestions suggestions))
+                                 (count (:docs/suggestions suggestions))))
+            {:stage/id :llm/test-doc
+             :status :status/ok
+             :artifacts (cond-> []
+                          log-path* (conj {:path log-path*
+                                           :label "LLM test/doc suggestions"
+                                           :channel :artifact.channel/log}))
+             :result {:llm.test-doc/status llm-status
+                      :llm.test-doc/mode mode
+                      :llm.test-doc/feature-flag feature-flag
+                      :llm.test-doc/context-hash context-hash
+                      :llm.test-doc/request-id (:llm.request/id request)
+                      :llm.test-doc/response-id (:llm.response/id response)
+                      :llm.test-doc/self-report (:meta/self-report response)
+                      :llm.test-doc/log-path log-path*
+                      :llm.test-doc/applied? applied?
+                      :tests/suggestions (:tests/suggestions suggestions)
+                      :docs/suggestions (:docs/suggestions suggestions)}})
+          (catch Exception e
+            (let [message (or (ex-message e) (.getMessage e) "LLM test/doc suggestion error")
+                  summary {:llm.surface surface
+                           :llm.mode mode
+                           :llm.status :llm.status/error
+                           :llm.feature-flag feature-flag
+                           :llm.environment environment
+                           :llm.context-hash context-hash
+                           :llm.status/reason message
+                           :llm.context/truncated? (not= context llm-input)
+                           :llm.context/original-size context-original-size
+                           :llm.context/persisted-size context-size
+                           :system-spec/sections llm-system-spec-sections}
+                  log-path* (write-edn! llm-log summary)]
+              (append-log! log-path limit
+                           (format "[llm/test-doc] error – continuing without suggestions: %s"
+                                   message))
+              {:stage/id :llm/test-doc
+               :status :status/ok
+               :artifacts (cond-> []
+                            log-path* (conj {:path log-path*
+                                             :label "LLM test/doc suggestions"
+                                             :channel :artifact.channel/log}))
+               :result {:llm.test-doc/status :llm.status/error
+                        :llm.test-doc/mode mode
+                        :llm.test-doc/feature-flag feature-flag
+                        :llm.test-doc/context-hash context-hash
+                        :llm.test-doc/log-path log-path*
+                        :llm.test-doc/error message}})))))))
+
 (defn- mission-standard-edit-stage!
   [{:keys [conn granted mission-id agent-id bundle log-path limit code-idents]}]
   (let [validation (or (:validation bundle) {})
@@ -728,22 +1296,37 @@
         tests-enabled? (if (contains? validation :tests/enabled?)
                          (boolean (:tests/enabled? validation))
                          true)
-        context {:mission/id mission-id
-                 :agent/id agent-id
-                 :workspace/root sandbox
-                 :branch/prefix (get-in bundle [:branch :prefix] "mission")
-                 :tests/enabled? tests-enabled?
-                 :tests/suite (or (:tests/suite validation) :test.suite/contract)
-                 :tests/paths (or (:tests/paths validation) ["test/actions_contract_test.clj"])
-                 :tests/error-mode (or (:tests/error-mode validation) :fail-fast)
-                 :lint/paths (or (:lint/paths validation) ["src" "test"])
-                 :lint/command (or (:lint/command validation) ["clojure" "-M:lint"])
-                 :docs/paths (or (:docs/paths validation) ["SYSTEM_SPEC.md"])
-                 :system-map/entities (or (:system-map/entities validation) [:action/mission.validate])
-                 :codetype/paths (or (:codetype/paths validation)
-                                     ["resources/dictionary/code_types.edn"])
-                 :code.definition/idents (vec (or code-idents
-                                                  (:code.definition/idents bundle)))}
+        context (cond-> {:mission/id mission-id
+                         :agent/id agent-id
+                         :workspace/root sandbox
+                         :branch/prefix (get-in bundle [:branch :prefix] "mission")
+                         :tests/enabled? tests-enabled?
+                         :tests/suite (or (:tests/suite validation) :test.suite/contract)
+                         :tests/paths (or (:tests/paths validation) ["test/actions_contract_test.clj"])
+                         :tests/error-mode (or (:tests/error-mode validation) :fail-fast)
+                         :lint/paths (or (:lint/paths validation) ["src" "test"])
+                         :lint/command (or (:lint/command validation) ["clojure" "-M:lint"])
+                         :docs/paths (or (:docs/paths validation) ["SYSTEM_SPEC.md"])
+                         :system-map/entities (or (:system-map/entities validation) [:action/mission.validate])
+                         :codetype/paths (or (:codetype/paths validation)
+                                             ["resources/dictionary/code_types.edn"])}
+                  (seq (or code-idents (:code.definition/idents bundle)))
+                  (assoc :code.definition/idents (vec (or code-idents
+                                                          (:code.definition/idents bundle)))))
+        llm-test-settings (llm-settings {:surface :llm.surface/test-doc-suggestions
+                                         :mode-key :llm.test-doc-suggestions/mode
+                                         :fake-key :llm.test-doc-suggestions/fake-response-fn
+                                         :call-key :llm.test-doc-suggestions/call-fn
+                                         :bundle bundle
+                                         :payload {}})
+        llm-stage (llm-test-doc-stage! {:conn conn
+                                        :mission-id mission-id
+                                        :agent-id agent-id
+                                        :bundle bundle
+                                        :code-idents (:code.definition/idents context)
+                                        :log-path log-path
+                                        :limit limit
+                                        :settings llm-test-settings})
         run (run-protocol conn granted {:ident :protocol/mission-standard
                                         :context context
                                         :instrumentation {:log-fn (fn [_ payload]
@@ -752,7 +1335,7 @@
     (append-log! log-path limit "[mission/standard] protocol completed")
     {:stage/id :mission/standard
      :status (:status run)
-     :artifacts (cond-> []
+     :artifacts (cond-> (vec (:artifacts llm-stage))
                   (get-in run [:step-results :step/git-branch :branch/edn-path])
                   (conj {:path (canonical-path (get-in run [:step-results :step/git-branch :branch/edn-path]))
                          :label "Branch snapshot"
@@ -764,7 +1347,8 @@
      :result {:sandbox/root sandbox
               :branch/name (get-in run [:step-results :step/git-branch :branch/name])
               :code.materialize (get-in run [:step-results :step/code-materialize])
-              :ci/run (get-in run [:step-results :step/run-tests])}}))
+              :ci/run (get-in run [:step-results :step/run-tests])
+              :llm.test-doc (:result llm-stage)}}))
 
 (defn edit-graph!
   "Executes the edit-graph pipeline:
@@ -799,8 +1383,14 @@
                                           (str "missions/logs/" mission-id "/edit-flow/manifest.edn")))
         run-log-path (canonical-path (or (get-in bundle [:logging :run-log-path])
                                          (str "missions/logs/" mission-id "/edit-flow/run.log")))
-        proposals-data (load-proposals* bundle payload)
-        proposals (:code.proposal/proposals proposals-data)
+        llm-code-settings (llm-settings {:surface :llm.surface/code-proposal
+                                         :mode-key :llm.code-proposal/mode
+                                         :fake-key :llm.code-proposal/fake-response-fn
+                                         :call-key :llm.code-proposal/call-fn
+                                         :bundle bundle
+                                         :payload payload})
+        proposals-data (load-proposals bundle payload {:required? (not (llm-enabled? llm-code-settings))})
+        proposals (vec (:code.proposal/proposals proposals-data))
         conn (ensure-conn! conn)
         required-perms (set (or (:permissions/required bundle)
                                 edit-default-permissions))
@@ -816,12 +1406,25 @@
                         (swap! stages conj stage)
                         stage)]
     (try
-      (let [validation-stage (record-stage! (validate-proposals-stage! {:conn conn
+      (let [llm-stage (record-stage! (llm-proposals-stage! {:conn conn
+                                                            :mission-id mission-id
+                                                            :agent-id agent-id
+                                                            :bundle bundle
+                                                            :proposals proposals
+                                                            :log-path run-log-path
+                                                            :limit truncate
+                                                            :settings (assoc llm-code-settings :surface :llm.surface/code-proposal)}))
+            proposals-merged (get-in llm-stage [:result :code.proposal/proposals])
+            _ (when (empty? proposals-merged)
+                (throw (ex-info "Proposals required after LLM + deterministic merge"
+                                {:mission/id mission-id
+                                 :llm/status (get-in llm-stage [:result :llm.code-proposal/status])})))
+            validation-stage (record-stage! (validate-proposals-stage! {:conn conn
                                                                         :granted granted
                                                                         :mission-id mission-id
                                                                         :agent-id agent-id
                                                                         :bundle bundle
-                                                                        :proposals proposals
+                                                                        :proposals proposals-merged
                                                                         :log-path run-log-path
                                                                         :limit truncate}))
             proposals-norm (get-in validation-stage [:result :code.proposal/proposals])
@@ -836,15 +1439,16 @@
                                                                 :limit truncate}))
             code-idents (or (not-empty (proposals->definition-idents proposals-norm))
                             (:code.definition/idents bundle))
-            _ (record-stage! (mission-standard-edit-stage! {:conn conn
-                                                            :granted granted
-                                                            :mission-id mission-id
-                                                            :agent-id agent-id
-                                                            :bundle bundle
-                                                            :code-idents code-idents
-                                                            :log-path run-log-path
-                                                            :limit truncate}))
+            mission-stage (record-stage! (mission-standard-edit-stage! {:conn conn
+                                                                         :granted granted
+                                                                         :mission-id mission-id
+                                                                         :agent-id agent-id
+                                                                         :bundle bundle
+                                                                         :code-idents code-idents
+                                                                         :log-path run-log-path
+                                                                         :limit truncate}))
             all-artifacts (mapcat :artifacts @stages)
+            llm-test-doc (get-in mission-stage [:result :llm.test-doc])
             manifest {:action/status :status/ok
                       :mission/id mission-id
                       :agent/id agent-id
@@ -853,6 +1457,27 @@
                       :context/bundle-path bundle-path
                       :graph/context (:graph/context bundle)
                       :proposals/path (:code.proposal/path proposals-data)
+                      :llm/code-proposal (select-keys (:result llm-stage)
+                                                      [:llm.code-proposal/status
+                                                       :llm.code-proposal/mode
+                                                       :llm.code-proposal/feature-flag
+                                                       :llm.code-proposal/log-path
+                                                       :llm.code-proposal/request-id
+                                                       :llm.code-proposal/response-id
+                                                       :llm.code-proposal/context-hash
+                                                       :llm.code-proposal/applied?
+                                                       :llm.code-proposal/proposals])
+                      :llm/test-doc (select-keys llm-test-doc
+                                                [:llm.test-doc/status
+                                                 :llm.test-doc/mode
+                                                 :llm.test-doc/feature-flag
+                                                 :llm.test-doc/log-path
+                                                 :llm.test-doc/request-id
+                                                 :llm.test-doc/response-id
+                                                 :llm.test-doc/context-hash
+                                                 :llm.test-doc/applied?
+                                                 :tests/suggestions
+                                                 :docs/suggestions])
                       :permissions/enforced required-perms
                       :permissions/granted granted
                       :trace trace

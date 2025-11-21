@@ -8,7 +8,6 @@
    Mission M-20251121-818 artifact (§§2.1–2.2, §§3.3–3.6, §4.7, §5, §6, §9, §11)."
   (:require
    [clojure.edn :as edn]
-   [clojure.java.io :as io]
    [clojure.java.shell :as shell]
    [clojure.pprint :as pprint]
    [clojure.string :as str]
@@ -128,4 +127,3 @@
         (when-let [data (ex-data e)]
           (println "Details:" (pr-str data))))
       (System/exit 1))))
-

@@ -6,7 +6,8 @@
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
    [intuition.sfs.actions.handlers :as handlers]
-   [intuition.versioning.runtime :as versioning])
+   [intuition.versioning.runtime :as versioning]
+   [support.datomic :as support])
   (:import
    (java.io File)
    (java.util UUID)))
@@ -48,6 +49,65 @@
     (spit target (slurp (io/file code-types-source)))
     target))
 
+(defn- perform-plan-generation
+  [{:keys [repo-root heuristics-path llm-config]}]
+  (let [spec-mission :mission/spec-planner
+        plan-mission :mission/plan-generator
+        planner-agent "planner"
+        spec-id :spec/planner.integration
+        spec-input (write-edn! repo-root "tmp/spec.edn"
+                               {:spec/id spec-id
+                                :spec/title "Planner integration spec"
+                                :spec/summary "Exercise the planner end-to-end."
+                                :spec/requirements ["REQ-plan-a" "REQ-plan-b"]
+                                :spec/acceptance-criteria ["Accept-A" "Accept-B"]
+                                :spec/constraints []
+                                :spec/status :spec.status/draft
+                                :spec/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "9"]
+                                :spec/artifacts []})
+        capture (handlers/spec-capture {:config {:mission/id spec-mission
+                                                 :agent/id planner-agent
+                                                 :spec/input-path spec-input}})
+        validate (handlers/spec-validate {:config {:mission/id spec-mission
+                                                   :agent/id planner-agent
+                                                   :spec/id (:spec/id capture)
+                                                   :spec/resource-path (:spec/resource-path capture)}})
+        publish (handlers/spec-publish {:config {:mission/id spec-mission
+                                                 :agent/id planner-agent
+                                                 :spec/id (:spec/id capture)}})
+        spec-snapshot (handlers/version-snapshot-spec
+                       {:config {:mission/id spec-mission
+                                 :agent/id planner-agent
+                                 :spec/id (:spec/id capture)
+                                 :spec/resource-path (:spec/resource-path capture)
+                                 :spec/validation-path (:spec/validation-path validate)
+                                 :spec/publish-log (:spec/publish-log publish)}})
+        plan-output (io/file repo-root "missions" "logs" "M-20251121-702" "generated-plan.edn")
+        generation-log (io/file repo-root "missions" "logs" "M-20251121-702" "planner-generation-log.edn")
+        base-config {:mission/id plan-mission
+                     :agent/id planner-agent
+                     :spec/id spec-id
+                     :spec/version 1
+                     :spec/resource-path (:spec/resource-path capture)
+                     :planner/heuristics-path heuristics-path
+                     :plan/output-path (.getCanonicalPath plan-output)
+                     :planner/generation-log-path (.getCanonicalPath generation-log)}
+        plan-config (if (seq llm-config)
+                      (assoc base-config :llm.plan-draft llm-config)
+                      base-config)
+        result (handlers/spec-plan-generate {:config plan-config})
+        plan-data (edn/read-string (slurp (:work-plan/resource-path result)))
+        generation-log-data (edn/read-string (slurp (:plan.generation/log-path result)))
+        plan-snapshot (edn/read-string (slurp (:version.snapshot/path result)))]
+    {:capture capture
+     :validate validate
+     :publish publish
+     :spec-snapshot spec-snapshot
+     :result result
+     :plan-data plan-data
+     :generation-log generation-log-data
+     :plan-snapshot plan-snapshot}))
+
 (defn- with-temp-repo
   [f]
   (let [root (temp-dir)
@@ -78,53 +138,12 @@
 (deftest spec-plan-generate-runs-validation-and-snapshots
   (with-temp-repo
     (fn [{:keys [repo-root heuristics-path]}]
-      (let [spec-mission :mission/spec-planner
-            plan-mission :mission/plan-generator
-            planner-agent "planner"
-            spec-id :spec/planner.integration
-            spec-input (write-edn! repo-root "tmp/spec.edn"
-                                   {:spec/id spec-id
-                                    :spec/title "Planner integration spec"
-                                    :spec/summary "Exercise the planner end-to-end."
-                                    :spec/requirements ["REQ-plan-a" "REQ-plan-b"]
-                                    :spec/acceptance-criteria ["Accept-A" "Accept-B"]
-                                    :spec/constraints []
-                                    :spec/status :spec.status/draft
-                                    :spec/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "9"]
-                                    :spec/artifacts []})
-            capture (handlers/spec-capture {:config {:mission/id spec-mission
-                                                     :agent/id planner-agent
-                                                     :spec/input-path spec-input}})
-            validate (handlers/spec-validate {:config {:mission/id spec-mission
-                                                       :agent/id planner-agent
-                                                       :spec/id (:spec/id capture)
-                                                       :spec/resource-path (:spec/resource-path capture)}})
-            publish (handlers/spec-publish {:config {:mission/id spec-mission
-                                                     :agent/id planner-agent
-                                                     :spec/id (:spec/id capture)}})
-            spec-snapshot (handlers/version-snapshot-spec
-                           {:config {:mission/id spec-mission
-                                     :agent/id planner-agent
-                                     :spec/id (:spec/id capture)
-                                     :spec/resource-path (:spec/resource-path capture)
-                                     :spec/validation-path (:spec/validation-path validate)
-                                     :spec/publish-log (:spec/publish-log publish)}})
-            plan-output (io/file repo-root "missions" "logs" "M-20251121-702" "generated-plan.edn")
-            generation-log (io/file repo-root "missions" "logs" "M-20251121-702" "planner-generation-log.edn")
-            result (handlers/spec-plan-generate
-                    {:config {:mission/id plan-mission
-                              :agent/id planner-agent
-                              :spec/id spec-id
-                              :spec/version 1
-                              :spec/resource-path (:spec/resource-path capture)
-                              :planner/heuristics-path heuristics-path
-                              :plan/output-path (.getCanonicalPath plan-output)
-                              :planner/generation-log-path (.getCanonicalPath generation-log)}})
-            plan-data (edn/read-string (slurp (:work-plan/resource-path result)))
-            generation-log-data (edn/read-string (slurp (:plan.generation/log-path result)))
-            plan-snapshot (first (versioning/snapshot-history {:subject-type :version.snapshot/plan
-                                                                :subject-id (:work.plan/id plan-data)
-                                                                :logs-root repo-root}))]
+      (let [planner-agent "planner"
+            {:keys [spec-snapshot result plan-data generation-log plan-snapshot]}
+            (perform-plan-generation {:repo-root repo-root
+                                      :heuristics-path heuristics-path})
+            generation-log-data generation-log
+            spec-id :spec/planner.integration]
         (testing "artifacts are written to mission log"
           (is (.exists (io/file (:plan.generation/log-path result))))
           (is (.exists (io/file (:work-plan/resource-path result))))
@@ -144,6 +163,10 @@
                  (count (:work.plan/edges plan-data))))
           (is (every? #(str/starts-with? % "src/")
                       (mapcat :plan.node/resources (:work.plan/nodes plan-data)))))
+        (testing "LLM plan-draft log records disabled mode"
+          (is (= :off (get-in generation-log-data [:plan.generation/llm :llm.plan-draft/mode])))
+          (is (= :llm.status/disabled (get-in generation-log-data [:plan.generation/llm :llm.plan-draft/status])))
+          (is (empty? (:plan.generation/warnings generation-log-data))))
         (testing "code types inferred from heuristics without spec hints"
           (is (every? (comp seq :plan.node/code-types) (:work.plan/nodes plan-data)))
           (is (= #{:code.type/runtime}
@@ -167,3 +190,73 @@
             (is (seq (:locks/requested locks)))
             (is (= (set (:locks/requested locks))
                    (set (map :mission.resource/path (:mission/resources binding)))))))))))
+
+(deftest llm-plan-draft-applies-when-enabled
+  (support/with-test-conn
+    (fn [conn]
+      (with-temp-repo
+        (fn [{:keys [repo-root heuristics-path]}]
+          (let [self-report {:confidence :high :reason "test" :assumptions [] :uncertainties []}
+                fake (fn [_]
+                       {:status :response.status/ok
+                        :payload {:plan/nodes [{:plan.node/id "planner.integration-LLM"
+                                                :plan.node/name "LLM extra"
+                                                :plan.node/scope-requirements ["REQ-plan-a"]
+                                                :plan.node/resources ["src/planner.integration/llm-extra.clj"]
+                                                :plan.node/test-contracts [:code/sample.validator]
+                                                :plan.node/code-types [:code.type/runtime]}]
+                                  :plan/edges []
+                                  :plan/coverage [{:coverage.row/requirement-id "REQ-plan-a"
+                                                   :coverage.row/nodes ["planner.integration-LLM"]
+                                                   :coverage.row/code-targets ["src/planner.integration/llm-extra.clj"]
+                                                   :coverage.row/test-contracts [:code/sample.validator]
+                                                   :coverage.row/code-types [:code.type/runtime]
+                                                   :coverage.row/acceptance-id "LLM-coverage"}]}
+                        :self-report self-report})
+                {:keys [plan-data generation-log]}
+                (perform-plan-generation {:repo-root repo-root
+                                          :heuristics-path heuristics-path
+                                          :llm-config {:mode :apply
+                                                       :conn conn
+                                                       :fake-response-fn fake}})
+                node-ids (set (map :plan.node/id (:work.plan/nodes plan-data)))
+                llm-log (:plan.generation/llm generation-log)
+                decisions (:plan.generation/decisions generation-log)]
+            (testing "LLM node appended"
+              (is (contains? node-ids "planner.integration-LLM")))
+            (testing "LLM metadata recorded"
+              (is (= :apply (:llm.plan-draft/mode llm-log)))
+              (is (= :llm.status/applied (:llm.plan-draft/status llm-log)))
+              (is (true? (:llm.plan-draft/applied? llm-log)))
+              (is (= :planner+llm.plan-draft
+                     (:decision/source (last decisions)))))
+            (testing "warnings remain empty"
+              (is (empty? (:plan.generation/warnings generation-log))))))))))
+
+(deftest llm-plan-draft-aborts-and-falls-back
+  (support/with-test-conn
+    (fn [conn]
+      (with-temp-repo
+        (fn [{:keys [repo-root heuristics-path]}]
+          (let [self-report {:confidence :medium :reason "abort" :assumptions [] :uncertainties []}
+                fake (fn [_]
+                       {:status :response.status/ok
+                        :payload {:llm.plan/status :abort
+                                  :reason "insufficient context"}
+                        :self-report self-report})
+                {:keys [plan-data generation-log]}
+                (perform-plan-generation {:repo-root repo-root
+                                          :heuristics-path heuristics-path
+                                          :llm-config {:mode :apply
+                                                       :conn conn
+                                                       :fake-response-fn fake}})
+                node-ids (set (map :plan.node/id (:work.plan/nodes plan-data)))
+                llm-log (:plan.generation/llm generation-log)
+                decisions (:plan.generation/decisions generation-log)]
+            (testing "deterministic nodes preserved"
+              (is (not (contains? node-ids "planner.integration-LLM"))))
+            (testing "abort recorded with warning"
+              (is (= :llm.status/abort (:llm.plan-draft/status llm-log)))
+              (is (some #(str/includes? % "LLM plan-draft aborted")
+                        (:plan.generation/warnings generation-log)))
+              (is (= :llm.status/abort (:decision/status (last decisions)))))))))))

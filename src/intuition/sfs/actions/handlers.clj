@@ -13,6 +13,7 @@
    [intuition.code.generate :as codegen]
    [intuition.code.runtime :as code]
    [intuition.docs.runtime :as docs]
+   [intuition.llm.harness :as llm]
    [intuition.sfs.env.bootstrap :as bootstrap]
    [intuition.sfs.protocols.runtime :as protocols]
    [intuition.versioning.runtime :as versioning])
@@ -2015,7 +2016,13 @@
 (defn- plan-node-ident
   [plan-id]
   (when plan-id
-    (keyword (str "plan/" (bootstrap/sanitize-fragment plan-id)))))
+    (let [fragment (bootstrap/sanitize-fragment plan-id)
+          ;; Namespaced keywords cannot start with digits; prefix when the plan id is
+          ;; a UUID/number so version snapshots remain valid EDN.
+          safe (if (Character/isLetter ^char (first fragment))
+                 fragment
+                 (str "plan-" fragment))]
+      (keyword (str "plan/" safe)))))
 
 (defn- mission-node-ident
   [mission-id]
@@ -2946,6 +2953,383 @@
          (remove nil?)
          vec)))
 
+(def ^:private llm-plan-draft-surface :llm.surface/plan-draft)
+(def ^:private llm-plan-modes #{:off :shadow :apply})
+
+(defn- sha256-str
+  [value]
+  (let [bytes (.getBytes (or value "") "UTF-8")
+        digest (MessageDigest/getInstance "SHA-256")]
+    (.update digest bytes)
+    (format "%064x" (BigInteger. 1 (.digest digest)))))
+
+(defn- canonicalize-llm-value
+  [value]
+  (cond
+    (map? value) (into (sorted-map)
+                       (map (fn [[k v]] [k (canonicalize-llm-value v)]))
+                       value)
+    (set? value) (->> value (map canonicalize-llm-value) sort vec)
+    (sequential? value) (vec (map canonicalize-llm-value value))
+    :else value))
+
+(defn- normalize-llm-mode
+  [mode]
+  (if (llm-plan-modes mode) mode :off))
+
+(defn- llm-plan-settings
+  [heuristics config]
+  (let [base {:mode :off
+              :feature-flag :llm.plan-draft/mode}
+        heuristics-settings (or (:llm.plan-draft heuristics) {})
+        overrides (or (:llm.plan-draft config) {})
+        merged (merge base heuristics-settings overrides)]
+    (-> merged
+        (update :mode normalize-llm-mode)
+        (update :feature-flag #(or % :llm.plan-draft/mode)))))
+
+(defn- llm-plan-enabled?
+  [settings]
+  (contains? #{:shadow :apply} (:mode settings)))
+
+(defn- plan-neighbors
+  [nodes edges]
+  (let [node-ids (->> nodes (map :plan.node/id) (remove nil?) distinct vec)
+        incoming (reduce (fn [acc edge]
+                           (if-let [to (:plan.edge/to-node-id edge)]
+                             (update acc to (fnil conj #{}) (:plan.edge/from-node-id edge))
+                             acc))
+                         {}
+                         edges)
+        outgoing (reduce (fn [acc edge]
+                           (if-let [from (:plan.edge/from-node-id edge)]
+                             (update acc from (fnil conj #{}) (:plan.edge/to-node-id edge))
+                             acc))
+                         {}
+                         edges)]
+    (into {}
+          (map (fn [node-id]
+                 [node-id {:incoming (-> (get incoming node-id #{})
+                                         vec
+                                         sort)
+                           :outgoing (-> (get outgoing node-id #{})
+                                         vec
+                                         sort)}]))
+          node-ids)))
+
+(defn- sanitize-plan-nodes
+  [entries]
+  (->> (vectorize entries)
+       (map #(when (and (map? %)
+                        (:plan.node/id %))
+               %))
+       (remove nil?)
+       vec))
+
+(defn- sanitize-plan-edges
+  [entries]
+  (->> (vectorize entries)
+       (map #(when (and (map? %)
+                        (:plan.edge/from-node-id %)
+                        (:plan.edge/to-node-id %))
+               %))
+       (remove nil?)
+       vec))
+
+(defn- sanitize-plan-coverage
+  [entries]
+  (->> (vectorize entries)
+       (map #(when (and (map? %)
+                        (:coverage.row/requirement-id %))
+               %))
+       (remove nil?)
+       vec))
+
+(defn- sanitize-plan-payload
+  [payload]
+  {:nodes (sanitize-plan-nodes (:plan/nodes payload))
+   :edges (sanitize-plan-edges (:plan/edges payload))
+   :coverage (sanitize-plan-coverage (:plan/coverage payload))
+   :status (or (:llm.plan/status payload)
+               (:plan/status payload))
+   :reason (or (:llm.plan/reason payload)
+               (:reason payload))})
+
+(defn- dedupe-by
+  [items key-fn]
+  (let [seen (volatile! #{})]
+    (reduce (fn [acc entry]
+              (let [k (key-fn entry)]
+                (if (or (nil? k) (contains? @seen k))
+                  acc
+                  (do
+                    (vswap! seen conj k)
+                    (conj acc entry)))))
+            []
+            items)))
+
+(defn- merge-plan-nodes
+  [base additions]
+  (let [base-order (->> base (map :plan.node/id) (remove nil?) vec)
+        base-map (into {} (map (fn [node] [(:plan.node/id node) node]) base))
+        appended-order (volatile! [])
+        appended-set (volatile! #{})
+        updated-set (volatile! #{})
+        merged-map (reduce (fn [acc node]
+                             (if-let [node-id (:plan.node/id node)]
+                               (if (contains? acc node-id)
+                                 (do
+                                   (vswap! updated-set conj node-id)
+                                   (assoc acc node-id node))
+                                 (do
+                                   (when-not (contains? @appended-set node-id)
+                                     (vswap! appended-set conj node-id)
+                                     (vswap! appended-order conj node-id))
+                                   (assoc acc node-id node)))
+                               acc))
+                           base-map
+                           additions)
+        ordered-ids (concat base-order @appended-order)
+        result (vec (keep #(get merged-map %) ordered-ids))]
+    {:result result
+     :summary {:nodes/appended (count @appended-order)
+               :nodes/updated (count @updated-set)}}))
+
+(defn- plan-edge-key
+  [edge]
+  (when (and (:plan.edge/from-node-id edge)
+             (:plan.edge/to-node-id edge))
+    [(:plan.edge/from-node-id edge)
+     (:plan.edge/to-node-id edge)
+     (:plan.edge/relation edge)]))
+
+(defn- merge-plan-edges
+  [base additions]
+  (let [sanitized (sanitize-plan-edges additions)
+        combined (dedupe-by (concat base sanitized) plan-edge-key)
+        base-keys (set (keep plan-edge-key base))
+        combined-keys (set (keep plan-edge-key combined))
+        appended (count (set/difference combined-keys base-keys))]
+    {:result (vec combined)
+     :summary {:edges/appended appended}}))
+
+(defn- coverage-key
+  [row]
+  (when (:coverage.row/requirement-id row)
+    [(:coverage.row/requirement-id row)
+     (vec (:coverage.row/nodes row))
+     (vec (:coverage.row/code-targets row))
+     (vec (:coverage.row/test-contracts row))
+     (:coverage.row/acceptance-id row)]))
+
+(defn- merge-plan-coverage
+  [base additions]
+  (let [sanitized (sanitize-plan-coverage additions)
+        combined (dedupe-by (concat base sanitized) coverage-key)
+        base-keys (set (keep coverage-key base))
+        combined-keys (set (keep coverage-key combined))
+        appended (count (set/difference combined-keys base-keys))]
+    {:result (vec combined)
+     :summary {:coverage/appended appended}}))
+
+(defn- combine-summaries
+  [& entries]
+  (->> entries
+       (remove nil?)
+       (apply merge-with +)
+       (into {}
+             (comp (remove (comp zero? val))
+                   (map identity)))))
+
+(defn- llm-plan-context
+  [{:keys [spec-id spec-version spec-data spec-tests requirements nodes edges coverage obligations heuristics mission agent plan-id generation-id spec-digest]}]
+  (let [sections (vec (or (:spec/spec-sections spec-data) []))]
+    {:spec/id spec-id
+     :spec/version spec-version
+     :spec/requirements requirements
+     :spec/test-contracts spec-tests
+     :spec/spec-sections sections
+     :plan/id (str plan-id)
+     :plan/nodes nodes
+     :plan/edges edges
+     :plan/coverage coverage
+     :plan/base {:node-count (count nodes)
+                 :edge-count (count edges)
+                 :coverage-count (count coverage)}
+     :work-plan/obligations obligations
+     :code-type/catalog (-> (code/type-ident-set) sort vec)
+     :graph/neighbors (plan-neighbors nodes edges)
+     :plan.generation/heuristics-id (:heuristics/id heuristics)
+     :plan.generation/heuristics-version (:heuristics/version heuristics)
+     :plan.generation/spec-digest spec-digest
+     :plan.generation/trace {:mission/id mission
+                             :agent/id agent
+                             :plan.generation/id generation-id}}))
+
+(defn- llm-plan-log-entry
+  [{:keys [mode status feature-flag request response context-hash applied? summary reason]}]
+  (cond-> {:llm.plan-draft/mode mode
+           :llm.plan-draft/status status}
+    feature-flag (assoc :llm.plan-draft/feature-flag feature-flag)
+    context-hash (assoc :llm.plan-draft/context-hash context-hash)
+    request (assoc :llm.plan-draft/request-id (:llm.request/id request))
+    response (assoc :llm.plan-draft/response-id (:llm.response/id response)
+                    :llm.plan-draft/self-report (:meta/self-report response))
+    (some? applied?) (assoc :llm.plan-draft/applied? applied?)
+    (seq summary) (assoc :llm.plan-draft/summary summary)
+    reason (assoc :llm.plan-draft/reason reason)))
+
+(defn- llm-plan-decision
+  [{:keys [mode status feature-flag request response context-hash applied? summary reason]}]
+  (cond-> {:decision/kind :planner/llm.plan-draft
+           :decision/source :planner+llm.plan-draft
+           :decision/mode mode
+           :decision/status status
+           :decision/surface llm-plan-draft-surface}
+    feature-flag (assoc :decision/feature-flag feature-flag)
+    context-hash (assoc :decision/context-hash context-hash)
+    request (assoc :decision/request-id (:llm.request/id request))
+    response (assoc :decision/response-id (:llm.response/id response)
+                    :decision/self-report (:meta/self-report response))
+    (some? applied?) (assoc :decision/applied? applied?)
+    (seq summary) (assoc :decision/summary summary)
+    reason (assoc :decision/reason reason)))
+
+(defn- apply-plan-draft-llm
+  [{:keys [mission agent heuristics spec-id spec-version spec-data spec-tests requirements nodes edges coverage obligations spec-digest plan-id generation-id config]}]
+  (let [settings (llm-plan-settings heuristics config)
+        feature-flag (:feature-flag settings)
+        mode (:mode settings)
+        base {:nodes nodes
+              :edges edges
+              :coverage coverage}
+        disabled-log (llm-plan-log-entry {:mode mode
+                                          :status :llm.status/disabled
+                                          :feature-flag feature-flag})]
+    (if-not (llm-plan-enabled? settings)
+      (assoc base
+             :warnings []
+             :log disabled-log
+             :decision nil)
+      (let [context (llm-plan-context {:spec-id spec-id
+                                       :spec-version spec-version
+                                       :spec-data spec-data
+                                       :spec-tests spec-tests
+                                       :requirements requirements
+                                       :nodes nodes
+                                       :edges edges
+                                       :coverage coverage
+                                       :obligations obligations
+                                       :heuristics heuristics
+                                       :mission mission
+                                       :agent agent
+                                       :plan-id plan-id
+                                       :generation-id generation-id
+                                       :spec-digest spec-digest})
+            context-hash (sha256-str (pr-str (canonicalize-llm-value context)))
+            trace (merge {:mission/id mission
+                          :agent/id agent
+                          :plan.generation/id generation-id
+                          :feature-flag feature-flag
+                          :mode mode}
+                         (:trace settings))
+            request-opts (cond-> {:surface llm-plan-draft-surface
+                                  :input context
+                                  :requested-outputs [:plan/nodes :plan/edges :plan/coverage]
+                                  :idempotency-key context-hash
+                                  :context-hash context-hash
+                                  :trace trace
+                                  :spec-sections (or (:spec/spec-sections spec-data)
+                                                     mission-instantiation-spec-sections)}
+                           (:fake-response-fn settings)
+                           (assoc :fake-response-fn (:fake-response-fn settings))
+                           (:conn settings)
+                           (assoc :conn (:conn settings))
+                           (:llm/call-fn settings)
+                           (assoc :llm/call-fn (:llm/call-fn settings)))]
+        (try
+          (let [call-result (llm/invoke! request-opts)
+                request (:llm/request call-result)
+                response (:llm/response call-result)
+                response-status (:llm.response/status response)
+                payload (:llm.response/payload response)
+                sanitized (sanitize-plan-payload payload)
+                abort? (= :abort (:status sanitized))
+                llm-status (cond
+                             (not= :response.status/ok response-status) :llm.status/error
+                             abort? :llm.status/abort
+                             (= mode :shadow) :llm.status/shadow
+                             :else :llm.status/applied)
+                node-merge (merge-plan-nodes nodes (:nodes sanitized))
+                edge-merge (merge-plan-edges edges (:edges sanitized))
+                coverage-merge (merge-plan-coverage coverage (:coverage sanitized))
+                summary (combine-summaries (:summary node-merge)
+                                           (:summary edge-merge)
+                                           (:summary coverage-merge))
+                summary-present? (seq summary)
+                applied? (boolean (and (= llm-status :llm.status/applied)
+                                       (= mode :apply)
+                                       summary-present?))
+                final-plan (if applied?
+                             {:nodes (:result node-merge)
+                              :edges (:result edge-merge)
+                              :coverage (:result coverage-merge)}
+                             base)
+                status-reason (or (:reason sanitized)
+                                  (when (= llm-status :llm.status/error)
+                                    (str response-status)))
+                warning (case llm-status
+                          :llm.status/abort (str "LLM plan-draft aborted"
+                                                 (when status-reason
+                                                   (str ": " status-reason)))
+                          :llm.status/error (str "LLM plan-draft error"
+                                                 (when status-reason
+                                                   (str ": " status-reason)))
+                          nil)
+                warnings (cond-> []
+                            warning (conj warning))
+                log-entry (llm-plan-log-entry {:mode mode
+                                               :status llm-status
+                                               :feature-flag feature-flag
+                                               :request request
+                                               :response response
+                                               :context-hash context-hash
+                                               :applied? applied?
+                                               :summary summary
+                                               :reason status-reason})
+                decision-entry (llm-plan-decision {:mode mode
+                                                   :status llm-status
+                                                   :feature-flag feature-flag
+                                                   :request request
+                                                   :response response
+                                                   :context-hash context-hash
+                                                   :applied? applied?
+                                                   :summary summary
+                                                   :reason status-reason})]
+            (assoc final-plan
+                   :warnings warnings
+                   :log log-entry
+                   :decision decision-entry))
+          (catch Exception e
+            (let [message (or (ex-message e) (.getMessage e) "LLM plan-draft error")
+                  warning (str "LLM plan-draft error: " message)
+                  log-entry (llm-plan-log-entry {:mode mode
+                                                 :status :llm.status/error
+                                                 :feature-flag feature-flag
+                                                 :context-hash context-hash
+                                                 :applied? false
+                                                 :reason message})
+                  decision-entry (llm-plan-decision {:mode mode
+                                                     :status :llm.status/error
+                                                     :feature-flag feature-flag
+                                                     :context-hash context-hash
+                                                     :applied? false
+                                                     :reason message})]
+              (assoc base
+                     :warnings [warning]
+                     :log log-entry
+                     :decision decision-entry))))))))
+
 (defn- default-proof-obligations
   []
   [{:plan.obligation/id "PO-coverage"
@@ -3045,6 +3429,28 @@
         coverage (coverage-rows requirements acceptance node-map node-tests node-code-types)
         obligations (default-proof-obligations)
         created-at (str (Instant/now))
+        llm-outcome (apply-plan-draft-llm {:mission mission
+                                           :agent agent
+                                           :heuristics heuristics
+                                           :spec-id parsed-spec-id
+                                           :spec-version parsed-spec-version
+                                           :spec-data spec-data
+                                           :spec-tests spec-tests
+                                           :requirements requirements
+                                           :nodes nodes
+                                           :edges edges
+                                           :coverage coverage
+                                           :obligations obligations
+                                           :spec-digest spec-digest
+                                           :plan-id plan-id
+                                           :generation-id generation-id
+                                           :config config})
+        nodes (:nodes llm-outcome)
+        edges (:edges llm-outcome)
+        coverage (:coverage llm-outcome)
+        llm-log (:log llm-outcome)
+        llm-decision (:decision llm-outcome)
+        llm-warnings (:warnings llm-outcome)
         plan (merge {:work.plan/id plan-id
                      :work.plan/spec-id parsed-spec-id
                      :work.plan/spec-version parsed-spec-version
@@ -3103,24 +3509,27 @@
                   :plan.generation/coverage (:work.plan/coverage updated-plan)
                   :plan.generation/work-plan-id (:work.plan/id updated-plan)
                   :plan.generation/status :plan.generation.status/validated
-                  :plan.generation/warnings []
-                  :plan.generation/decisions [{:decision/kind :planner/grouping
-                                               :decision/strategy :group-by-requirement
-                                              :decision/requirements (count requirements)}
-                                              {:decision/kind :planner/coverage
-                                               :decision/requirements (count requirements)
-                                               :decision/acceptance (count acceptance)
-                                               :decision/tests spec-tests}
-                                              {:decision/kind :planner/code-types
-                                               :decision/requirements (count requirements)
-                                               :decision/code-types (->> node-code-types
-                                                                         vals
-                                                                         (mapcat identity)
-                                                                         set
-                                                                         vec)
-                                               :decision/source :codetype-inference}
-                                              {:decision/kind :planner/snapshot
-                                               :decision/version-snapshot (:version.snapshot/id (:version/snapshot snapshot))}]
+                  :plan.generation/warnings llm-warnings
+                  :plan.generation/llm llm-log
+                  :plan.generation/decisions (cond-> [{:decision/kind :planner/grouping
+                                                       :decision/strategy :group-by-requirement
+                                                       :decision/requirements (count requirements)}
+                                                      {:decision/kind :planner/coverage
+                                                       :decision/requirements (count requirements)
+                                                       :decision/acceptance (count acceptance)
+                                                       :decision/tests spec-tests}
+                                                      {:decision/kind :planner/code-types
+                                                       :decision/requirements (count requirements)
+                                                       :decision/code-types (->> node-code-types
+                                                                                 vals
+                                                                                 (mapcat identity)
+                                                                                 set
+                                                                                 vec)
+                                                       :decision/source :codetype-inference}
+                                                      {:decision/kind :planner/snapshot
+                                                       :decision/version-snapshot (:version.snapshot/id (:version/snapshot snapshot))}]
+                                                llm-decision
+                                                (conj llm-decision))
                   :plan.generation/actor agent
                   :plan.generation/generated-at (str (Instant/now))
                   :plan.generation/spec-digest spec-digest}
@@ -3138,6 +3547,7 @@
      :plan.generation/edges (:work.plan/edges updated-plan)
      :plan.generation/coverage (:work.plan/coverage updated-plan)
      :plan.generation/warnings (:plan.generation/warnings generation-log)
+     :plan.generation/llm (:plan.generation/llm generation-log)
      :work-plan/resource-path (.getCanonicalPath resource-file)
      :work-plan/log-path (.getCanonicalPath mission-file)
      :work-plan/validation-path (:work-plan/validation-path validation)

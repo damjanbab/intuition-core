@@ -303,3 +303,180 @@ Context: Missions through M-20251121-802 are complete. The items below are the r
 
 **Deliverables**  
 - `agent-eval-notes.md`, spec + mission artifacts, exact Codex invocation/prompt, analytics reports (md+edn), lint/test logs, and a clear summary of diagnostics + optimisation changes under `/home/dami/intuition-core/missions/logs/M-20251121-819/`.
+
+---
+
+### LLM Integration Into Planner, Missions, and Scheduler
+
+#### Mission ID: M-20251121-820 – LLM Integration Design & Switches  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-820/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5.1, §5.3, §8.1, §9, §11.
+
+**Scope/Tasks**  
+1. Mission log: `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-820/`; keep `llm-integration-design-notes.md` there.  
+2. For each LLM surface in `llm_surfaces.edn` (plan-draft, code-proposal, test-doc-suggestions, analytics-digest, code-graph-gaps), decide precisely *where* in the pipeline it will be invoked (planner, mission-standard, edit-graph, analytics) and what bundle slice it will see. Capture this as a “surface → hook” table.  
+3. Define feature flags/config toggles for each surface (e.g., `:llm.plan-draft/enabled?`, `:llm.code-proposal/enabled?`) and document the default settings for: dev-local, CI, and production-like runs.  
+4. Specify failure/abort behaviour: when an LLM surface returns `:abort` or errors, what deterministic fallback is used (e.g., pure heuristics, skip optional suggestions) and how this is recorded in analytics.  
+5. Add a design EDN (`resources/dictionary/llm_integration_plan.edn`) describing the integration plan: surfaces, hooks, flags, abort policies, and metrics (what analytics we’ll watch to evaluate safety).
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-820/lint.txt`  
+- `clojure -M:test -n llm-surfaces-taxonomy-test` (to ensure surfaces referenced in the integration plan are valid) → `/home/dami/intuition-core/missions/logs/M-20251121-820/test.txt`
+
+**Deliverables**  
+- `llm-integration-design-notes.md`, `llm_integration_plan.edn`, and lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-820/`. Notes must call out the exact hook points, flags, and abort policies for each surface.
+
+---
+
+#### Mission ID: M-20251121-821 – Planner LLM Integration (Spec→Plan)  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-821/`. Cite `SYSTEM_SPEC` §§3.3–3.6, §4.7, §5.1, §5.3, §8.1, §9.
+
+**Scope/Tasks**  
+1. Mission log: `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-821/`; keep `llm-planner-integration-notes.md` there.  
+2. Implement the hook from M-820 for `:llm.surface/plan-draft` inside the spec→plan flow (either directly in `:action/spec.plan.generate` or a closely coupled step): given a captured/validated spec and the existing heuristic plan, call the LLM surface when its flag is enabled and merge the suggested nodes/edges/coverage into the WorkPlan (with validators still enforcing coverage/DAG/resource rules).  
+3. Ensure that:
+   - When the surface is disabled, behaviour remains identical to today’s deterministic planner.  
+   - When enabled and the surface returns `:abort`, the planner falls back to deterministic heuristics only and records the abort in the generation log.  
+   - When enabled and the surface returns a proposal, the merged plan still passes existing validation and snapshot steps (no weakening of invariants).  
+4. Update `planner-heuristics.edn`, plan generation logs, and any relevant meta-types so that LLM-assisted decisions are traceable (e.g., `:decision/source :planner+llm.plan-draft`).  
+5. Extend `plan_generator_integration_test.clj` (and/or add a dedicated `llm_plan_integration_test.clj`) to cover:
+   - deterministic-only mode,  
+   - LLM-enabled mode with fake responder (no Codex),  
+   - LLM abort fallback.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-821/lint.txt`  
+- `clojure -M:test -n plan-generator-integration-test -n llm-harness-test` (plus any new LLM planner tests) → `/home/dami/intuition-core/missions/logs/M-20251121-821/test.txt`
+
+**Deliverables**  
+- Notes, updated planner action/heuristics/log format, LLM-assisted plan generation code, and lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-821/`. The mission log should include at least one LLM-assisted plan generation run recorded via a fake responder.
+
+---
+
+#### Mission ID: M-20251121-822 – Mission LLM Integration (Edit-Graph & Mission-Standard)  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-822/`. Cite `SYSTEM_SPEC` §§3.3–3.6, §4.7, §5.1, §5.3, §6.2, §7, §9.
+
+**Scope/Tasks**  
+1. Mission log: `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-822/`; keep `llm-mission-integration-notes.md` there.  
+2. Implement the integration plan from M-820 for:
+   - `:llm.surface/code-proposal` in the edit-graph/mission pipeline (e.g., generate proposals based on context bundle + code graph instead of relying solely on pre-baked proposals).  
+   - `:llm.surface/test-doc-suggestions` to propose additional tests/docs tied to plan nodes/CodeDefinitions.  
+3. Wire `orchestrator/edit-graph!` so that, when enabled, it can:
+   - call the code-proposal surface via the harness (using `dev.codex-oneshot` or a fake responder),  
+   - feed returned proposals into `:action/code.proposal.validate` and `:action/code.proposal.apply`,  
+   - then run mission-standard with code materialization and tests as today, while keeping sandbox + locks invariant.  
+4. Ensure:
+   - all LLM interactions go through the harness; no direct Codex/file/shell access inside orchestrator.  
+   - abort/error paths fall back to deterministic behaviour and are logged.  
+   - sandbox boundaries remain enforced for all generated code/tests/docs.  
+5. Extend `agent_edit_flow_test.clj` (and potentially add a new `llm_agent_edit_flow_test.clj`) to cover:
+   - purely deterministic proposal flow,  
+   - LLM-driven proposals via a fake responder,  
+   - abort/fallback behaviour.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-822/lint.txt`  
+- `clojure -M:test -n agent-edit-flow-test -n mission-standard-stage-test -n llm-harness-test` → `/home/dami/intuition-core/missions/logs/M-20251121-822/test.txt`
+
+**Deliverables**  
+- Notes, updated orchestrator/edit-graph wiring, LLM proposal integration, and lint/test logs in `/home/dami/intuition-core/missions/logs/M-20251121-822/`, including example manifests/logs for LLM-assisted edit-graph runs (using fake responders).
+
+---
+
+#### Mission ID: M-20251121-823 – Scheduler + LLM Cutover & DR Run  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-823/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §6, §8.1, §9, §11.
+
+**Scope/Tasks**  
+1. Mission log: `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-823/`; keep `scheduler-llm-cutover-notes.md` there.  
+2. Update the scheduler (and any related dev tooling) so it can:
+   - decide when to invoke LLM surfaces based on mission state and the integration plan from M-820,  
+   - call the harness/Codex one-shot path (`dev.codex-oneshot` or equivalent) for those surfaces,  
+   - resume missions automatically once responses are persisted, without manual shell interaction.  
+3. Define and run a DR-style spec (or reuse DR1 with minimal tweaks) that exercises the full pipeline with LLM enabled: spec-intake → planner (deterministic + plan-draft) → mission-instantiation → LLM-driven code proposals + mission-standard/codegen/tests → merge sim → analytics. Capture all artifacts in the mission log.  
+4. Capture scheduler logs/config showing:
+   - how it picks missions and surfaces,  
+   - how feature flags are configured (which surfaces are enabled),  
+   - how failures/aborts are handled.  
+5. Use analytics to compare at least one LLM-enabled DR run vs. deterministic-only baseline (time to completion, number of retries, CI failures, abort rates), and record conclusions and any follow-up tuning in the notes.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-823/lint.txt`  
+- `clojure -M:test -n scheduler-smoke-test -n run-mission-pipeline-test -n llm-harness-test` (and any additional DR-specific tests) → `/home/dami/intuition-core/missions/logs/M-20251121-823/test.txt`
+
+**Deliverables**  
+- Notes, scheduler configuration/logs showing LLM integration, DR run artifacts (spec/plan/mission/merge/analytics + LLM request/response records), and lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-823/`. The notes should explicitly state that, once this mission is green, the system can extend itself from spec to code/tests/docs with LLM assistance and no manual shell interaction.
+
+## System Identity (Reasoning Pipeline) – Snapshot Report (assumes 822/823 wired)
+
+**Observed shape:** Spec intake feeds deterministic planner + optional `plan-draft` surface, validated WorkPlan → mission instantiation → edit-graph with optional `code-proposal`/`test-doc-suggestions` surfaces → mission-standard (codegen/tests/docs/system-map) → merge simulation → analytics. Orchestrator/scheduler is the only executor; Codex is one-shot via the LLM harness; context bundles are the only inputs to LLM; all responses carry `:meta/self-report`.
+
+**Identity as a “general reasoning app”:** Inputs are structured specs; outputs are artifacts + analytics; all reasoning is mediated, stateless, auditable, and feature-flagged. Deterministic validators, locks, and sandboxing remain the safety rails; Datomic + EDN are the single source of truth; file writes happen only through orchestrated actions.
+
+**Inconsistencies / overbuild risk:** Parallel launch surfaces (legacy dev scripts/MCP stubs), ad-hoc context assembly outside the bundle runtime, duplicate logging/snapshots, lingering CodeType scaffolds or catalog drift, and stray “alpha/beta/gama” artifacts not reconciled into the canonical repo. Some docs still reference “manual shell” toggles that no longer match the gateway-only stance.
+
+**Redesign direction:** Collapse to one entrypoint (scheduler→gateway→harness), one context source (bundle runtime), one surface set (`llm_surfaces.edn` + `llm_integration_plan.edn`), and one catalog (`code_types.edn`). Remove legacy prompt/CLI shims, retire unused logs, and codify “reasoning app” obligations so non-code tasks flow the same way (spec→bundle→LLM→materialisation/analytics).
+
+---
+
+#### Mission ID: M-20251121-824 – System Identity Audit & Garbage Collection  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-824/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §8.1, §9, §11.
+
+**Scope/Tasks**  
+1. Log setup: `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-824/`; keep `identity-audit-notes.md` there.  
+2. Perform a full structure walk: enumerate all entrypoints (dev scripts, MCP stubs, CLI/MCP), context assemblers, CodeType/catalog sources, and logging/snapshot schemes; map each to the canonical reasoning flow (spec→bundle→LLM→materialisation→analytics).  
+3. Identify drift/garbage: legacy prompt runners, duplicate context builders, unused logs, stale CodeType templates, and any alpha/beta/gama artifacts not reconciled into this repo.  
+4. Produce `identity-audit-report.md` with a canonical flow diagram, the keep/remove list (files/modules), doc mismatches, and a prioritized cut list to align with the reasoning app identity.  
+5. Emit a machine-readable `identity-gaps.edn` summarizing gaps/removals (paths, owners, rationale) to drive cleanup missions.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-824/lint.txt`  
+- `clojure -M:test -n llm-harness-test -n agent-context-bundle-test` → `/home/dami/intuition-core/missions/logs/M-20251121-824/test.txt`
+
+**Deliverables**  
+- `identity-audit-notes.md`, `identity-audit-report.md`, `identity-gaps.edn`, lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-824/`.
+
+---
+
+#### Mission ID: M-20251121-825 – Canonical Entrypoints & Surface Cleanup  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-825/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §8.1, §9, §11.
+
+**Scope/Tasks**  
+1. Log setup: `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-825/`; keep `entrypoint-cleanup-notes.md` there.  
+2. Apply `identity-gaps.edn`: remove/deprecate redundant launchers/prompts/MCP stubs; route everything through scheduler→gateway→harness (`run-mission` + `codex_oneshot`); update docs/comments accordingly.  
+3. Normalize context assembly: enforce the bundle runtime (M-815) as the only context source; delete or redirect ad-hoc assemblers; ensure `llm_integration_plan.edn` is the single switchboard for all surfaces/flags.  
+4. Prune duplicate logging/snapshots; keep canonical mission logs + Datomic records + bundle artifacts; replace bulky copies with references where allowed.  
+5. Update SYSTEM_SPEC/docs to codify “gateway-only reasoning app,” removal of manual shell toggles, and the canonical entrypoint set.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-825/lint.txt`  
+- `clojure -M:test -n run-mission-pipeline-test -n llm-harness-test -n agent-context-bundle-test` → `/home/dami/intuition-core/missions/logs/M-20251121-825/test.txt`
+
+**Deliverables**  
+- Notes, updated code/docs, lint/test logs, and a concise “before/after” inventory of entrypoints/context paths under `/home/dami/intuition-core/missions/logs/M-20251121-825/`.
+
+---
+
+#### Mission ID: M-20251121-826 – Generalized Reasoning Templates (Beyond Code)  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-826/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5.1, §5.3, §8.1, §9, §11.
+
+**Scope/Tasks**  
+1. Log setup: `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-826/`; keep `generalized-reasoning-notes.md` there.  
+2. Extend `llm_surfaces.edn` and meta-types to cover non-code “computer work” templates (e.g., structured analyses, policy summaries, data classification) with self-report and deterministic schemas; add exemplar specs under `resources/specs/`.  
+3. Ensure context bundles project the right slices (docs, analytics, graph neighbors) for these tasks; update the bundle runtime if needed.  
+4. Add a small E2E sample mission (spec → plan → mission → LLM surface → materialized EDN/markdown report) that produces no code changes but writes results to Datomic/mission log.  
+5. Update docs to state the pipeline now supports general reasoning tasks, including expected artifacts/outputs for these templates.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-826/lint.txt`  
+- `clojure -M:test -n llm-harness-test -n agent-context-bundle-test -n plan-generator-integration-test` → `/home/dami/intuition-core/missions/logs/M-20251121-826/test.txt`
+
+**Deliverables**  
+- Notes, updated surfaces/meta-types/bundle projections, sample non-code spec + mission artifacts, lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-826/`.
+
+---

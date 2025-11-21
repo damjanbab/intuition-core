@@ -1,0 +1,156 @@
+{:llm.integration/id "llm-integration-plan/v1"
+ :llm.integration/description "Plan for invoking governed LLM surfaces in planner, edit-graph, mission-standard, and analytics pipelines with deterministic fallbacks per SYSTEM_SPEC §§2.1–2.2, §§3.3–3.6, §4.7, §5.1, §5.3, §8.1, §9, §11."
+ :llm.integration/spec-sections ["2.1" "2.2" "3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "8.1" "9" "11"]
+ :llm.integration/modes [:off :shadow :apply]
+ :llm.integration/env-defaults
+ {:env/dev-local {:llm.plan-draft/mode :shadow
+                  :llm.code-proposal/mode :shadow
+                  :llm.test-doc-suggestions/mode :shadow
+                  :llm.analytics-digest/mode :apply
+                  :llm.code-graph-gaps/mode :shadow}
+  :env/ci {:llm.plan-draft/mode :off
+           :llm.code-proposal/mode :off
+           :llm.test-doc-suggestions/mode :off
+           :llm.analytics-digest/mode :shadow
+           :llm.code-graph-gaps/mode :shadow}
+  :env/production-like {:llm.plan-draft/mode :off
+                        :llm.code-proposal/mode :off
+                        :llm.test-doc-suggestions/mode :off
+                        :llm.analytics-digest/mode :shadow
+                        :llm.code-graph-gaps/mode :shadow}}
+ :llm.integration/abort-events
+ {:llm/abort {:analytics/tag :analytics.event/llm.abort
+              :record-self-report? true
+              :fallback :deterministic}}
+ :llm.integration/surfaces
+ [{:llm.surface/ident :llm.surface/plan-draft
+   :llm.integration/pipeline :pipeline/planner
+   :llm.integration/hook {:action/ident :action/spec.plan.generate
+                         :stage :planner/after-heuristics
+                         :description "Call harness once heuristics + CodeType inference are loaded, before nodes/edges/coverage are finalized."}
+   :llm.integration/context [:spec/requirements
+                             :spec/test-contracts
+                             :spec/spec-sections
+                             :code-type/catalog
+                             :graph/neighbors
+                             :work-plan/obligations
+                             :plan.generation/heuristics-id
+                             :plan.generation/trace]
+   :llm.integration/outputs [:plan/nodes :plan/edges :plan/coverage]
+   :llm.integration/feature-flag :llm.plan-draft/mode
+   :llm.integration/default-mode {:env/dev-local :shadow
+                                  :env/ci :off
+                                  :env/production-like :off}
+   :llm.integration/abort-policy {:on-abort :planner/heuristics-only
+                                  :on-error :planner/heuristics-only
+                                  :analytics/event :analytics.event/llm.abort
+                                  :log-path-key :plan.generation/log-path}
+   :llm.integration/metrics [:metric/coverage-delta
+                             :metric/validation-pass-rate
+                             :metric/retry-free-rate]}
+
+  {:llm.surface/ident :llm.surface/code-proposal
+   :llm.integration/pipeline :pipeline/edit-graph
+   :llm.integration/hook {:function 'intuition.gateway.orchestrator/edit-graph!
+                         :stage :proposals/load
+                         :description "Before proposal validation, use harness to emit proposals from the mission context bundle; proceed to validate/apply regardless."}
+   :llm.integration/context [:mission/context-bundle
+                             :code.definition/graph
+                             :code.type/catalog
+                             :spec/requirements
+                             :plan/nodes
+                             :code.proposal/proposals
+                             :sandbox/root]
+   :llm.integration/outputs [:code/proposals]
+   :llm.integration/feature-flag :llm.code-proposal/mode
+   :llm.integration/default-mode {:env/dev-local :shadow
+                                  :env/ci :off
+                                  :env/production-like :off}
+   :llm.integration/abort-policy {:on-abort :proposals/deterministic-only
+                                  :on-error :proposals/deterministic-only
+                                  :analytics/event :analytics.event/llm.abort
+                                  :log-path-key :code.proposal/log-path}
+   :llm.integration/metrics [:metric/proposal-schema-pass
+                             :metric/apply-success-rate
+                             :metric/ci-pass-rate]}
+
+  {:llm.surface/ident :llm.surface/test-doc-suggestions
+   :llm.integration/pipeline :pipeline/mission-standard
+   :llm.integration/hook {:function 'intuition.gateway.orchestrator/mission-standard-stage!
+                         :stage :pre-tests
+                         :description "After code materialization context is assembled and before tests run, request optional test/doc suggestions."}
+   :llm.integration/context [:context/bundle
+                             :code.definition/coverage
+                             :doc/coverage
+                             :analytics/failures
+                             :plan/nodes
+                             :code.definition/idents
+                             :mission/id]
+   :llm.integration/outputs [:tests/suggestions :docs/suggestions]
+   :llm.integration/feature-flag :llm.test-doc-suggestions/mode
+   :llm.integration/default-mode {:env/dev-local :shadow
+                                  :env/ci :off
+                                  :env/production-like :off}
+   :llm.integration/abort-policy {:on-abort :tests-docs/deterministic-only
+                                  :on-error :tests-docs/deterministic-only
+                                  :analytics/event :analytics.event/llm.abort
+                                  :log-path-key :mission.standard/log-path}
+   :llm.integration/metrics [:metric/acceptance-rate
+                             :metric/redundancy-rate
+                             :metric/ci-impact]}
+
+  {:llm.surface/ident :llm.surface/analytics-digest
+   :llm.integration/pipeline :pipeline/analytics
+   :llm.integration/hook {:function 'intuition.gateway.orchestrator/analytics-stage!
+                         :stage :post-deterministic-report
+                         :description "After deterministic analytics report is generated, call LLM for digest/risks/follow-ups; deterministic output stays canonical."}
+   :llm.integration/context [:ci/run-manifest
+                             :merge/logs
+                             :plan/analytics
+                             :version/snapshots
+                             :analytics/report]
+   :llm.integration/outputs [:summary/markdown :risks :follow-ups]
+   :llm.integration/feature-flag :llm.analytics-digest/mode
+   :llm.integration/default-mode {:env/dev-local :apply
+                                  :env/ci :shadow
+                                  :env/production-like :shadow}
+   :llm.integration/abort-policy {:on-abort :analytics/deterministic-only
+                                  :on-error :analytics/deterministic-only
+                                  :analytics/event :analytics.event/llm.abort
+                                  :log-path-key :analytics/log-path}
+   :llm.integration/metrics [:metric/hash-consistency
+                             :metric/steward-acceptance
+                             :metric/review-time]}
+
+  {:llm.surface/ident :llm.surface/code-graph-gaps
+   :llm.integration/pipeline :pipeline/analytics
+   :llm.integration/hook {:function 'intuition.gateway.orchestrator/analytics-stage!
+                         :stage :graph-gap-scan
+                         :description "Alongside analytics digest, run graph gap finder using collected plan coverage + code/test/doc graphs."}
+   :llm.integration/context [:graph/nodes
+                             :graph/edges
+                             :code.type/catalog
+                             :spec/coverage
+                             :plan/coverage
+                             :mission/id]
+   :llm.integration/outputs [:missing-edges :orphan-nodes :rationale]
+   :llm.integration/feature-flag :llm.code-graph-gaps/mode
+   :llm.integration/default-mode {:env/dev-local :shadow
+                                  :env/ci :shadow
+                                  :env/production-like :shadow}
+   :llm.integration/abort-policy {:on-abort :analytics/deterministic-gap-checks
+                                  :on-error :analytics/deterministic-gap-checks
+                                  :analytics/event :analytics.event/llm.abort
+                                  :log-path-key :analytics/log-path}
+   :llm.integration/metrics [:metric/true-positive-rate
+                             :metric/false-positive-rate
+                             :metric/stability]}]
+ :llm.integration/analytics
+ {:record {:store :analytics.manifest/llm
+           :include [:llm.surface/ident
+                     :llm.integration/mode
+                     :llm.integration/context-hash
+                     :llm.response/status
+                     :meta/self-report]}
+  :fallback {:status-tag :llm/abort
+             :self-report-required? true}}}
