@@ -48,7 +48,13 @@
    :spec/target {:sections ["3.3" "3.4" "3.5" "3.6" "4.1" "4.2" "4.7" "5.1" "9"]
                  :summary "System Spec targets that missions + tests must satisfy."}
    :meta/code-type {:sections ["4.7" "5.1"]
-                    :summary "Code governance + validation primitives."}})
+                    :summary "Code governance + validation primitives."}
+   :recipe/definition {:sections ["2.1" "2.2" "3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "8.1" "9" "11"]
+                       :summary "Contract for cataloged recipes that drive planner/router behavior."}
+   :recipe/plan {:sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "9" "11"]
+                 :summary "Plan-level schema describing allowed ops, limits, and validations."}
+   :recipe/step {:sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "9" "11"]
+                 :summary "Step-level contract for deterministic execution primitives."}})
 
 (defn- resolve-resource [path]
   (or (io/resource path)

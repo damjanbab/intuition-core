@@ -1,13 +1,23 @@
 (ns dev.run-mission
-  "Quick helper that exercises the mission lifecycle runtime so stewards can see the happy path."
+  "Deprecated manual runner. Forward requests to the Agent Gateway (context-bundle driven) and refuse direct execution
+  per SYSTEM_SPEC §§2.1–2.2, §§3.3–3.6, §5, §6, and §9. Use `clojure -M:dev -m dev.agent-gateway run-mission` with a
+  context bundle instead."
   (:require
+   [dev.agent-gateway :as gateway]
    [intuition.sfs.missions.runtime :as missions]))
 
 (def sample-mission-id "M-20251117-001")
 (def sample-agent "dev-agent")
 
+(defn- warn
+  []
+  (binding [*out* *err*]
+    (println "WARNING: dev.run-mission is deprecated. Use dev.agent-gateway run-mission with a context bundle.")
+    (println "SYSTEM_SPEC §§2.1–2.2, §§3.3–3.6, §5, §6, §9 mandate scheduler→gateway only.")))
+
 (defn run-mission!
   []
+  (warn)
   (let [start-result (missions/start! {:mission/id sample-mission-id
                                        :agent/id sample-agent})
         transition (missions/transition! {:mission/id sample-mission-id
@@ -26,5 +36,9 @@
      :transition transition}))
 
 (defn -main
-  [& _]
-  (run-mission!))
+  [& args]
+  (if (seq args)
+    (do
+      (warn)
+      (apply gateway/-main args))
+    (run-mission!)))

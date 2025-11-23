@@ -6733,7 +6733,7 @@
   :entity/description "One-shot LLM response payload with meta/self-report telemetry for analytics."
   :type/ident :llm/response
   :type/category :category/runtime
-  :type/attributes [:llm.response/id
+ :type/attributes [:llm.response/id
                     :llm.response/request-id
                     :llm.response/surface
                     :llm.response/requested-outputs
@@ -6748,4 +6748,725 @@
   :type/meta {:spec/sections ["2.1" "2.2" "3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "8.1" "9" "11"]
               :extends [:dictionary/entity]
               :doc "Captured LLM response with structured telemetry, trace metadata, and SYSTEM_SPEC citations."}}
+
+ ;; Attribute definitions – Recipe contract
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/ident"
+  :entity/name "Recipe ident"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Keyword identifier for a governed recipe (§§2.1–2.2, §§3.3–3.6, §4.7, §5.1, §5.3, §8.1, §9, §11)."
+  :attribute/ident :recipe/ident
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Used by planner/router to select the recipe."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/version"
+  :entity/name "Recipe version"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Monotonic recipe version for determinism (§§3.3–3.6, §5.1)."
+  :attribute/ident :recipe/version
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/long
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Incremented whenever plan/schema changes."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/owner"
+  :entity/name "Recipe owner"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Role or team accountable for the recipe (§§2.1–2.2)."
+  :attribute/ident :recipe/owner
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Used for approvals and stewardship."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/layer"
+  :entity/name "Recipe layer"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Catalog layer (L0 primitives → L3 extensions) (§§3.3–3.6, §4.7)."
+  :attribute/ident :recipe/layer
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/options {:enum #{:layer/l0 :layer/l1 :layer/l2 :layer/l3}}
+  :attribute/description "Supports governance and capability gating."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/stability"
+  :entity/name "Recipe stability"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Stability tier (experimental → frozen) per promotion rules (§§3.3–3.6, §5.1, §5.3)."
+  :attribute/ident :recipe/stability
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/options {:enum #{:stability/experimental :stability/beta :stability/ga :stability/frozen}}
+  :attribute/description "Used by dispatcher and steward to gate usage."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/intent-tags"
+  :entity/name "Recipe intent tags"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Tags describing the intent and routing hooks (§§3.3–3.6, §9, §11)."
+  :attribute/ident :recipe/intent-tags
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/many
+  :attribute/required? true
+  :attribute/description "Planner/router filters by these tags."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/required-capabilities"
+  :entity/name "Recipe required capabilities"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Capabilities/tools the executor must provide (§§3.3–3.6, §5.1, §8.1)."
+  :attribute/ident :recipe/required-capabilities
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/many
+  :attribute/required? true
+  :attribute/description "E.g., :capability/llm or :capability/clojure."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/match"
+  :entity/name "Recipe match rules"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Serialized map of routing constraints, tags, classifier thresholds (§§3.3–3.6, §4.7, §9, §11)."
+  :attribute/ident :recipe/match
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Planner/router uses this for deterministic selection."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/input-schema"
+  :entity/name "Recipe input schema"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Required/optional inputs + constraints (§§3.3–3.6, §4.7, §5.1, §5.3)."
+  :attribute/ident :recipe/input-schema
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Declares required fields, context, constraints, and secrets handling."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/output-schema"
+  :entity/name "Recipe output schema"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Structured outputs + side effects (§§3.3–3.6, §4.7, §5.1, §5.3, §9)."
+  :attribute/ident :recipe/output-schema
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Status, artifacts, diff/patch manifests, metrics, and summary fields."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/plan"
+  :entity/name "Recipe plan"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Serialized plan definition (ops, steps, edges) (§§3.3–3.6, §4.7, §5.1)."
+  :attribute/ident :recipe/plan
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "One-shot plan or DAG with bindings and budgets."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/plan-ops"
+  :entity/name "Recipe plan ops"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Enumerates allowed ops in the plan (§§3.3–3.6, §4.7, §5.1, §5.3)."
+  :attribute/ident :recipe/plan-ops
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/many
+  :attribute/required? true
+  :attribute/options {:enum #{:op/llm-call :op/tool-call :op/map :op/reduce :op/branch :op/eval-code :op/retry :op/select-best}}
+  :attribute/description "Must be subset of the governed op set."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/limits"
+  :entity/name "Recipe limits"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Budgets (tokens/time/files), sandbox profile, allowed tools (§§3.3–3.6, §4.7, §5.1, §5.3, §8.1)."
+  :attribute/ident :recipe/limits
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Keeps planner/router within safe operating bounds."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/validations"
+  :entity/name "Recipe validations"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Preflight/invariant/post validations (§§3.3–3.6, §4.7, §5.1, §5.3, §9)."
+  :attribute/ident :recipe/validations
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Includes reproducibility hints (seeds, locked tools) for determinism."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/audit"
+  :entity/name "Recipe audit fields"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Trace keys, decisions, tool hashes (§§3.3–3.6, §5.1, §5.3, §9, §11)."
+  :attribute/ident :recipe/audit
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Ensures replayability with side-effect manifests."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/errors"
+  :entity/name "Recipe error handling"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Retry/fallback/escalation policies (§§3.3–3.6, §5.1, §5.3, §9)."
+  :attribute/ident :recipe/errors
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? false
+  :attribute/description "Defines backoff, fallback recipes, and escalation paths."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/side-effects"
+  :entity/name "Recipe side effects"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Expected side effects (writes, commands) (§§3.3–3.6, §4.7, §5.1, §5.3, §9)."
+  :attribute/ident :recipe/side-effects
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? false
+  :attribute/description "Summarizes file touches, command executions, audit outputs."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/extends"
+  :entity/name "Recipe extension"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Base recipe ident when this is a thin extension (§§3.3–3.6, §4.7)."
+  :attribute/ident :recipe/extends
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? false
+  :attribute/description "Used for L3 extensions that adjust policy without altering IO."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe/ephemeral?"
+  :entity/name "Recipe ephemeral flag"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Marks one-shot synthesized recipes with tight budgets (§§3.3–3.6, §4.7, §5.1, §5.3)."
+  :attribute/ident :recipe/ephemeral?
+  :attribute/owner-type :recipe/definition
+  :attribute/value-type :db.type/boolean
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? false
+  :attribute/description "Ephemeral recipes are not persisted and have bounded budgets."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.plan/id"
+  :entity/name "Recipe plan id"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Identifier for the plan payload (§§3.3–3.6)."
+  :attribute/ident :recipe.plan/id
+  :attribute/owner-type :recipe/plan
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Typically mirrors the recipe ident + version."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.plan/ops"
+  :entity/name "Recipe plan ops"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Allowed ops for the plan DAG (§§3.3–3.6, §4.7, §5.1)."
+  :attribute/ident :recipe.plan/ops
+  :attribute/owner-type :recipe/plan
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/many
+  :attribute/required? true
+  :attribute/options {:enum #{:op/llm-call :op/tool-call :op/map :op/reduce :op/branch :op/eval-code :op/retry :op/select-best}}
+  :attribute/description "Must remain within governed primitives."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.plan/steps"
+  :entity/name "Recipe plan steps"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Serialized vector of :recipe/step entries (§§3.3–3.6, §4.7, §5.1, §5.3)."
+  :attribute/ident :recipe.plan/steps
+  :attribute/owner-type :recipe/plan
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Each step must declare op, inputs, outputs, and limits."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.plan/edges"
+  :entity/name "Recipe plan edges"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Optional DAG edges between steps (§§3.3–3.6)."
+  :attribute/ident :recipe.plan/edges
+  :attribute/owner-type :recipe/plan
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? false
+  :attribute/description "Represents ordering and dependencies."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.plan/limits"
+  :entity/name "Recipe plan limits"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Plan-level budget/sandbox profile for quick inspection (§§3.3–3.6, §4.7, §5.1)."
+  :attribute/ident :recipe.plan/limits
+  :attribute/owner-type :recipe/plan
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Summarizes sandbox and budgets used by the plan."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.plan/validations"
+  :entity/name "Recipe plan validations"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Pre/post/invariant validators attached to the plan (§§3.3–3.6, §4.7, §5.1, §5.3, §9)."
+  :attribute/ident :recipe.plan/validations
+  :attribute/owner-type :recipe/plan
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Used for conformance checks and promotion readiness."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.step/id"
+  :entity/name "Recipe step id"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Step identifier unique within a recipe plan (§§3.3–3.6, §5.1)."
+  :attribute/ident :recipe.step/id
+  :attribute/owner-type :recipe/step
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Used in edges and telemetry."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.step/name"
+  :entity/name "Recipe step name"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Human-readable label for the step."
+  :attribute/ident :recipe.step/name
+  :attribute/owner-type :recipe/step
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Supports audit readability."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.step/op"
+  :entity/name "Recipe step op"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Primitive op invoked by the step (§§3.3–3.6, §4.7, §5.1)."
+  :attribute/ident :recipe.step/op
+  :attribute/owner-type :recipe/step
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/options {:enum #{:op/llm-call :op/tool-call :op/map :op/reduce :op/branch :op/eval-code :op/retry :op/select-best}}
+  :attribute/description "Must be subset of governed op set."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.step/description"
+  :entity/name "Recipe step description"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Narrative for the step’s purpose (§§3.3–3.6, §11)."
+  :attribute/ident :recipe.step/description
+  :attribute/owner-type :recipe/step
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Supports docgen and audits."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.step/inputs"
+  :entity/name "Recipe step inputs"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Serialized vector of required inputs (§§3.3–3.6, §4.7, §5.1, §5.3)."
+  :attribute/ident :recipe.step/inputs
+  :attribute/owner-type :recipe/step
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Used by validation and router context binding."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.step/outputs"
+  :entity/name "Recipe step outputs"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Serialized vector of outputs produced by the step (§§3.3–3.6, §4.7, §5.1, §5.3)."
+  :attribute/ident :recipe.step/outputs
+  :attribute/owner-type :recipe/step
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Provides the step-level IO contract."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.step/tools"
+  :entity/name "Recipe step tools"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Referenced tools for the step (§§3.3–3.6, §5.1, §8.1)."
+  :attribute/ident :recipe.step/tools
+  :attribute/owner-type :recipe/step
+  :attribute/value-type :db.type/keyword
+  :attribute/cardinality :db.cardinality/many
+  :attribute/required? false
+  :attribute/description "E.g., :tool/llm or :tool/fs."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.step/bindings"
+  :entity/name "Recipe step bindings"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Bindings or context merges for the step (§§3.3–3.6, §5.1)."
+  :attribute/ident :recipe.step/bindings
+  :attribute/owner-type :recipe/step
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? false
+  :attribute/description "Supports explicit input wiring and deterministic context."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.step/limits"
+  :entity/name "Recipe step limits"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Step-level budgets and sandbox hints (§§3.3–3.6, §4.7, §5.1, §5.3, §8.1)."
+  :attribute/ident :recipe.step/limits
+  :attribute/owner-type :recipe/step
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? true
+  :attribute/description "Includes per-step tokens/time/files and sandbox profile."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.step/validations"
+  :entity/name "Recipe step validations"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Per-step checks/invariants (§§3.3–3.6, §4.7, §5.1, §5.3, §9)."
+  :attribute/ident :recipe.step/validations
+  :attribute/owner-type :recipe/step
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? false
+  :attribute/description "Assertions after the step completes."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.step/side-effects"
+  :entity/name "Recipe step side effects"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Side-effect manifest for a step (§§3.3–3.6, §5.1, §5.3, §9)."
+  :attribute/ident :recipe.step/side-effects
+  :attribute/owner-type :recipe/step
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? false
+  :attribute/description "Captures commands, writes, and audit traces at the step level."}
+
+ {:entity/type :meta/attribute
+  :entity/path "/system/attributes/recipe.step/error-policy"
+  :entity/name "Recipe step error policy"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Retry/backoff or escalation policy for the step (§§3.3–3.6, §5.1, §5.3)."
+  :attribute/ident :recipe.step/error-policy
+  :attribute/owner-type :recipe/step
+  :attribute/value-type :db.type/string
+  :attribute/cardinality :db.cardinality/one
+  :attribute/required? false
+  :attribute/description "Defines per-step fallback or abort behavior."}
+
+ ;; Type definitions – Recipe contract
+ {:entity/type :meta/type
+  :entity/path "/system/types/recipe/definition"
+  :entity/name "Recipe definition"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Recipe contract carrying metadata, IO schema, match rules, plan ops, budgets, validations, and audit fields (§§2.1–2.2, §§3.3–3.6, §4.7, §5.1, §5.3, §8.1, §9, §11)."
+  :type/ident :recipe/definition
+  :type/category :category/spec
+  :type/attributes [:recipe/ident
+                    :recipe/version
+                    :recipe/owner
+                    :recipe/layer
+                    :recipe/stability
+                    :recipe/intent-tags
+                    :recipe/required-capabilities
+                    :recipe/match
+                    :recipe/input-schema
+                    :recipe/output-schema
+                    :recipe/plan
+                    :recipe/plan-ops
+                    :recipe/limits
+                    :recipe/validations
+                    :recipe/audit
+                    :recipe/errors
+                    :recipe/side-effects
+                    :recipe/extends
+                    :recipe/ephemeral?]
+  :type/meta {:spec/sections ["2.1" "2.2" "3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "8.1" "9" "11"]
+              :extends [:dictionary/entity]
+              :doc "Planner/router IR ensuring deterministic routing and execution."}}
+
+ {:entity/type :meta/type
+  :entity/path "/system/types/recipe/plan"
+  :entity/name "Recipe plan"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Plan structure built from governed ops (LLM/tool/map/reduce/branch/eval/retry/select-best) with budgets and validations (§§3.3–3.6, §4.7, §5.1, §5.3, §9, §11)."
+  :type/ident :recipe/plan
+  :type/category :category/spec
+  :type/attributes [:recipe.plan/id
+                    :recipe.plan/ops
+                    :recipe.plan/steps
+                    :recipe.plan/edges
+                    :recipe.plan/limits
+                    :recipe.plan/validations]
+  :type/meta {:spec/sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "9" "11"]
+              :extends [:dictionary/entity]
+              :doc "Defines the ordered or DAG steps executed by the recipe."}}
+
+ {:entity/type :meta/type
+  :entity/path "/system/types/recipe/step"
+  :entity/name "Recipe step"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-833
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-833
+  :entity/description "Step contract describing the op, IO bindings, limits, validations, and side-effect manifest (§§3.3–3.6, §4.7, §5.1, §5.3, §9, §11)."
+  :type/ident :recipe/step
+  :type/category :category/spec
+  :type/attributes [:recipe.step/id
+                    :recipe.step/name
+                    :recipe.step/op
+                    :recipe.step/description
+                    :recipe.step/inputs
+                    :recipe.step/outputs
+                    :recipe.step/tools
+                    :recipe.step/bindings
+                    :recipe.step/limits
+                    :recipe.step/validations
+                    :recipe.step/side-effects
+                    :recipe.step/error-policy]
+  :type/meta {:spec/sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "9" "11"]
+              :extends [:dictionary/entity]
+              :doc "Normalized per-step schema for deterministic execution and audit."}}
 ]

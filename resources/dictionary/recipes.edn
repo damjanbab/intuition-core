@@ -1,0 +1,356 @@
+{:recipe.catalog/id "recipes/v1"
+ :recipe.catalog/description "Governed recipe catalog for planner/router per SYSTEM_SPEC §§2.1–2.2, §§3.3–3.6, §4.7, §5.1, §5.3, §8.1, §9, §11."
+ :recipe.catalog/spec-sections ["2.1" "2.2" "3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "8.1" "9" "11"]
+ :recipe.catalog/entries
+ [{:entity/type :recipe/definition
+   :entity/path "/recipes/l0/plan-llm-draft"
+   :entity/name "L0 plan draft"
+   :entity/status :entity.status/active
+   :entity/version 1
+   :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+   :entity/created-by :mission/M-20251121-833
+   :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+   :entity/updated-by :mission/M-20251121-833
+   :entity/description "One-shot LLM hinting to draft plan nodes/coverage under read-only sandbox (SYSTEM_SPEC §§3.3–3.6, §4.7, §5.1, §5.3, §9)."
+   :recipe/ident :recipe/plan.llm-draft
+   :recipe/version 1
+   :recipe/owner :role/dictionary-engineer
+   :recipe/layer :layer/l0
+   :recipe/stability :stability/beta
+   :recipe/intent-tags [:intent/plan :intent/clarify]
+   :recipe/required-capabilities [:capability/llm]
+   :recipe/match {:tags [:intent/plan :intent/clarify]
+                  :constraints {:sandbox [:sandbox/read-only]}
+                  :classifier {:ident :classifier/intent-score
+                               :threshold 0.25}}
+   :recipe/input-schema {:required [:spec/requirements :work-plan/obligations]
+                         :optional [:context/summary]
+                         :constraints {:secrets? false}}
+   :recipe/output-schema {:produces [:plan/nodes :plan/coverage]
+                          :status [:status/ok :status/failed]
+                          :side-effects {:writes [] :commands []}
+                          :summary "LLM plan sketch with coverage rows."}
+   :recipe/plan {:ops #{:op/llm-call :op/branch}
+                 :steps [{:recipe.step/id :draft-plan
+                          :recipe.step/name "Draft plan"
+                          :recipe.step/op :op/llm-call
+                          :recipe.step/description "One-shot draft using governed context."
+                          :recipe.step/inputs [:spec/requirements :work-plan/obligations :context/summary]
+                          :recipe.step/outputs [:plan/nodes :plan/coverage]
+                          :recipe.step/tools [:tool/llm]
+                          :recipe.step/limits {:tokens 1200 :time-ms 5000}
+                          :recipe.step/validations [:validator/plan-shape :validator/coverage]}
+                         {:recipe.step/id :guard-coverage
+                          :recipe.step/name "Guard coverage"
+                          :recipe.step/op :op/branch
+                          :recipe.step/description "Abort if coverage is missing."
+                          :recipe.step/inputs [:plan/coverage]
+                          :recipe.step/outputs [:plan/coverage]
+                          :recipe.step/limits {:time-ms 500}
+                          :recipe.step/validations [:validator/coverage]}]
+                 :edges [[:draft-plan :guard-coverage]]}
+   :recipe/limits {:sandbox :sandbox/read-only
+                   :tokens 2000
+                   :wall-clock-ms 45000
+                   :files-max 0
+                   :allowed-tools [:tool/llm]}
+   :recipe/validations {:pre [:validator/input-schema]
+                        :invariants [:validator/allowed-ops :validator/limits]
+                        :post [:validator/output-schema]}
+   :recipe/audit {:trace [:inputs :decisions :tool-calls]
+                  :hash-fields [:plan/nodes :plan/coverage]}
+   :recipe/policies {:policy/approvals [:approval/steward-signoff]
+                     :policy/tests [:test/lint :test/recipe-conformance]
+                     :policy/gates {:stability/min :stability/beta
+                                    :sandbox/profile :sandbox/read-only}}
+   :recipe/promotion {:promotion/spec-sections ["2.1" "2.2" "3.3" "3.4" "3.5" "3.6" "4.7" "5" "6" "8.1" "9" "11"]
+                      :promotion/rules [{:from :stability/experimental
+                                         :to :stability/beta
+                                         :requirements [:policy/approvals :policy/tests]
+                                         :policies {:policy/approvals [:approval/steward-signoff]
+                                                    :policy/tests [:test/lint :test/recipe-conformance]}}
+                                        {:from :stability/beta
+                                         :to :stability/ga
+                                         :requirements [:evidence/repeatable-runs :policy/approvals :policy/tests]}
+                                        {:from :stability/ga
+                                         :to :stability/frozen
+                                         :requirements [:steward/freeze :policy/approvals]}]}
+   :recipe/errors {:retry-policy {:max-attempts 1 :backoff-ms 0}
+                   :fallback [:recipe/pattern.map-plan]}
+   :recipe/side-effects {:writes [] :commands [] :audit [:meta/self-report]}}
+
+  {:entity/type :recipe/definition
+   :entity/path "/recipes/l1/pattern-map-plan"
+   :entity/name "L1 map/reduce planner"
+   :entity/status :entity.status/active
+   :entity/version 1
+   :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+   :entity/created-by :mission/M-20251121-833
+   :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+   :entity/updated-by :mission/M-20251121-833
+   :entity/description "Patternized map/reduce over requirements to build plan nodes then select best coverage (§§3.3–3.6, §4.7, §5.1, §5.3, §9)."
+   :recipe/ident :recipe/pattern.map-plan
+   :recipe/version 1
+   :recipe/owner :role/dictionary-engineer
+   :recipe/layer :layer/l1
+   :recipe/stability :stability/beta
+   :recipe/intent-tags [:intent/plan :intent/pattern]
+   :recipe/required-capabilities [:capability/llm :capability/map]
+   :recipe/match {:tags [:intent/plan]
+                  :constraints {:sandbox [:sandbox/read-only]
+                                :languages [:lang/clojure :lang/typescript]}
+                  :classifier {:ident :classifier/coverage-density
+                               :threshold 0.45}}
+   :recipe/input-schema {:required [:spec/requirements :spec/test-contracts :work-plan/obligations]
+                         :optional [:context/summary]
+                         :constraints {:secrets? false}}
+   :recipe/output-schema {:produces [:plan/nodes :plan/coverage]
+                          :status [:status/ok :status/failed]
+                          :side-effects {:writes [] :commands []}
+                          :summary "Map/reduce coverage rows with best-of selection."}
+   :recipe/plan {:ops #{:op/map :op/reduce :op/select-best :op/branch}
+                 :steps [{:recipe.step/id :map-nodes
+                          :recipe.step/name "Map requirements"
+                          :recipe.step/op :op/map
+                          :recipe.step/description "Map over requirements to propose nodes."
+                          :recipe.step/inputs [:spec/requirements :context/summary]
+                          :recipe.step/outputs [:plan/nodes]
+                          :recipe.step/tools [:tool/llm]
+                          :recipe.step/limits {:tokens 1600 :time-ms 8000}
+                          :recipe.step/validations [:validator/plan-shape]}
+                         {:recipe.step/id :reduce-coverage
+                          :recipe.step/name "Reduce coverage"
+                          :recipe.step/op :op/reduce
+                          :recipe.step/description "Aggregate node coverage and enforce constraints."
+                          :recipe.step/inputs [:plan/nodes :spec/test-contracts :work-plan/obligations]
+                          :recipe.step/outputs [:plan/coverage]
+                          :recipe.step/limits {:time-ms 4000}
+                          :recipe.step/validations [:validator/coverage]}
+                         {:recipe.step/id :select-best
+                          :recipe.step/name "Select best"
+                          :recipe.step/op :op/select-best
+                          :recipe.step/description "Choose best coverage candidate using score."
+                          :recipe.step/inputs [:plan/coverage]
+                          :recipe.step/outputs [:plan/coverage]
+                          :recipe.step/limits {:time-ms 1000}
+                          :recipe.step/validations [:validator/coverage :validator/no-cycles]}]
+                 :edges [[:map-nodes :reduce-coverage]
+                         [:reduce-coverage :select-best]]}
+   :recipe/limits {:sandbox :sandbox/read-only
+                   :tokens 3200
+                   :wall-clock-ms 90000
+                   :files-max 0
+                   :allowed-tools [:tool/llm]}
+   :recipe/validations {:pre [:validator/input-schema]
+                        :invariants [:validator/allowed-ops :validator/limits]
+                        :post [:validator/output-schema]}
+   :recipe/audit {:trace [:inputs :decisions :tool-calls]
+                  :hash-fields [:plan/nodes :plan/coverage]}
+   :recipe/policies {:policy/approvals [:approval/steward-signoff]
+                     :policy/tests [:test/lint :test/recipe-conformance]
+                     :policy/gates {:stability/min :stability/beta
+                                    :sandbox/profile :sandbox/read-only}}
+   :recipe/promotion {:promotion/spec-sections ["2.1" "2.2" "3.3" "3.4" "3.5" "3.6" "4.7" "5" "6" "8.1" "9" "11"]
+                      :promotion/rules [{:from :stability/experimental
+                                         :to :stability/beta
+                                         :requirements [:policy/approvals :policy/tests]
+                                         :policies {:policy/approvals [:approval/steward-signoff]
+                                                    :policy/tests [:test/lint :test/recipe-conformance]}}
+                                        {:from :stability/beta
+                                         :to :stability/ga
+                                         :requirements [:evidence/repeatable-runs :policy/approvals :policy/tests]}
+                                        {:from :stability/ga
+                                         :to :stability/frozen
+                                         :requirements [:steward/freeze :policy/approvals]}]}
+   :recipe/errors {:retry-policy {:max-attempts 1 :backoff-ms 0}
+                   :fallback [:recipe/plan.llm-draft]}
+   :recipe/side-effects {:writes [] :commands [] :audit [:meta/self-report]}}
+
+  {:entity/type :recipe/definition
+   :entity/path "/recipes/l2/domain-code-refactor"
+   :entity/name "L2 code refactor"
+   :entity/status :entity.status/active
+   :entity/version 1
+   :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+   :entity/created-by :mission/M-20251121-833
+   :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+   :entity/updated-by :mission/M-20251121-833
+   :entity/description "Domain recipe that proposes and stages code refactors with deterministic validations (§§3.3–3.6, §4.7, §5.1, §5.3, §8.1, §9)."
+   :recipe/ident :recipe/domain.code-refactor
+   :recipe/version 1
+   :recipe/owner :role/dictionary-engineer
+   :recipe/layer :layer/l2
+   :recipe/stability :stability/experimental
+   :recipe/intent-tags [:intent/code-change :intent/refactor]
+   :recipe/required-capabilities [:capability/code :capability/llm :capability/fs]
+   :recipe/match {:tags [:intent/code-change :intent/refactor]
+                  :constraints {:sandbox [:sandbox/workspace-write]
+                                :languages [:lang/clojure :lang/typescript]
+                                :tools/required [:tool/fs :tool/clojure]}}
+   :recipe/input-schema {:required [:context/bundle :plan/nodes :code.definition/graph]
+                         :optional [:spec/test-contracts]
+                         :constraints {:secrets? false}}
+   :recipe/output-schema {:produces [:patches/draft :plan/coverage :side-effects/manifest]
+                          :status [:status/ok :status/failed]
+                          :side-effects {:writes [:workspace/files]
+                                         :commands [:clojure/process]}
+                          :summary "Refactor patch set with coverage map and side-effect manifest."}
+   :recipe/plan {:ops #{:op/tool-call :op/llm-call :op/branch}
+                 :steps [{:recipe.step/id :analyze-context
+                          :recipe.step/name "Analyze context"
+                          :recipe.step/op :op/tool-call
+                          :recipe.step/description "Gather file context and tests for nodes."
+                          :recipe.step/inputs [:context/bundle :plan/nodes]
+                          :recipe.step/outputs [:analysis/context]
+                          :recipe.step/tools [:tool/fs]
+                          :recipe.step/limits {:time-ms 5000 :files-max 10}
+                          :recipe.step/validations [:validator/context-present]}
+                         {:recipe.step/id :draft-patches
+                          :recipe.step/name "Draft patches"
+                          :recipe.step/op :op/llm-call
+                          :recipe.step/description "LLM proposes refactor patches with safeguards."
+                          :recipe.step/inputs [:analysis/context :code.definition/graph :plan/nodes]
+                          :recipe.step/outputs [:patches/draft :plan/coverage]
+                          :recipe.step/tools [:tool/llm]
+                          :recipe.step/limits {:tokens 1800 :time-ms 8000 :files-max 10}
+                          :recipe.step/validations [:validator/patch-shape :validator/coverage]}
+                         {:recipe.step/id :stage-manifest
+                          :recipe.step/name "Stage manifest"
+                          :recipe.step/op :op/tool-call
+                          :recipe.step/description "Compute side-effect manifest before apply."
+                          :recipe.step/inputs [:patches/draft]
+                          :recipe.step/outputs [:side-effects/manifest]
+                          :recipe.step/tools [:tool/fs]
+                          :recipe.step/limits {:time-ms 3000 :files-max 10}
+                          :recipe.step/validations [:validator/side-effects]}
+                         {:recipe.step/id :guard-risk
+                          :recipe.step/name "Risk guard"
+                          :recipe.step/op :op/branch
+                          :recipe.step/description "Abort if manifests exceed declared limits."
+                          :recipe.step/inputs [:side-effects/manifest]
+                          :recipe.step/outputs [:side-effects/manifest]
+                          :recipe.step/limits {:time-ms 500}
+                          :recipe.step/validations [:validator/limits]}]
+                 :edges [[:analyze-context :draft-patches]
+                         [:draft-patches :stage-manifest]
+                         [:stage-manifest :guard-risk]]}
+   :recipe/limits {:sandbox :sandbox/workspace-write
+                   :tokens 3600
+                   :wall-clock-ms 120000
+                   :files-max 12
+                   :allowed-tools [:tool/fs :tool/clojure :tool/llm]}
+   :recipe/validations {:pre [:validator/input-schema]
+                        :invariants [:validator/allowed-ops :validator/limits :validator/side-effects]
+                        :post [:validator/output-schema]}
+   :recipe/audit {:trace [:inputs :decisions :tool-calls :patches/draft]
+                  :hash-fields [:patches/draft :side-effects/manifest]}
+   :recipe/policies {:policy/approvals [:approval/steward-signoff]
+                     :policy/tests [:test/lint :test/recipe-conformance]
+                     :policy/gates {:stability/min :stability/beta
+                                    :sandbox/profile :sandbox/workspace-write}}
+   :recipe/promotion {:promotion/spec-sections ["2.1" "2.2" "3.3" "3.4" "3.5" "3.6" "4.7" "5" "6" "8.1" "9" "11"]
+                      :promotion/rules [{:from :stability/experimental
+                                         :to :stability/beta
+                                         :requirements [:policy/approvals :policy/tests]
+                                         :policies {:policy/approvals [:approval/steward-signoff]
+                                                    :policy/tests [:test/lint :test/recipe-conformance]}}
+                                        {:from :stability/beta
+                                         :to :stability/ga
+                                         :requirements [:evidence/repeatable-runs :policy/approvals :policy/tests]}
+                                        {:from :stability/ga
+                                         :to :stability/frozen
+                                         :requirements [:steward/freeze :policy/approvals]}]}
+   :recipe/errors {:retry-policy {:max-attempts 1 :backoff-ms 0}
+                   :fallback [:recipe/pattern.map-plan]}
+   :recipe/side-effects {:writes [:workspace/files]
+                         :commands [:clojure/process]
+                         :audit [:side-effects/manifest :meta/self-report]}}
+
+  {:entity/type :recipe/definition
+   :entity/path "/recipes/l3/extension-code-refactor-reviewed"
+   :entity/name "L3 refactor with review gates"
+   :entity/status :entity.status/active
+   :entity/version 1
+   :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+   :entity/created-by :mission/M-20251121-833
+   :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+   :entity/updated-by :mission/M-20251121-833
+   :entity/description "Extension that wraps the domain refactor recipe with extra validations and conservative limits (§§3.3–3.6, §4.7, §5.1, §5.3, §9, §11)."
+   :recipe/ident :recipe/extension.code-refactor-reviewed
+   :recipe/version 1
+   :recipe/owner :role/steward
+   :recipe/layer :layer/l3
+   :recipe/stability :stability/experimental
+   :recipe/intent-tags [:intent/code-change :intent/refactor :intent/review]
+   :recipe/required-capabilities [:capability/code :capability/llm :capability/fs]
+   :recipe/extends :recipe/domain.code-refactor
+   :recipe/match {:tags [:intent/review]
+                  :constraints {:sandbox [:sandbox/workspace-write]
+                                :languages [:lang/clojure :lang/typescript]}}
+   :recipe/input-schema {:required [:context/bundle :plan/nodes :code.definition/graph]
+                         :optional [:spec/test-contracts]}
+   :recipe/output-schema {:produces [:patches/draft :plan/coverage :side-effects/manifest]
+                          :status [:status/ok :status/failed]
+                          :side-effects {:writes [:workspace/files]
+                                         :commands [:clojure/process]}
+                          :summary "Refactor patches with gated review steps."}
+   :recipe/plan {:ops #{:op/tool-call :op/llm-call :op/branch :op/retry}
+                 :steps [{:recipe.step/id :draft-refactor
+                          :recipe.step/name "Draft refactor"
+                          :recipe.step/op :op/llm-call
+                          :recipe.step/description "LLM proposes minimal refactor with doc/test hints."
+                          :recipe.step/inputs [:context/bundle :plan/nodes]
+                          :recipe.step/outputs [:patches/draft :plan/coverage]
+                          :recipe.step/tools [:tool/llm]
+                          :recipe.step/limits {:tokens 1400 :time-ms 7000 :files-max 8}
+                          :recipe.step/validations [:validator/plan-shape :validator/coverage]}
+                         {:recipe.step/id :review-guard
+                          :recipe.step/name "Review guard"
+                          :recipe.step/op :op/branch
+                          :recipe.step/description "Require side-effect manifest to stay under extension limits."
+                          :recipe.step/inputs [:patches/draft]
+                          :recipe.step/outputs [:patches/draft]
+                          :recipe.step/tools [:tool/fs]
+                          :recipe.step/limits {:time-ms 2000 :files-max 8}
+                          :recipe.step/validations [:validator/side-effects]}
+                         {:recipe.step/id :retry-lite
+                          :recipe.step/name "Retry with tighter budget"
+                          :recipe.step/op :op/retry
+                          :recipe.step/description "Single retry with halved tokens if coverage missing."
+                          :recipe.step/inputs [:patches/draft :plan/coverage]
+                          :recipe.step/outputs [:patches/draft :plan/coverage]
+                          :recipe.step/limits {:tokens 700 :time-ms 3000}
+                          :recipe.step/validations [:validator/coverage]}]
+                 :edges [[:draft-refactor :review-guard]
+                         [:review-guard :retry-lite]]}
+   :recipe/limits {:sandbox :sandbox/workspace-write
+                   :tokens 2400
+                   :wall-clock-ms 90000
+                   :files-max 8
+                   :allowed-tools [:tool/fs :tool/clojure :tool/llm]}
+   :recipe/validations {:pre [:validator/input-schema]
+                        :invariants [:validator/allowed-ops :validator/limits]
+                        :post [:validator/output-schema]}
+   :recipe/audit {:trace [:inputs :decisions :tool-calls :patches/draft]
+                  :hash-fields [:patches/draft]}
+   :recipe/policies {:policy/approvals [:approval/steward-signoff]
+                     :policy/tests [:test/lint :test/recipe-conformance]
+                     :policy/gates {:stability/min :stability/beta
+                                    :sandbox/profile :sandbox/workspace-write}}
+   :recipe/promotion {:promotion/spec-sections ["2.1" "2.2" "3.3" "3.4" "3.5" "3.6" "4.7" "5" "6" "8.1" "9" "11"]
+                      :promotion/rules [{:from :stability/experimental
+                                         :to :stability/beta
+                                         :requirements [:policy/approvals :policy/tests]
+                                         :policies {:policy/approvals [:approval/steward-signoff]
+                                                    :policy/tests [:test/lint :test/recipe-conformance]}}
+                                        {:from :stability/beta
+                                         :to :stability/ga
+                                         :requirements [:evidence/repeatable-runs :policy/approvals :policy/tests]}
+                                        {:from :stability/ga
+                                         :to :stability/frozen
+                                         :requirements [:steward/freeze :policy/approvals]}]}
+   :recipe/errors {:retry-policy {:max-attempts 2 :backoff-ms 500}
+                   :fallback [:recipe/domain.code-refactor]}
+   :recipe/side-effects {:writes [:workspace/files]
+                         :commands [:clojure/process]
+                         :audit [:meta/self-report]}}]}

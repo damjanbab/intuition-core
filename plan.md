@@ -2,7 +2,7 @@
 
 ## 1. Stabilize Mission Execution (current system)
 - Finish bootstrap → branch snapshot → lint/tests/codetype → report/approval flow.
-- Add smoke/integration tests for the dev helpers (`dev.list-missions`, `dev.run-mission`, etc.).
+- Add smoke/integration tests for the dev helpers (`dev.list-missions`, `dev.run-mission`, etc.) as gateway-only shims that warn and forward to `dev.agent-gateway run-mission` with a `context-bundle.edn` payload.
 - Continue handing missions manually, capturing evidence under `missions/logs/<mission-id>/`.
 
 ## 2. Define Target Spec Schema & Intake

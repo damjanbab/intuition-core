@@ -177,10 +177,30 @@
   :action/description "Runs coverage (requirements+tests), DAG, and resource-conflict validators before steward review (§§3.3–3.6, §4.7, §5.1, §9)."
   :action/invariants [:spec/p3.3 :spec/p3.5 :spec/p4.7 :spec/p5.1 :spec/p9.1]
   :action/permissions [:permission/spec.manage]
-  :action/config-spec :action.work-plan/validate-config
+ :action/config-spec :action.work-plan/validate-config
   :action/output-spec :action.work-plan/validate-output
   :action/handler "intuition.sfs.actions.handlers/work-plan-validate"
   :action/tags [:action.tag/spec :action.tag/tests]}
+
+ {:action/ident :action/recipe.validate-catalog
+  :action/name "Validate recipe catalog"
+  :action/description "Validates recipe contract metadata, match rules, plan ops, budgets, and audit fields (§§2.1–2.2, §§3.3–3.6, §4.7, §5.1, §5.3, §8.1, §9, §11)."
+  :action/invariants [:spec/p2.1 :spec/p2.2 :spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p3.6 :spec/p4.7 :spec/p5.1 :spec/p5.3 :spec/p8.1 :spec/p9.1 :spec/p11.1]
+  :action/permissions [:permission/tests.run]
+  :action/config-spec :action.recipe/validate-config
+  :action/output-spec :action.recipe/validate-output
+  :action/handler "intuition.recipes.runtime/validate-catalog-action"
+  :action/tags [:action.tag/spec :action.tag/tests]}
+
+ {:action/ident :action/planner.route
+  :action/name "Route planner request"
+  :action/description "Routes a request to a governed recipe by tags/constraints, applies optional classifier, and synthesizes a guarded ephemeral recipe when no match fits (SYSTEM_SPEC §§2.1–2.2, §§3.3–3.6, §4.7, §5.1, §5.3, §8.1, §9, §11)."
+  :action/invariants [:spec/p2.1 :spec/p2.2 :spec/p3.3 :spec/p3.4 :spec/p3.5 :spec/p3.6 :spec/p4.7 :spec/p5.1 :spec/p5.3 :spec/p8.1 :spec/p9.1 :spec/p11.1]
+  :action/permissions [:permission/missions.manage]
+  :action/config-spec :action.planner/route-config
+  :action/output-spec :action.planner/route-output
+  :action/handler "intuition.planner.router/route-action"
+  :action/tags [:action.tag/spec :action.tag/planner]}
 
  {:action/ident :action/work-plan.publish
   :action/name "Publish work plan"

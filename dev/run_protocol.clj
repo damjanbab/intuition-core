@@ -1,5 +1,8 @@
 (ns dev.run-protocol
+  "Deprecated protocol runner. Direct protocol execution bypasses the Agent Gateway and is blocked per SYSTEM_SPEC
+  §§2.1–2.2, §§3.3–3.6, §5, §6, and §9. Use dev.agent-gateway run-mission with a context bundle instead."
   (:require
+   [dev.agent-gateway :as gateway]
    [intuition.datomic :as db]
    [intuition.dictionary :as dictionary]
    [intuition.sfs.permissions :as perms]
@@ -19,8 +22,15 @@
 
 (def permissions perms/default-permissions)
 
+(defn- warn
+  []
+  (binding [*out* *err*]
+    (println "WARNING: dev.run-protocol is deprecated. Use dev.agent-gateway run-mission with a context bundle.")
+    (println "Direct protocol execution is frozen (SYSTEM_SPEC §§2.1–2.2, §§3.3–3.6, §5, §6, §9).")))
+
 (defn run-mission-standard!
   []
+  (warn)
   (let [conn (db/ensure-db!)]
     (dictionary/seed-all! conn)
     (protocols/run!
@@ -32,5 +42,9 @@
                                   (println "[dev]" event payload))}})))
 
 (defn -main
-  [& _]
-  (prn (run-mission-standard!)))
+  [& args]
+  (if (seq args)
+    (do
+      (warn)
+      (apply gateway/-main args))
+    (run-mission-standard!)))

@@ -1097,3 +1097,34 @@
 (s/def :action.mission/archive-output
   (s/keys :req [:action/status :archive/path]
           :opt [:artifacts/captured?]))
+
+;; Recipe catalog + planner routing -----------------------------------------
+
+(s/def :recipe/catalog-path non-blank-string?)
+(s/def :recipe/count pos-int?)
+(s/def :recipe/idents (s/coll-of keyword? :kind vector? :min-count 1))
+
+(s/def :action.recipe/validate-config
+  (s/keys :req [:mission/id]
+          :opt [:recipe/catalog-path]))
+
+(s/def :action.recipe/validate-output
+  (s/keys :req [:action/status :recipe/count :recipe/idents]
+          :opt [:recipe/catalog-path]))
+
+(s/def :planner/request map?)
+(s/def :planner/classifier map?)
+(s/def :planner/recipes (s/coll-of map? :kind vector?))
+(s/def :planner/catalog (s/or :path non-blank-string?
+                              :catalog map?))
+(s/def :planner/route map?)
+(s/def :planner/decision keyword?)
+(s/def :planner/recipe keyword?)
+
+(s/def :action.planner/route-config
+  (s/keys :req [:mission/id :planner/request]
+          :opt [:planner/classifier :planner/recipes :planner/catalog]))
+
+(s/def :action.planner/route-output
+  (s/keys :req [:action/status :planner/decision :planner/recipe]
+          :opt [:planner/route]))

@@ -9,6 +9,21 @@
    :llm.surface/name "Plan draft hinting"
    :llm.surface/description "Suggests plan nodes/edges/coverage from spec + graph context; validators decide acceptance."
    :llm.surface/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "9" "11"]
+   :llm.surface/layer :layer/l1
+   :llm.surface/stability :stability/beta
+   :llm.surface/required-tools [:tool/llm]
+   :llm.surface/sandbox-profile :sandbox/read-only
+   :llm.surface/input-schema {:required [:spec/requirements
+                                         :spec/test-contracts
+                                         :code-type/catalog
+                                         :graph/neighbors
+                                         :work-plan/obligations]
+                              :self-report? true}
+   :llm.surface/output-schema {:produces [:plan/nodes :plan/edges :plan/coverage]
+                               :self-report? true}
+   :llm.surface/side-effects {:writes []
+                              :external-calls [:llm/call]
+                              :audit [:meta/self-report]}
    :llm.surface/inputs [:spec/requirements :spec/test-contracts :code-type/catalog :graph/neighbors :work-plan/obligations]
    :llm.surface/outputs [:plan/nodes :plan/edges :plan/coverage]
    :llm.surface/invariants ["Read-only hints; validators enforce coverage/DAG/resource rules."
@@ -21,6 +36,20 @@
    :llm.surface/name "Datomic code proposal"
    :llm.surface/description "Produces Datomic-first code/spec/template proposals that downstream validators and generators apply."
    :llm.surface/spec-sections ["2.1" "2.2" "3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "6" "8.1" "9" "11"]
+   :llm.surface/layer :layer/l2
+   :llm.surface/stability :stability/experimental
+   :llm.surface/required-tools [:tool/llm]
+   :llm.surface/sandbox-profile :sandbox/read-only
+   :llm.surface/input-schema {:required [:mission/context-bundle
+                                         :code.definition/graph
+                                         :code.type/catalog
+                                         :spec/requirements
+                                         :plan/nodes]}
+   :llm.surface/output-schema {:produces [:code/proposals]
+                               :self-report? true}
+   :llm.surface/side-effects {:writes []
+                              :external-calls [:llm/call]
+                              :audit [:meta/self-report]}
    :llm.surface/inputs [:mission/context-bundle :code.definition/graph :code.type/catalog :spec/requirements :plan/nodes]
    :llm.surface/outputs [:code/proposals]
    :llm.surface/invariants ["Never touches files or shell; proposals only."
@@ -34,7 +63,23 @@
    :llm.surface/name "Test/doc suggestion surface"
    :llm.surface/description "Highlights missing tests/docs tied to plan nodes and CodeDefinitions."
    :llm.surface/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "8.1" "9" "11"]
-   :llm.surface/inputs [:context/bundle :code.definition/coverage :doc/coverage :analytics/failures]
+   :llm.surface/layer :layer/l2
+   :llm.surface/stability :stability/experimental
+   :llm.surface/required-tools [:tool/llm]
+   :llm.surface/sandbox-profile :sandbox/read-only
+   :llm.surface/input-schema {:required [:context/bundle
+                                         :code.definition/coverage
+                                         :doc/coverage
+                                         :analytics/failures
+                                         :plan/nodes
+                                         :code.definition/idents
+                                         :mission/id]}
+   :llm.surface/output-schema {:produces [:tests/suggestions :docs/suggestions]
+                               :self-report? true}
+   :llm.surface/side-effects {:writes []
+                              :external-calls [:llm/call]
+                              :audit [:meta/self-report]}
+   :llm.surface/inputs [:context/bundle :code.definition/coverage :doc/coverage :analytics/failures :plan/nodes :code.definition/idents :mission/id]
    :llm.surface/outputs [:tests/suggestions :docs/suggestions]
    :llm.surface/invariants ["Suggestions only; no CI execution."
                             "Targets must be addressable plan nodes or CodeDefinitions."
@@ -47,7 +92,17 @@
    :llm.surface/name "Run analytics digest"
    :llm.surface/description "Summarizes run manifests (ci/merge/plan) into Markdown/EDN digests with trace tokens."
    :llm.surface/spec-sections ["5.1" "5.3" "8.1" "9" "11"]
-   :llm.surface/inputs [:ci/run-manifest :merge/logs :plan/analytics :version/snapshots]
+   :llm.surface/layer :layer/l3
+   :llm.surface/stability :stability/beta
+   :llm.surface/required-tools [:tool/llm]
+   :llm.surface/sandbox-profile :sandbox/read-only
+   :llm.surface/input-schema {:required [:ci/run-manifest :merge/logs :plan/analytics :version/snapshots :analytics/report]}
+   :llm.surface/output-schema {:produces [:summary/markdown :risks :follow-ups]
+                               :self-report? true}
+   :llm.surface/side-effects {:writes []
+                              :external-calls [:llm/call]
+                              :audit [:meta/self-report]}
+   :llm.surface/inputs [:ci/run-manifest :merge/logs :plan/analytics :version/snapshots :analytics/report]
    :llm.surface/outputs [:summary/markdown :risks :follow-ups]
    :llm.surface/invariants ["Read-only; must not mutate manifests."
                             "Must include hashes/ids so digests are auditable."
@@ -60,11 +115,20 @@
    :llm.surface/name "Code graph gap finder"
    :llm.surface/description "Detects missing edges or orphan nodes across code↔test↔doc graph slices."
    :llm.surface/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "8.1" "9" "11"]
-   :llm.surface/inputs [:graph/nodes :graph/edges :code.type/catalog :spec/coverage :plan/coverage]
+   :llm.surface/layer :layer/l3
+   :llm.surface/stability :stability/experimental
+   :llm.surface/required-tools [:tool/llm]
+   :llm.surface/sandbox-profile :sandbox/read-only
+   :llm.surface/input-schema {:required [:graph/nodes :graph/edges :code.type/catalog :spec/coverage :plan/coverage :mission/id]}
+   :llm.surface/output-schema {:produces [:missing-edges :orphan-nodes :rationale]
+                               :self-report? true}
+   :llm.surface/side-effects {:writes []
+                              :external-calls [:llm/call]
+                              :audit [:meta/self-report]}
+   :llm.surface/inputs [:graph/nodes :graph/edges :code.type/catalog :spec/coverage :plan/coverage :mission/id]
    :llm.surface/outputs [:missing-edges :orphan-nodes :rationale]
    :llm.surface/invariants ["Read-only analysis of provided graph slice."
                             "May not propose file edits or locks; suggestions only."]
    :llm.surface/metrics {:true-positive-rate "Validator-confirmed missing edges."
                          :false-positive-rate "Rate of rejected/incorrect flags."
                          :stability "Repeatability of results across seeds."}}]}
-

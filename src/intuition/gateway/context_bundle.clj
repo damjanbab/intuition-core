@@ -18,7 +18,7 @@
    (java.math BigInteger)
    (java.security MessageDigest)))
 
-(def ^:private bundle-id "agent-context-bundle/v1")
+(def ^:private bundle-id "context-bundle/v1")
 (def ^:private bundle-version 1)
 (def ^:private system-spec-watermark ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "8.1" "9" "11"])
 
@@ -390,12 +390,12 @@
   (canonical-path path))
 
 (defn build!
-  "Builds and writes an agent context bundle for the provided mission. Options:
+  "Builds and optionally writes a context bundle for the provided mission. Options:
    - :mission/id (required)
    - :focus/node – optional graph node ident to anchor the neighborhood
    - :bundle – optional existing bundle map used for hints
    - :log/root – mission log root (defaults to missions/logs)
-   - :output/path – override output path
+   - :output/path – when provided, write the canonical bundle (recommended: missions/logs/<id>/context-bundle.edn)
    - :conn – Datomic connection (prepared when omitted)
    Returns the in-memory bundle with :bundle/path and :bundle/sha256 populated when written."
   [{:mission/keys [id]
@@ -405,8 +405,7 @@
     (throw (ex-info "mission/id is required" {:field :mission/id})))
   (let [log-root (or (:log/root opts) default-log-root)
         mission-root (mission-dir log-root id)
-        output (or (:output/path opts)
-                   (canonical-path (io/file mission-root "agent-context-bundle.edn")))
+        output (some-> (:output/path opts) canonical-path)
         conn (ensure-conn! (:conn opts))
         mission-rec (sanitize-mission-record
                      (mission-record {:conn conn

@@ -1,4 +1,4 @@
-(ns agent-context-bundle-test
+(ns context-bundle-test
   (:require
    [clojure.edn :as edn]
    [clojure.java.io :as io]
@@ -8,7 +8,7 @@
 
 (def ^:private mission-id "M-20251121-805")
 (def ^:private focus-ident :mission/M-20251121-805)
-(def ^:private bundle-path "tmp/agent-context-bundle.edn")
+(def ^:private bundle-path "tmp/context-bundle/context-bundle.edn")
 
 (defn- canonical
   [path]
@@ -23,13 +23,14 @@
   (doseq [k ks]
     (is (contains? m k) (str label " missing key " k))))
 
-(deftest agent-context-bundle-shape-and-stability
+(deftest context-bundle-shape-and-stability
   (testing "context bundle captures graph neighborhood, artifacts, and stays stable"
     (support/with-test-conn
       (fn [conn]
         (let [file (io/file bundle-path)]
           (when (.exists file)
             (io/delete-file file true))
+          (io/make-parents file)
           (let [result (context-bundle/build! {:mission/id mission-id
                                                :focus/node focus-ident
                                                :conn conn
@@ -41,8 +42,8 @@
                           :code/types :artifacts/validation :system-spec/sections]]
             (is (.exists file) "bundle file should be written")
             (is (= (canonical bundle-path) (:bundle/path result)))
-            (assert-keys! data required "agent context bundle")
-            (is (= "agent-context-bundle/v1" (:bundle/id data)))
+            (assert-keys! data required "context bundle")
+            (is (= "context-bundle/v1" (:bundle/id data)))
             (is (= mission-id (:mission/id data)))
             (is (seq (:plan/nodes data)) "plan nodes should be present")
             (is (seq (:code/definitions data)) "code definitions should be collected")

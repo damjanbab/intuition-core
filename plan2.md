@@ -194,22 +194,22 @@ Context: Missions through M-20251121-802 are complete. The items below are the r
 
 ---
 
-### Agent Context Bundles & Graph Retrieval
+### Context Bundles & Graph Retrieval
 
-#### Mission ID: M-20251121-815 – Agent Context Bundles from Graph & Artifacts  
+#### Mission ID: M-20251121-815 – Context Bundles from Graph & Artifacts  
 **Root Directory:** `/home/dami/intuition-core`  
 **WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-815/`. Cite `SYSTEM_SPEC` §§3.3–3.6, §4.7, §5.1, §8.1, §9, §11.
 
 **Scope/Tasks**  
-1. Mission log: `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-815/`; keep `agent-context-bundles-notes.md` there.  
-2. Define a canonical “agent context bundle” EDN format that packages: spec fragment, plan nodes, mission record, relevant CodeDefinitions/CodeTypes, tests, docs, system-map neighbors, and validation artifacts (spec/plan/mission/merge/analytics) for a given mission id.  
-3. Implement a runtime (`src/intuition/gateway/context_bundle.clj`) that queries Datomic + code graph and builds this bundle deterministically, given a mission id and optional focus node.  
+1. Mission log: `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-815/`; keep `context-bundles-notes.md` there.  
+2. Define a canonical context bundle EDN format that packages: spec fragment, plan nodes, mission record, relevant CodeDefinitions/CodeTypes, tests, docs, system-map neighbors, and validation artifacts (spec/plan/mission/merge/analytics) for a given mission id.  
+3. Implement a runtime (`src/intuition/gateway/context_bundle.clj`) that queries Datomic + code graph and builds this bundle deterministically, given a mission id and optional focus node; emit to `missions/logs/<id>/context-bundle.edn`.  
 4. Integrate this runtime into the orchestrator/gateway so `run-mission` can emit the bundle path in the manifest, and agent launcher scripts (Codex or others) can use it directly.  
-5. Add tests (`test/agent_context_bundle_test.clj`) asserting that the bundle is well-formed, contains the expected graph neighborhood and artifact paths, and remains stable across runs for the same mission state.
+5. Add tests (`test/context_bundle_test.clj`) asserting that the bundle is well-formed, contains the expected graph neighborhood and artifact paths, and remains stable across runs for the same mission state.
 
 **Testing**  
 - `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-815/lint.txt`  
-- `clojure -M:test -n agent-context-bundle-test` → `/home/dami/intuition-core/missions/logs/M-20251121-815/test.txt`
+- `clojure -M:test -n context-bundle-test` → `/home/dami/intuition-core/missions/logs/M-20251121-815/test.txt`
 
 **Deliverables**  
 - Notes, context bundle runtime/format, gateway/orchestrator integration, and lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-815/`, plus at least one captured bundle file for an existing mission.
@@ -299,7 +299,7 @@ Context: Missions through M-20251121-802 are complete. The items below are the r
 
 **Testing**  
 - `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-819/lint.txt`  
-- `clojure -M:test -n agent-edit-flow-test -n agent-context-bundle-test` (and any additional harness you add) → `/home/dami/intuition-core/missions/logs/M-20251121-819/test.txt`
+- `clojure -M:test -n agent-edit-flow-test -n context-bundle-test` (and any additional harness you add) → `/home/dami/intuition-core/missions/logs/M-20251121-819/test.txt`
 
 **Deliverables**  
 - `agent-eval-notes.md`, spec + mission artifacts, exact Codex invocation/prompt, analytics reports (md+edn), lint/test logs, and a clear summary of diagnostics + optimisation changes under `/home/dami/intuition-core/missions/logs/M-20251121-819/`.
@@ -385,6 +385,324 @@ Context: Missions through M-20251121-802 are complete. The items below are the r
 
 ---
 
+#### Mission ID: M-20251121-830 – Reasoning Dictionary Capture for System Spec 2  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-830/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §8.1, §9, §11.
+
+**Scope/Tasks**  
+1. Log setup: `pwd` to confirm `/home/dami/intuition-core`, then `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-830/`; keep `/home/dami/intuition-core/missions/logs/M-20251121-830/dictionary-notes.md` there.  
+2. Inventory the current catalogs (code/LLM/policy/permissions/templates), entrypoints, bundle formats, and routing rules that matter for the “one entrypoint, single catalog” target in `/home/dami/intuition-core/system_spec_2.md`.  
+3. Extract semantic relationships (what depends on what: recipes ↔ templates ↔ permissions ↔ policies ↔ bundles) so future LLM runs don’t need to hunt context.  
+4. Produce a machine-readable dictionary `/home/dami/intuition-core/missions/logs/M-20251121-830/reasoning-dictionary.edn` and a human summary `/home/dami/intuition-core/missions/logs/M-20251121-830/reasoning-dictionary.md` that map ids, paths, owners, stability tiers, and how to use them.  
+5. Highlight gaps/blockers to align the current system with the target spec (missing templates, duplicate bundle formats, legacy entrypoints) in `/home/dami/intuition-core/missions/logs/M-20251121-830/dictionary-notes.md`.
+
+**Testing**  
+- Info-gathering mission; no code changes required. If any scripts are run, note them in `/home/dami/intuition-core/missions/logs/M-20251121-830/`.
+
+**Deliverables**  
+- `/home/dami/intuition-core/missions/logs/M-20251121-830/dictionary-notes.md`, `/home/dami/intuition-core/missions/logs/M-20251121-830/reasoning-dictionary.edn`, and `/home/dami/intuition-core/missions/logs/M-20251121-830/reasoning-dictionary.md`, capturing catalogs, relationships, and alignment gaps for `/home/dami/intuition-core/system_spec_2.md`.
+
+---
+
+#### Mission ID: M-20251121-831 – Single Catalog Layering & Cleanup  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-831/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §8.1, §9, §11 and `/home/dami/intuition-core/system_spec_2.md`.
+
+**Scope/Tasks**  
+1. Log setup: `pwd` to confirm `/home/dami/intuition-core`, then `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-831/`; keep `/home/dami/intuition-core/missions/logs/M-20251121-831/catalog-notes.md` there.  
+2. Apply the layered catalog model (L0 primitives, L1 patterns, L2 domain recipes, L3 extensions) to the live catalog: update `/home/dami/intuition-core/resources/dictionary/code_types.edn` (and related catalogs) to add layer/stability metadata and move draft/placeholder items to test fixtures.  
+3. Quarantine or delete catalog drift (`/home/dami/intuition-core/resources/dictionary/codetype_inference_sample.edn` and other draft entries) into `/home/dami/intuition-core/test/fixtures/` with notes.  
+4. Add conformance metadata/tests so recipes declare: stability tier, required tools, sandbox profile, input/output schemas, and side-effect manifest shape (aligning with `/home/dami/intuition-core/system_spec_2.md`).  
+5. Capture before/after diffs and any migration steps in `/home/dami/intuition-core/missions/logs/M-20251121-831/catalog-notes.md`.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-831/lint.txt`  
+- `clojure -M:test -n catalog-layering-test` (or added suites) → `/home/dami/intuition-core/missions/logs/M-20251121-831/test.txt`
+
+**Deliverables**  
+- `/home/dami/intuition-core/missions/logs/M-20251121-831/catalog-notes.md`, updated catalogs under `/home/dami/intuition-core/resources/dictionary/`, quarantined fixtures under `/home/dami/intuition-core/test/fixtures/`, and lint/test logs in `/home/dami/intuition-core/missions/logs/M-20251121-831/`.
+
+---
+
+#### Mission ID: M-20251121-832 – Single Entrypoint & Bundle Convergence  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-832/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §5, §6, §9, §11 and `/home/dami/intuition-core/system_spec_2.md`.
+
+**Scope/Tasks**  
+1. Log setup: `pwd` to confirm `/home/dami/intuition-core`, then `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-832/`; keep `/home/dami/intuition-core/missions/logs/M-20251121-832/entrypoint-notes.md` there.  
+2. Remove/deprecate legacy entrypoints (`/home/dami/intuition-core/dev/run_mission.clj`, `/home/dami/intuition-core/dev/run_protocol.clj`, `/home/dami/intuition-core/tmp/run-mission-*`, `/home/dami/intuition-core/tmp/debug-run.clj`) per `/home/dami/intuition-core/missions/logs/M-20251121-824/identity-gaps.edn`; leave shims if needed that forward to gateway with clear warnings.  
+3. Converge bundles: select the canonical bundle schema (context-bundle) and migrate/remove `/home/dami/intuition-core/missions/logs/M-20251121-823/M-20251121-823-BASE/agent-context-bundle.edn` and `/home/dami/intuition-core/tmp/agent-context-bundle.edn` variants; update builder code/docs to emit only the canonical format.  
+4. Update gateway/scheduler docs and examples to reflect the single entrypoint and bundle shape; refresh `/home/dami/intuition-core/plan.md` and `/home/dami/intuition-core/plan2.md` language accordingly.  
+5. Record the final CLI template and sample bundle path in `/home/dami/intuition-core/missions/logs/M-20251121-832/entrypoint-notes.md`.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-832/lint.txt`  
+- `clojure -M:test -n run-mission-pipeline-test` → `/home/dami/intuition-core/missions/logs/M-20251121-832/test.txt`
+
+**Deliverables**  
+- `/home/dami/intuition-core/missions/logs/M-20251121-832/entrypoint-notes.md`, updated docs (`/home/dami/intuition-core/plan.md`, `/home/dami/intuition-core/plan2.md`), canonical bundle artifacts, and lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-832/`.
+
+---
+
+#### Mission ID: M-20251121-833 – Recipe Contract & Planner Integration  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-833/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5.1, §5.3, §8.1, §9, §11 and `/home/dami/intuition-core/system_spec_2.md`.
+
+**Scope/Tasks**  
+1. Log setup: `pwd` to confirm `/home/dami/intuition-core`, then `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-833/`; keep `/home/dami/intuition-core/missions/logs/M-20251121-833/recipe-contract-notes.md` there.  
+2. Implement the recipe/plan/step schema (metadata, input/output schemas, match rules, plan ops, limits, validations, audit fields) in code and data (`/home/dami/intuition-core/resources/dictionary/meta-types.edn`, `/home/dami/intuition-core/resources/dictionary/actions.edn`, related namespaces).  
+3. Wire the planner/router to use the contract: routing by tags/constraints, optional classifier, and guarded ephemeral recipe synthesis when no match fits—aligned with `/home/dami/intuition-core/system_spec_2.md` rules (one-shot, tight budgets, allowed ops only).  
+4. Add conformance tests for the contract and planner flow; include sample recipes across layers (primitive/pattern/domain/extension) and an ephemeral-planner path.  
+5. Document the contract and planner behavior in `/home/dami/intuition-core/missions/logs/M-20251121-833/recipe-contract-notes.md` with concrete examples and links to updated schemas.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-833/lint.txt`  
+- `clojure -M:test -n recipe-contract-test -n planner-router-test` → `/home/dami/intuition-core/missions/logs/M-20251121-833/test.txt`
+
+**Deliverables**  
+- `/home/dami/intuition-core/missions/logs/M-20251121-833/recipe-contract-notes.md`, updated schemas/data, planner/router code, sample recipes, and lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-833/`.
+
+---
+
+#### Mission ID: M-20251121-834 – Promotion, Stability Tiers, and Policy Injection  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-834/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §6, §8.1, §9, §11 and `/home/dami/intuition-core/system_spec_2.md`.
+
+**Scope/Tasks**  
+1. Log setup: `pwd` to confirm `/home/dami/intuition-core`, then `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-834/`; keep `/home/dami/intuition-core/missions/logs/M-20251121-834/promotion-notes.md` there.  
+2. Implement stability tiers and promotion rules (experimental → beta → ga/frozen) for recipes/catalog entries, including capability gating, sandbox profiles, and policy injection (approvals/tests matrices as policies, not baked into recipes).  
+3. Add conformance checks: recipes declare required tools, sandbox profile, limits; enforce forbidden undeclared tools/writes; capture AI self-report when AI is used.  
+4. Introduce governance for AI-suggested recipes: offline validation, lint, conformance, and promotion path; block high-side-effect ops until promotion criteria are met.  
+5. Document promotion flows, policy hooks, and enforcement outcomes in `/home/dami/intuition-core/missions/logs/M-20251121-834/promotion-notes.md`.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-834/lint.txt`  
+- `clojure -M:test -n recipe-promotion-test -n policy-injection-test` → `/home/dami/intuition-core/missions/logs/M-20251121-834/test.txt`
+
+**Deliverables**  
+- `/home/dami/intuition-core/missions/logs/M-20251121-834/promotion-notes.md`, updated policy/tier metadata in catalogs, enforcement code, and lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-834/`.
+
+---
+
+#### Mission ID: M-20251121-835 – Telemetry, Determinism, and Docs Alignment to System Spec 2  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-835/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §8.1, §9, §11 and `/home/dami/intuition-core/system_spec_2.md`.
+
+**Scope/Tasks**  
+1. Log setup: `pwd` to confirm `/home/dami/intuition-core`, then `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-835/`; keep `/home/dami/intuition-core/missions/logs/M-20251121-835/determinism-notes.md` there.  
+2. Implement determinism levers across the pipeline: seeded randomness, canonical ordering of file sets, hash-locked tool/model versions, explicit env capture, forbidden undeclared tool calls/writes; ensure side-effect manifests are emitted.  
+3. Enhance telemetry: step traces, AI self-report (confidence, assumptions, uncertainties), semantic links for context reuse; ensure manifests/logs include bundle paths and policy decisions.  
+4. Align docs (`/home/dami/intuition-core/system_spec_2.md`, `/home/dami/intuition-core/plan.md`, `/home/dami/intuition-core/plan2.md`) to the finalized architecture, flags, and single-entry/bundle stance.  
+5. Capture before/after evidence and any new flags in `/home/dami/intuition-core/missions/logs/M-20251121-835/determinism-notes.md`.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-835/lint.txt`  
+- `clojure -M:test -n determinism-telemetry-test` → `/home/dami/intuition-core/missions/logs/M-20251121-835/test.txt`
+
+**Deliverables**  
+- `/home/dami/intuition-core/missions/logs/M-20251121-835/determinism-notes.md`, updated telemetry/determinism code, refreshed docs, and lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-835/`.
+
+---
+
+#### Mission ID: M-20251121-836 – End-to-End Proving Run (System Spec 2)  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-836/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §6, §8.1, §9, §11 and `/home/dami/intuition-core/system_spec_2.md`.
+
+**Scope/Tasks**  
+1. Log setup: `pwd` to confirm `/home/dami/intuition-core`, then `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-836/`; keep `/home/dami/intuition-core/missions/logs/M-20251121-836/e2e-notes.md` there.  
+2. Prepare a representative request set (code change, refactor, analysis) using the canonical bundle format; record bundle paths in `/home/dami/intuition-core/missions/logs/M-20251121-836/e2e-notes.md`.  
+3. Run end-to-end via scheduler → gateway with AI off, then AI on (one-shot slots only), capturing manifests, traces, and artifacts under `/home/dami/intuition-core/missions/logs/M-20251121-836/`.  
+4. Collect validation outcomes: lint, tests, policy decisions, side-effect manifests, AI self-reports; store in the mission log.  
+5. Summarize pass/fail, timing, and any unexpected behavior in `/home/dami/intuition-core/missions/logs/M-20251121-836/e2e-notes.md`.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-836/lint.txt`  
+- `clojure -M:test -n run-mission-pipeline-test -n determinism-telemetry-test` → `/home/dami/intuition-core/missions/logs/M-20251121-836/test.txt`
+
+**Deliverables**  
+- `/home/dami/intuition-core/missions/logs/M-20251121-836/e2e-notes.md`, bundles/manifests/logs/traces for both AI-off and AI-on runs, and lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-836/`.
+
+---
+
+#### Mission ID: M-20251121-837 – Findings Analysis & Remediation Plan  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-837/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §8.1, §9, §11 and `/home/dami/intuition-core/system_spec_2.md`.
+
+**Scope/Tasks**  
+1. Log setup: `pwd` to confirm `/home/dami/intuition-core`, then `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-837/`; keep `/home/dami/intuition-core/missions/logs/M-20251121-837/findings-notes.md` there.  
+2. Analyze outputs from `/home/dami/intuition-core/missions/logs/M-20251121-836/` (AI-off/on runs): failures, flakiness, performance, policy breaches, catalog gaps.  
+3. Produce a remediation plan with owners, targeted fixes, and the tests/flags they impact; capture in `/home/dami/intuition-core/missions/logs/M-20251121-837/findings-notes.md`.  
+4. If small fixes are obvious (config/docs), apply them and record diffs; otherwise, list follow-up missions needed.  
+5. Summarize risk and priority to proceed to optimization.
+
+**Testing**  
+- If code changes occur: `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-837/lint.txt`; `clojure -M:test` (targeted) → `/home/dami/intuition-core/missions/logs/M-20251121-837/test.txt`. If no code changes, note “not run”.
+
+**Deliverables**  
+- `/home/dami/intuition-core/missions/logs/M-20251121-837/findings-notes.md`, any applied diffs, and lint/test logs (or note not run) under `/home/dami/intuition-core/missions/logs/M-20251121-837/`.
+
+---
+
+#### Mission ID: M-20251121-838 – Optimization & Regression Retest  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-838/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §6, §8.1, §9, §11 and `/home/dami/intuition-core/system_spec_2.md`.
+
+**Scope/Tasks**  
+1. Log setup: `pwd` to confirm `/home/dami/intuition-core`, then `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-838/`; keep `/home/dami/intuition-core/missions/logs/M-20251121-838/optimization-notes.md` there.  
+2. Implement prioritized fixes/optimizations from `/home/dami/intuition-core/missions/logs/M-20251121-837/findings-notes.md` (e.g., routing thresholds, template tweaks, policy/flag defaults, perf caps).  
+3. Rerun the end-to-end scenarios from `/home/dami/intuition-core/missions/logs/M-20251121-836/` (AI-off/on) to confirm regressions are resolved and performance/quality improved; capture manifests/logs/traces under `/home/dami/intuition-core/missions/logs/M-20251121-838/`.  
+4. Record metrics deltas (time, retries, failures) and updated risk in `/home/dami/intuition-core/missions/logs/M-20251121-838/optimization-notes.md`.  
+5. If gaps remain, list follow-up actions.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-838/lint.txt`  
+- `clojure -M:test -n run-mission-pipeline-test -n determinism-telemetry-test` → `/home/dami/intuition-core/missions/logs/M-20251121-838/test.txt`
+
+**Deliverables**  
+- `/home/dami/intuition-core/missions/logs/M-20251121-838/optimization-notes.md`, updated configs/code, rerun artifacts, and lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-838/`.
+
+---
+
+#### Mission ID: M-20251121-901 – UI Design System & Tokens  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-901/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §8.1, §9, §11 and `/home/dami/intuition-core/design.md`. Work on a separate UI branch; do not run SfS test aliases.
+
+**Scope/Tasks**  
+1. Log setup: `pwd` to confirm `/home/dami/intuition-core`, then `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-901/`; keep `/home/dami/intuition-core/missions/logs/M-20251121-901/ui-tokens-notes.md` there.  
+2. Define UI design tokens (typography scale, spacing, radii, palette, accents per entity type) as data under `/home/dami/intuition-core/resources/ui/tokens.edn`; add a small README at `/home/dami/intuition-core/resources/ui/README.md`.  
+3. Add a shared shell/chrome style guide (identity bar, overview band, rails, pane chrome) as a documented spec in `/home/dami/intuition-core/resources/ui/shell.edn` plus a short explainer in `/home/dami/intuition-core/missions/logs/M-20251121-901/ui-tokens-notes.md`.  
+4. Set up a UI test lane separate from SfS (e.g., `clojure -M:test-ui` or chosen UI runner); document the command in the notes.  
+5. Record branch name and sandbox path in the notes; avoid touching SfS code/tests.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-901/lint.txt`  
+- UI lane tests (e.g., `clojure -M:test-ui` or equivalent) → `/home/dami/intuition-core/missions/logs/M-20251121-901/test.txt`
+
+**Deliverables**  
+- `/home/dami/intuition-core/missions/logs/M-20251121-901/ui-tokens-notes.md`, token files under `/home/dami/intuition-core/resources/ui/`, lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-901/`.
+
+---
+
+#### Mission ID: M-20251121-902 – UI Shell & Workspace Layouts  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-902/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §8.1, §9, §11 and `/home/dami/intuition-core/design.md`. Use separate UI branch and test lane; avoid SfS tests/sandboxes.
+
+**Scope/Tasks**  
+1. Log setup: `pwd` to confirm `/home/dami/intuition-core`, then `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-902/`; keep `/home/dami/intuition-core/missions/logs/M-20251121-902/ui-shell-notes.md` there.  
+2. Implement the shared shell (top bar, identity bar, overview band, context/action rails, pane chrome) using tokens from `/home/dami/intuition-core/resources/ui/tokens.edn`.  
+3. Add workspace layout presets (Explore/Edit/Review) and pane docking model (left/main/right/bottom/floating), recording configs under `/home/dami/intuition-core/resources/ui/layouts.edn`.  
+4. Ensure shell components are data-driven (read tokens/layout configs) and scoped to UI branch/sandbox; do not touch SfS namespaces.  
+5. Document branch, sandbox, and any shared assets touched in `/home/dami/intuition-core/missions/logs/M-20251121-902/ui-shell-notes.md`.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-902/lint.txt`  
+- UI lane tests (e.g., `clojure -M:test-ui`) → `/home/dami/intuition-core/missions/logs/M-20251121-902/test.txt`
+
+**Deliverables**  
+- `/home/dami/intuition-core/missions/logs/M-20251121-902/ui-shell-notes.md`, shell/layout code/config, lint/test logs in `/home/dami/intuition-core/missions/logs/M-20251121-902/`.
+
+---
+
+#### Mission ID: M-20251121-903 – Entity View & Mini-Graph  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-903/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §8.1, §9, §11 and `/home/dami/intuition-core/design.md`. UI branch/sandbox only.
+
+**Scope/Tasks**  
+1. Log setup: `pwd` to confirm `/home/dami/intuition-core`, then `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-903/`; keep `/home/dami/intuition-core/missions/logs/M-20251121-903/entity-view-notes.md` there.  
+2. Build the entity view: identity bar, breadcrumb/trail, relationship pills, mini-graph panel (1–2 hop view), and “next steps” strip per `/home/dami/intuition-core/design.md`.  
+3. Make it data-driven: feed from catalog/graph data (no hardcoded nodes); stub data may live under `/home/dami/intuition-core/resources/ui/fixtures/` if needed, noted in the mission log.  
+4. Implement interactions: hover previews on pills, side pane expansion, mini-graph grouping for >N neighbors.  
+5. Document data contracts (inputs/outputs) for the mini-graph and relationship strip in `/home/dami/intuition-core/missions/logs/M-20251121-903/entity-view-notes.md`.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-903/lint.txt`  
+- UI lane tests (component/integration) → `/home/dami/intuition-core/missions/logs/M-20251121-903/test.txt`
+
+**Deliverables**  
+- `/home/dami/intuition-core/missions/logs/M-20251121-903/entity-view-notes.md`, entity/graph components, fixtures (if any), lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-903/`.
+
+---
+
+#### Mission ID: M-20251121-904 – App Space & Search/Facets  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-904/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §8.1, §9, §11 and `/home/dami/intuition-core/design.md`. UI branch/sandbox only.
+
+**Scope/Tasks**  
+1. Log setup: `pwd` to confirm `/home/dami/intuition-core`, then `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-904/`; keep `/home/dami/intuition-core/missions/logs/M-20251121-904/app-space-notes.md` there.  
+2. Implement App Space: search bar with typeahead and quick filters, facets (domain, team, data used, status), results list/cards, and relationship panel for selected app as per `/home/dami/intuition-core/design.md`.  
+3. Wire to data (or fixtures under `/home/dami/intuition-core/resources/ui/fixtures/`) with clear contracts for search/facet APIs; avoid SfS data paths.  
+4. Add curated/auto collections (recent, trending, new/changed) as data-driven lists.  
+5. Capture API/contract definitions and branch/sandbox info in `/home/dami/intuition-core/missions/logs/M-20251121-904/app-space-notes.md`.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-904/lint.txt`  
+- UI lane tests (search/facet components) → `/home/dami/intuition-core/missions/logs/M-20251121-904/test.txt`
+
+**Deliverables**  
+- `/home/dami/intuition-core/missions/logs/M-20251121-904/app-space-notes.md`, App Space UI code, API/contracts, fixtures if used, lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-904/`.
+
+---
+
+#### Mission ID: M-20251121-905 – Health, Activity, and Traceability UI  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-905/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §8.1, §9, §11 and `/home/dami/intuition-core/design.md`. UI branch/sandbox only.
+
+**Scope/Tasks**  
+1. Log setup: `pwd` to confirm `/home/dami/intuition-core`, then `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-905/`; keep `/home/dami/intuition-core/missions/logs/M-20251121-905/health-ui-notes.md` there.  
+2. Implement health cues: global health strip, entity health chips in identity bar, inline impact indicators, and subtle alerts per `/home/dami/intuition-core/design.md`.  
+3. Implement Activity/traceability pane: merged timeline (schema/code changes, deployments, missions, incidents), filters, and compact charts for health/impact.  
+4. Ensure data-driven feeds (no hardcoded samples except fixtures under `/home/dami/intuition-core/resources/ui/fixtures/` if needed) and document data contracts in the mission notes.  
+5. Keep separation from SfS tests/branches; log branch/sandbox paths.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-905/lint.txt`  
+- UI lane tests (components/timeline) → `/home/dami/intuition-core/missions/logs/M-20251121-905/test.txt`
+
+**Deliverables**  
+- `/home/dami/intuition-core/missions/logs/M-20251121-905/health-ui-notes.md`, health/traceability UI code, data contracts/fixtures, lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-905/`.
+
+---
+
+#### Mission ID: M-20251121-906 – Editors & Actions (Type/Code/Nav)  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-906/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §8.1, §9, §11 and `/home/dami/intuition-core/design.md`. UI branch/sandbox only.
+
+**Scope/Tasks**  
+1. Log setup: `pwd` to confirm `/home/dami/intuition-core`, then `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-906/`; keep `/home/dami/intuition-core/missions/logs/M-20251121-906/editors-notes.md` there.  
+2. Implement editor profiles inside the shared shell: Type/schema editor, Code app editor, Nav/layout editor—using the pane chrome, modes (View/Edit/Review), and tokenized styles.  
+3. Wire actions/rails: context-sensitive actions (Edit, Run tests, Compose mission, etc.) per entity type; ensure permissions/visibility are data-driven.  
+4. Add mode clarity (View/Edit/Review) and ensure consistent shell behavior across editors; document data contracts (what each editor needs/produces) in the notes.  
+5. Keep work isolated to UI branch/sandbox and UI test lane.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-906/lint.txt`  
+- UI lane tests (editor components) → `/home/dami/intuition-core/missions/logs/M-20251121-906/test.txt`
+
+**Deliverables**  
+- `/home/dami/intuition-core/missions/logs/M-20251121-906/editors-notes.md`, editor UIs/action rails, data contracts, lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-906/`.
+
+---
+
+#### Mission ID: M-20251121-907 – UI E2E & Data-Driven Validation  
+**Root Directory:** `/home/dami/intuition-core`  
+**WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-907/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §8.1, §9, §11 and `/home/dami/intuition-core/design.md`. UI branch/sandbox only; no SfS tests.
+
+**Scope/Tasks**  
+1. Log setup: `pwd` to confirm `/home/dami/intuition-core`, then `mkdir -p /home/dami/intuition-core/missions/logs/M-20251121-907/`; keep `/home/dami/intuition-core/missions/logs/M-20251121-907/ui-e2e-notes.md` there.  
+2. Define UI data contracts and fixtures to drive the UI end-to-end (entity view, mini-graph, App Space, health/activity, editors). Store fixtures under `/home/dami/intuition-core/resources/ui/fixtures/` and document schemas in the notes.  
+3. Run UI E2E tests in the UI lane (e.g., `clojure -M:test-ui-e2e` or chosen runner) to cover the full shell/flows; record commands and outputs.  
+4. Capture screenshots/artifacts and note any gaps or regressions; produce a brief summary of pass/fail and performance in the mission log.  
+5. Keep separation: branch, sandbox, and tests isolated from SfS; note any shared files touched.
+
+**Testing**  
+- `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-907/lint.txt`  
+- UI E2E tests (UI lane) → `/home/dami/intuition-core/missions/logs/M-20251121-907/test.txt`
+
+**Deliverables**  
+- `/home/dami/intuition-core/missions/logs/M-20251121-907/ui-e2e-notes.md`, fixtures under `/home/dami/intuition-core/resources/ui/fixtures/`, screenshots/artifacts, and lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-907/`.
+
+---
+
 #### Mission ID: M-20251121-823 – Scheduler + LLM Cutover & DR Run  
 **Root Directory:** `/home/dami/intuition-core`  
 **WARNING:** Zero context. Evidence under `/home/dami/intuition-core/missions/logs/M-20251121-823/`. Cite `SYSTEM_SPEC` §§2.1–2.2, §§3.3–3.6, §4.7, §5, §6, §8.1, §9, §11.
@@ -434,7 +752,7 @@ Context: Missions through M-20251121-802 are complete. The items below are the r
 
 **Testing**  
 - `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-824/lint.txt`  
-- `clojure -M:test -n llm-harness-test -n agent-context-bundle-test` → `/home/dami/intuition-core/missions/logs/M-20251121-824/test.txt`
+- `clojure -M:test -n llm-harness-test -n context-bundle-test` → `/home/dami/intuition-core/missions/logs/M-20251121-824/test.txt`
 
 **Deliverables**  
 - `identity-audit-notes.md`, `identity-audit-report.md`, `identity-gaps.edn`, lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-824/`.
@@ -454,7 +772,7 @@ Context: Missions through M-20251121-802 are complete. The items below are the r
 
 **Testing**  
 - `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-825/lint.txt`  
-- `clojure -M:test -n run-mission-pipeline-test -n llm-harness-test -n agent-context-bundle-test` → `/home/dami/intuition-core/missions/logs/M-20251121-825/test.txt`
+- `clojure -M:test -n run-mission-pipeline-test -n llm-harness-test -n context-bundle-test` → `/home/dami/intuition-core/missions/logs/M-20251121-825/test.txt`
 
 **Deliverables**  
 - Notes, updated code/docs, lint/test logs, and a concise “before/after” inventory of entrypoints/context paths under `/home/dami/intuition-core/missions/logs/M-20251121-825/`.
@@ -474,7 +792,7 @@ Context: Missions through M-20251121-802 are complete. The items below are the r
 
 **Testing**  
 - `clojure -M:lint` → `/home/dami/intuition-core/missions/logs/M-20251121-826/lint.txt`  
-- `clojure -M:test -n llm-harness-test -n agent-context-bundle-test -n plan-generator-integration-test` → `/home/dami/intuition-core/missions/logs/M-20251121-826/test.txt`
+- `clojure -M:test -n llm-harness-test -n context-bundle-test -n plan-generator-integration-test` → `/home/dami/intuition-core/missions/logs/M-20251121-826/test.txt`
 
 **Deliverables**  
 - Notes, updated surfaces/meta-types/bundle projections, sample non-code spec + mission artifacts, lint/test logs under `/home/dami/intuition-core/missions/logs/M-20251121-826/`.

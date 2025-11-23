@@ -3,6 +3,7 @@
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.test :refer [deftest is]]
+   [intuition.code.runtime :as code]
    [intuition.sfs.actions.handlers :as handlers]
    [intuition.sfs.actions.runtime :as actions]
    [intuition.sfs.env.bootstrap :as bootstrap]
@@ -15,6 +16,30 @@
                      (str "codetype-generation-test-" (UUID/randomUUID)))]
     (.mkdirs dir)
     dir))
+
+(defn- load-catalog
+  [path]
+  (-> path io/file slurp edn/read-string))
+
+(def code-types-source "resources/dictionary/code_types.edn")
+(def code-types-fixtures "test/fixtures/code_types_test_fixtures.edn")
+
+(defn- fixture-code-types
+  []
+  (let [base (load-catalog code-types-source)
+        fixtures (when (.exists (io/file code-types-fixtures))
+                   (load-catalog code-types-fixtures))
+        catalog (vec (concat base fixtures))
+        types (filter #(= :code/type (:entity/type %)) catalog)]
+    {:types types
+     :type-map (into {} (map (juxt :code.type/ident identity) types))}))
+
+(defn- with-fixture-code-types
+  [f]
+  (let [{:keys [types type-map]} (fixture-code-types)]
+    (with-redefs [code/code-types (constantly types)
+                  code/type-by-ident (fn [ident] (get type-map ident))]
+      (f))))
 
 (defn- delete-tree [^java.io.File path]
   (when (and path (.exists path))
@@ -55,87 +80,95 @@
       (edn/read-string (slurp file)))))
 
 (deftest codetype-generation-produces-artifacts
-  (with-repo-and-conn
-    (fn [repo-root conn]
-      (let [mission-id "M-GEN-001"
-            sandbox (sandbox-path repo-root)
-            {:keys [result]} (actions/execute!
-                              {:conn conn
-                               :action/ident :action/codetype.generate
-                               :config {:mission/id mission-id
-                                        :agent/id "tester"
-                                        :sandbox/root sandbox
-                                        :codetype/ident :code.type/codex.sample}
-                               :permissions #{:permission/env.bootstrap}})
-            artifact (io/file sandbox "src" "generated" "sample_runtime.clj")
-            stamp (io/file sandbox ".codetype"
-                           (str (bootstrap/sanitize-fragment (name :code.type/codex.sample))
-                                ".edn"))]
-        (is (= :status/ok (:action/status result)))
-        (is (.exists artifact) "Generated file should exist")
-        (is (.exists stamp) "Stamp file should exist")
-        (is (= (:codetype/ident result) :code.type/codex.sample))
-        (is (seq (:codetype/generated-files result)))
-        (let [log (generation-log repo-root mission-id)]
-          (is (seq (:codetype/generations log)))
-          (is (= [mission-id]
-                 (->> (:codetype/generations log)
-                      (map :mission/id)
-                      set
-                      vec))))))))
+  (with-fixture-code-types
+    (fn []
+      (with-repo-and-conn
+        (fn [repo-root conn]
+          (let [mission-id "M-GEN-001"
+                sandbox (sandbox-path repo-root)
+                {:keys [result]} (actions/execute!
+                                  {:conn conn
+                                   :action/ident :action/codetype.generate
+                                   :config {:mission/id mission-id
+                                            :agent/id "tester"
+                                            :sandbox/root sandbox
+                                            :codetype/ident :code.type/codex.sample}
+                                   :permissions #{:permission/env.bootstrap}})
+                artifact (io/file sandbox "src" "generated" "sample_runtime.clj")
+                stamp (io/file sandbox ".codetype"
+                               (str (bootstrap/sanitize-fragment (name :code.type/codex.sample))
+                                    ".edn"))]
+            (is (= :status/ok (:action/status result)))
+            (is (.exists artifact) "Generated file should exist")
+            (is (.exists stamp) "Stamp file should exist")
+            (is (= (:codetype/ident result) :code.type/codex.sample))
+            (is (seq (:codetype/generated-files result)))
+            (let [log (generation-log repo-root mission-id)]
+              (is (seq (:codetype/generations log)))
+              (is (= [mission-id]
+                     (->> (:codetype/generations log)
+                          (map :mission/id)
+                          set
+                          vec))))))))))
 
 (deftest codetype-generation-skips-duplicates
-  (with-repo-and-conn
-    (fn [repo-root conn]
-      (let [mission-id "M-GEN-002"
-            sandbox (sandbox-path repo-root)
-            run! (fn []
-                   (:result (actions/execute!
-                             {:conn conn
-                              :action/ident :action/codetype.generate
-                              :config {:mission/id mission-id
-                                       :agent/id "tester"
-                                       :sandbox/root sandbox
-                                       :codetype/ident :code.type/codex.sample}
-                              :permissions #{:permission/env.bootstrap}})))
-            first-run (run!)
-            second-run (run!)]
-        (is (= :status/ok (:action/status first-run)))
-        (is (= :status/ok (:action/status second-run)))
-        (is (= (:codetype/generated-at first-run)
-               (:codetype/generated-at second-run))
-            "Skip reuses original timestamp")
-        (is (:codetype/skipped? second-run))
-        (let [log (generation-log repo-root mission-id)]
-          (is (= 2 (count (:codetype/generations log))))
-          (is (true? (-> log :codetype/generations second :codetype/skipped?))))))))
+  (with-fixture-code-types
+    (fn []
+      (with-repo-and-conn
+        (fn [repo-root conn]
+          (let [mission-id "M-GEN-002"
+                sandbox (sandbox-path repo-root)
+                run! (fn []
+                       (:result (actions/execute!
+                                 {:conn conn
+                                  :action/ident :action/codetype.generate
+                                  :config {:mission/id mission-id
+                                           :agent/id "tester"
+                                           :sandbox/root sandbox
+                                           :codetype/ident :code.type/codex.sample}
+                                  :permissions #{:permission/env.bootstrap}})))
+                first-run (run!)
+                second-run (run!)]
+            (is (= :status/ok (:action/status first-run)))
+            (is (= :status/ok (:action/status second-run)))
+            (is (= (:codetype/generated-at first-run)
+                   (:codetype/generated-at second-run))
+                "Skip reuses original timestamp")
+            (is (:codetype/skipped? second-run))
+            (let [log (generation-log repo-root mission-id)]
+              (is (= 2 (count (:codetype/generations log))))
+              (is (true? (-> log :codetype/generations second :codetype/skipped?))))))))))
 
 (deftest codetype-generation-errors-when-template-missing
-  (with-repo-and-conn
-    (fn [repo-root conn]
-      (is (thrown-with-msg?
-           clojure.lang.ExceptionInfo
-           #"Generator template not found"
-           (actions/execute!
-            {:conn conn
-             :action/ident :action/codetype.generate
-             :config {:mission/id "M-GEN-003"
-                      :agent/id "tester"
-                      :sandbox/root (sandbox-path repo-root)
-                      :codetype/ident :code.type/codex.sample-missing-template}
-             :permissions #{:permission/env.bootstrap}}))))))
+  (with-fixture-code-types
+    (fn []
+      (with-repo-and-conn
+        (fn [repo-root conn]
+          (is (thrown-with-msg?
+               clojure.lang.ExceptionInfo
+               #"Generator template not found"
+               (actions/execute!
+                {:conn conn
+                 :action/ident :action/codetype.generate
+                 :config {:mission/id "M-GEN-003"
+                          :agent/id "tester"
+                          :sandbox/root (sandbox-path repo-root)
+                          :codetype/ident :code.type/codex.sample-missing-template}
+                 :permissions #{:permission/env.bootstrap}}))))))))
 
 (deftest codetype-generation-errors-when-handler-missing
-  (with-repo-and-conn
-    (fn [repo-root conn]
-      (is (thrown-with-msg?
-           clojure.lang.ExceptionInfo
-           #"Unable to resolve generator function"
-           (actions/execute!
-            {:conn conn
-             :action/ident :action/codetype.generate
-             :config {:mission/id "M-GEN-004"
-                      :agent/id "tester"
-                      :sandbox/root (sandbox-path repo-root)
-                      :codetype/ident :code.type/codex.sample-missing-handler}
-             :permissions #{:permission/env.bootstrap}}))))))
+  (with-fixture-code-types
+    (fn []
+      (with-repo-and-conn
+        (fn [repo-root conn]
+          (is (thrown-with-msg?
+               clojure.lang.ExceptionInfo
+               #"Unable to resolve generator function"
+               (actions/execute!
+                {:conn conn
+                 :action/ident :action/codetype.generate
+                 :config {:mission/id "M-GEN-004"
+                          :agent/id "tester"
+                          :sandbox/root (sandbox-path repo-root)
+                          :codetype/ident :code.type/codex.sample-missing-handler}
+                 :permissions #{:permission/env.bootstrap}}))))))))

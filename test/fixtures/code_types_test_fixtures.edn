@@ -1,0 +1,88 @@
+[
+ {:entity/type :code/type
+  :entity/path "/code/types/generator/sample"
+  :entity/name "Generator sample (fixture)"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-404
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-831
+  :entity/description "Quarantined generator sample used only by tests; moved out of the live catalog per M-20251121-831."
+  :code.type/ident :code.type/codex.sample
+  :code.type/category :code.category/dev
+  :code.type/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3"]
+  :code.type/layer :layer/l3
+  :code.type/stability :stability/experimental
+  :code.type/required-tools [:tool/clojure]
+  :code.type/sandbox-profile :sandbox/workspace-write
+  :code.type/input-schema {:required [:mission/id :codetype/ident :sandbox/root]
+                           :context [:code.type/generator-templates :code.type/generated-artifacts]}
+  :code.type/output-schema {:produces [:codetype/generated-files :codetype/stamp-path]
+                            :side-effects [:codetype/generation-log]}
+  :code.type/side-effects {:writes [:sandbox/files :sandbox/metadata]
+                           :external-calls [:clojure/process]
+                           :audit [:codetype/generation-log]}
+  :code.type/default-validators []
+  :code.type/generator "intuition.codetype.generators/sample-runtime"
+  :code.type/generator-templates ["resources/codetype/sample_handler.clj.tpl"]
+  :code.type/generated-artifacts ["src/generated/sample_runtime.clj"]}
+
+ {:entity/type :code/type
+  :entity/path "/code/types/generator/missing-template"
+  :entity/name "Generator sample – missing template (fixture)"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-404
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-831
+  :entity/description "Test-only CodeType kept in fixtures to assert missing-template handling."
+  :code.type/ident :code.type/codex.sample-missing-template
+  :code.type/category :code.category/dev
+  :code.type/spec-sections ["3.3" "3.4" "4.7" "5.1" "5.3"]
+  :code.type/layer :layer/l3
+  :code.type/stability :stability/experimental
+  :code.type/required-tools [:tool/clojure]
+  :code.type/sandbox-profile :sandbox/workspace-write
+  :code.type/input-schema {:required [:mission/id :codetype/ident :sandbox/root]
+                           :context [:code.type/generator-templates :code.type/generated-artifacts]}
+  :code.type/output-schema {:produces [:codetype/generated-files :codetype/stamp-path]
+                            :side-effects [:codetype/generation-log]}
+  :code.type/side-effects {:writes [:sandbox/files :sandbox/metadata]
+                           :external-calls [:clojure/process]
+                           :audit [:codetype/generation-log]}
+  :code.type/default-validators []
+  :code.type/generator "intuition.codetype.generators/sample-runtime"
+  :code.type/generator-templates ["resources/codetype/does-not-exist.tpl"]
+  :code.type/generated-artifacts ["src/generated/missing_template.clj"]}
+
+ {:entity/type :code/type
+  :entity/path "/code/types/generator/missing-handler"
+  :entity/name "Generator sample – missing handler (fixture)"
+  :entity/status :entity.status/active
+  :entity/version 1
+  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/created-by :mission/M-20251121-404
+  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
+  :entity/updated-by :mission/M-20251121-831
+  :entity/description "Test-only CodeType fixture for unresolved generator var coverage."
+  :code.type/ident :code.type/codex.sample-missing-handler
+  :code.type/category :code.category/dev
+  :code.type/spec-sections ["3.3" "3.5" "4.7" "5.1" "5.3"]
+  :code.type/layer :layer/l3
+  :code.type/stability :stability/experimental
+  :code.type/required-tools [:tool/clojure]
+  :code.type/sandbox-profile :sandbox/workspace-write
+  :code.type/input-schema {:required [:mission/id :codetype/ident :sandbox/root]
+                           :context [:code.type/generator-templates :code.type/generated-artifacts]}
+  :code.type/output-schema {:produces [:codetype/generated-files :codetype/stamp-path]
+                            :side-effects [:codetype/generation-log]}
+  :code.type/side-effects {:writes [:sandbox/files :sandbox/metadata]
+                           :external-calls [:clojure/process]
+                           :audit [:codetype/generation-log]}
+  :code.type/default-validators []
+  :code.type/generator "intuition.codetype.generators/missing-runtime"
+  :code.type/generator-templates ["resources/codetype/sample_handler.clj.tpl"]
+  :code.type/generated-artifacts ["src/generated/missing_handler.clj"]}
+]

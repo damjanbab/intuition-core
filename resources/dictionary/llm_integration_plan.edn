@@ -3,11 +3,11 @@
  :llm.integration/spec-sections ["2.1" "2.2" "3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3" "8.1" "9" "11"]
  :llm.integration/modes [:off :shadow :apply]
  :llm.integration/env-defaults
- {:env/dev-local {:llm.plan-draft/mode :shadow
-                  :llm.code-proposal/mode :shadow
-                  :llm.test-doc-suggestions/mode :shadow
+ {:env/dev-local {:llm.plan-draft/mode :apply
+                  :llm.code-proposal/mode :apply
+                  :llm.test-doc-suggestions/mode :apply
                   :llm.analytics-digest/mode :apply
-                  :llm.code-graph-gaps/mode :shadow}
+                  :llm.code-graph-gaps/mode :apply}
   :env/ci {:llm.plan-draft/mode :off
            :llm.code-proposal/mode :off
            :llm.test-doc-suggestions/mode :off

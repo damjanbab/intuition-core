@@ -12,6 +12,17 @@
   :code.type/ident :code.type/runtime
   :code.type/category :code.category/runtime
   :code.type/spec-sections ["4.7" "7" "9"]
+  :code.type/layer :layer/l1
+  :code.type/stability :stability/ga
+  :code.type/required-tools [:tool/clojure :tool/fs]
+  :code.type/sandbox-profile :sandbox/workspace-write
+  :code.type/input-schema {:required [:mission/id :codetype/ident :sandbox/root]
+                           :context [:code.type/generator-templates :code.type/generated-artifacts]}
+  :code.type/output-schema {:produces [:codetype/generated-files :codetype/stamp-path]
+                            :side-effects [:codetype/generation-log]}
+  :code.type/side-effects {:writes [:sandbox/files :sandbox/metadata]
+                           :external-calls [:clojure/process]
+                           :audit [:codetype/generation-log]}
   :code.type/default-validators [:validator/ns-loads :validator/spec-trace]
   :code.type/generator "intuition.codetype.generators/templated-scaffold"
   :code.type/generator-templates ["resources/codetype/runtime_stub.clj.tpl"]
@@ -30,6 +41,17 @@
   :code.type/ident :code.type/resource
   :code.type/category :code.category/resource
   :code.type/spec-sections ["4.1" "4.2" "4.7" "7"]
+  :code.type/layer :layer/l0
+  :code.type/stability :stability/ga
+  :code.type/required-tools [:tool/clojure :tool/fs]
+  :code.type/sandbox-profile :sandbox/workspace-write
+  :code.type/input-schema {:required [:mission/id :codetype/ident :sandbox/root]
+                           :context [:code.type/generator-templates :code.type/generated-artifacts]}
+  :code.type/output-schema {:produces [:codetype/generated-files :codetype/stamp-path]
+                            :side-effects [:codetype/generation-log]}
+  :code.type/side-effects {:writes [:sandbox/files :sandbox/metadata]
+                           :external-calls [:clojure/process]
+                           :audit [:codetype/generation-log]}
   :code.type/default-validators [:validator/edn-readable :validator/spec-citations]
   :code.type/generator "intuition.codetype.generators/templated-scaffold"
   :code.type/generator-templates ["resources/codetype/resource_stub.edn.tpl"]
@@ -48,6 +70,17 @@
   :code.type/ident :code.type/test
   :code.type/category :code.category/test
   :code.type/spec-sections ["3.5" "5.1" "7" "9"]
+  :code.type/layer :layer/l2
+  :code.type/stability :stability/ga
+  :code.type/required-tools [:tool/clojure :tool/test-runner]
+  :code.type/sandbox-profile :sandbox/workspace-write
+  :code.type/input-schema {:required [:mission/id :codetype/ident :sandbox/root]
+                           :context [:code.type/generator-templates :code.type/generated-artifacts]}
+  :code.type/output-schema {:produces [:codetype/generated-files :codetype/stamp-path]
+                            :side-effects [:codetype/generation-log]}
+  :code.type/side-effects {:writes [:sandbox/files :sandbox/metadata]
+                           :external-calls [:clojure/process]
+                           :audit [:codetype/generation-log]}
   :code.type/default-validators [:validator/test-runner :validator/spec-coverage]
   :code.type/generator "intuition.codetype.generators/templated-scaffold"
   :code.type/generator-templates ["resources/codetype/test_stub.clj.tpl"]
@@ -66,6 +99,17 @@
   :code.type/ident :code.type/dev
   :code.type/category :code.category/dev
   :code.type/spec-sections ["3.6" "7" "9"]
+  :code.type/layer :layer/l3
+  :code.type/stability :stability/beta
+  :code.type/required-tools [:tool/clojure]
+  :code.type/sandbox-profile :sandbox/workspace-write
+  :code.type/input-schema {:required [:mission/id :codetype/ident :sandbox/root]
+                           :context [:code.type/generator-templates :code.type/generated-artifacts]}
+  :code.type/output-schema {:produces [:codetype/generated-files :codetype/stamp-path]
+                            :side-effects [:codetype/generation-log]}
+  :code.type/side-effects {:writes [:sandbox/files :sandbox/metadata]
+                           :external-calls [:clojure/process]
+                           :audit [:codetype/generation-log]}
   :code.type/default-validators [:validator/dev-script :validator/ns-loads]
   :code.type/generator "intuition.codetype.generators/templated-scaffold"
   :code.type/generator-templates ["resources/codetype/dev_stub.clj.tpl"]
@@ -84,64 +128,22 @@
   :code.type/ident :code.type/doc
   :code.type/category :code.category/doc
   :code.type/spec-sections ["4.9" "7" "9"]
+  :code.type/layer :layer/l2
+  :code.type/stability :stability/beta
+  :code.type/required-tools [:tool/clojure :tool/docgen]
+  :code.type/sandbox-profile :sandbox/workspace-write
+  :code.type/input-schema {:required [:mission/id :codetype/ident :sandbox/root]
+                           :context [:code.type/generator-templates :code.type/generated-artifacts]}
+  :code.type/output-schema {:produces [:codetype/generated-files :codetype/stamp-path]
+                            :side-effects [:codetype/generation-log]}
+  :code.type/side-effects {:writes [:sandbox/files :sandbox/metadata]
+                           :external-calls [:clojure/process]
+                           :audit [:codetype/generation-log]}
   :code.type/default-validators [:validator/doc-template :validator/edn-readable]
   :code.type/generator "intuition.codetype.generators/templated-scaffold"
   :code.type/generator-templates ["resources/codetype/doc_stub.md.tpl"]
   :code.type/generated-artifacts ["docs/generated/{{IDENT}}.md"]}
 
- {:entity/type :code/type
-  :entity/path "/code/types/generator/sample"
-  :entity/name "Generator sample"
-  :entity/status :entity.status/active
-  :entity/version 1
-  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
-  :entity/created-by :mission/M-20251121-404
-  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
-  :entity/updated-by :mission/M-20251121-404
-  :entity/description "Demonstrates CodeType generator metadata cited in SYSTEM_SPEC.md §§3.3–3.6, §4.7, §5.1, §5.3."
-  :code.type/ident :code.type/codex.sample
-  :code.type/category :code.category/dev
-  :code.type/spec-sections ["3.3" "3.4" "3.5" "3.6" "4.7" "5.1" "5.3"]
-  :code.type/default-validators []
-  :code.type/generator "intuition.codetype.generators/sample-runtime"
-  :code.type/generator-templates ["resources/codetype/sample_handler.clj.tpl"]
-  :code.type/generated-artifacts ["src/generated/sample_runtime.clj"]}
-
- {:entity/type :code/type
-  :entity/path "/code/types/generator/missing-template"
-  :entity/name "Generator sample – missing template"
-  :entity/status :entity.status/draft
-  :entity/version 1
-  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
-  :entity/created-by :mission/M-20251121-404
-  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
-  :entity/updated-by :mission/M-20251121-404
-  :entity/description "Test-only CodeType that references a missing template to assert generator error handling."
-  :code.type/ident :code.type/codex.sample-missing-template
-  :code.type/category :code.category/dev
-  :code.type/spec-sections ["3.3" "3.4" "4.7" "5.1" "5.3"]
-  :code.type/default-validators []
-  :code.type/generator "intuition.codetype.generators/sample-runtime"
-  :code.type/generator-templates ["resources/codetype/does-not-exist.tpl"]
-  :code.type/generated-artifacts ["src/generated/missing_template.clj"]}
-
- {:entity/type :code/type
-  :entity/path "/code/types/generator/missing-handler"
-  :entity/name "Generator sample – missing handler"
-  :entity/status :entity.status/draft
-  :entity/version 1
-  :entity/created-at #inst "2025-11-21T00:00:00.000-00:00"
-  :entity/created-by :mission/M-20251121-404
-  :entity/updated-at #inst "2025-11-21T00:00:00.000-00:00"
-  :entity/updated-by :mission/M-20251121-404
-  :entity/description "Test-only CodeType that references an unresolved generator var."
-  :code.type/ident :code.type/codex.sample-missing-handler
-  :code.type/category :code.category/dev
-  :code.type/spec-sections ["3.3" "3.5" "4.7" "5.1" "5.3"]
-  :code.type/default-validators []
-  :code.type/generator "intuition.codetype.generators/missing-runtime"
-  :code.type/generator-templates ["resources/codetype/sample_handler.clj.tpl"]
-  :code.type/generated-artifacts ["src/generated/missing_handler.clj"]}
  {:entity/type :code/definition
   :entity/path "/code/definitions/src/spec/importer"
   :entity/name "Spec importer"
